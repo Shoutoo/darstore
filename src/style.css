@@ -6,17 +6,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --bg-primary: #16212c;
-  --bg-secondary: #121a22;
-  --bg-card: #1e2a36;
-  --bg-card-subtle: #18232d;
-  --bg-card-hover: #263440;
-  --bg-input: #1c2830;
-  --bg-input-focus: #23323d;
+  --bg-primary: #262727;
+  --bg-secondary: #212121;
+  --bg-card: #313438;
+  --bg-card-subtle: #2b2e32;
+  --bg-card-hover: #383c41;
+  --bg-input: #373b3f;
+  --bg-input-focus: #3d4247;
   
   --accent-gold: #006199;
-  --accent-gold-hover: #1483bf;
-  --accent-gold-light: #6fd1ff;
+  --accent-gold-hover: #1479b3;
+  --accent-gold-light: #5ec8f2;
   --accent-gold-glow: rgba(0, 97, 153, 0.35);
   
   --badge-green: #285346;
@@ -29,9 +29,9 @@
   --text-muted: #737373;
   --text-dark: #1f2937;
   
-  --border-subtle: #26333d;
+  --border-subtle: #3c4045;
   --border-focus: #006199;
-  --border-card: #304250;
+  --border-card: #43474d;
   
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -117,7 +117,7 @@ img {
   background: var(--bg-secondary);
 }
 ::-webkit-scrollbar-thumb {
-  background: #263440;
+  background: #474c52;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -141,7 +141,7 @@ img {
   position: sticky;
   top: 0;
   z-index: 100;
-  background-color: rgba(22, 33, 44, 0.94);
+  background-color: rgba(38, 39, 39, 0.94);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
   transition: background-color var(--transition-normal);
@@ -374,7 +374,7 @@ img {
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-card);
-  background: #121a22;
+  background: #191b1c;
 }
 
 .carousel-slide {
@@ -618,7 +618,7 @@ img {
   width: 100%;
   aspect-ratio: 188 / 250;
   overflow: hidden;
-  background-color: #121a22;
+  background-color: #1a1c1e;
 }
 
 .game-poster {
@@ -674,7 +674,7 @@ img {
 
 .btn-load-more {
   padding: 10px 32px;
-  background-color: #1c2830;
+  background-color: #373b3f;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
   color: var(--text-primary);
@@ -743,7 +743,7 @@ img {
   display: flex;
   flex-direction: column;
   flex: 1;
-  background: linear-gradient(180deg, #1c2830 0%, #0f171d 100%);
+  background: linear-gradient(180deg, #373b3f 0%, #292b2e 100%);
 }
 
 .news-title {
@@ -798,7 +798,7 @@ img {
 }
 
 .game-profile-bar {
-  background-color: #121a22;
+  background-color: #212224;
   border-bottom: 1px solid var(--border-subtle);
   padding: 20px 0;
   margin-bottom: 32px;
@@ -825,7 +825,7 @@ img {
   border: 2px solid var(--accent-gold);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
   margin-top: -40px;
-  background-color: #18232d;
+  background-color: #2b2d30;
 }
 
 .game-title-large {
@@ -982,7 +982,7 @@ img {
 
 .nominal-card {
   position: relative;
-  background-color: #1c2830;
+  background-color: #373b3f;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
   padding: 14px 14px;
@@ -995,7 +995,7 @@ img {
 }
 
 .nominal-card:hover {
-  background-color: #263440;
+  background-color: #43484f;
   border-color: #5d636b;
   transform: translateY(-2px);
 }
@@ -1138,12 +1138,12 @@ img {
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  background-color: #1c2830;
+  background-color: #373b3f;
   transition: background-color var(--transition-fast);
 }
 
 .payment-group-header:hover {
-  background-color: #263440;
+  background-color: #40454a;
 }
 
 .payment-group-title {
@@ -1201,7 +1201,7 @@ img {
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   padding: 16px;
-  background-color: #18232d;
+  background-color: #2b2e32;
 }
 
 .payment-group.expanded .payment-methods-grid {
@@ -1210,7 +1210,7 @@ img {
 
 .payment-method-card {
   padding: 12px 14px;
-  background-color: #1c2830;
+  background-color: #373b3f;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
   display: flex;
@@ -1222,13 +1222,13 @@ img {
 }
 
 .payment-method-card:hover {
-  background-color: #263440;
+  background-color: #43484f;
   border-color: #626871;
 }
 
 .payment-method-card.selected {
   border: 2px solid var(--accent-gold);
-  background-color: #263440;
+  background-color: #3f4449;
   box-shadow: 0 0 12px var(--accent-gold-glow);
 }
 
@@ -1641,7 +1641,7 @@ img {
 .invoice-result-card {
   max-width: 680px;
   margin: 0 auto 48px auto;
-  background-color: #18232d;
+  background-color: #2b2e32;
   border: 2px solid var(--accent-gold);
   border-radius: var(--radius-xl);
   padding: 24px;
@@ -1713,7 +1713,7 @@ img {
   font-size: 13px;
   font-weight: 700;
   color: var(--text-secondary);
-  background-color: #18232d;
+  background-color: #2b2e32;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -1786,7 +1786,7 @@ img {
 
 .leaderboard-col-header {
   padding: 16px 20px;
-  background-color: #18232d;
+  background-color: #2e3135;
   border-bottom: 1px solid var(--border-subtle);
   font-size: 14px;
   font-weight: 700;
@@ -1898,7 +1898,7 @@ img {
 }
 
 .modal-box {
-  background-color: #18232d;
+  background-color: #2b2e32;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-xl);
   width: 100%;
@@ -2005,7 +2005,7 @@ img {
   width: 38px;
   height: 38px;
   border-radius: var(--radius-full);
-  background: #18232d;
+  background: #2e3135;
   border: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
@@ -2022,7 +2022,7 @@ img {
 .social-link:hover {
   border-color: var(--accent-gold);
   transform: translateY(-2px);
-  background: #23323d;
+  background: #393d43;
 }
 
 .footer-col-title {
@@ -2063,7 +2063,7 @@ img {
   width: 36px;
   height: 36px;
   border-radius: var(--radius-full);
-  background: #18232d;
+  background: #2e3135;
   border: 1px solid var(--border-subtle);
   color: var(--text-primary);
   display: flex;
