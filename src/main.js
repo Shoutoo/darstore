@@ -283,7 +283,7 @@ async function renderMLView() {
         id: p.id.toString(),
         name: p.nama_item || p.namaItem,
         price: p.harga,
-        icon: p.icon || '/assets/icons/diamond_small.png'
+        icon: (p.icon && !p.icon.includes('diamond_small.png')) ? p.icon : '/assets/icons/diamond_single.png'
       }));
       appState.mlProducts = items;
     }

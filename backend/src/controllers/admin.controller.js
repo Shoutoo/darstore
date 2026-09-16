@@ -175,7 +175,7 @@ exports.createProduct = async (req, res) => {
     }
 
     const id = `${game}_item_${Date.now()}`;
-    const defaultIcon = game === 'valorant' ? '/assets/icons/vp_icon.png' : '/assets/icons/diamond_small.png';
+    const defaultIcon = game === 'valorant' ? '/assets/icons/vp_icon.png' : '/assets/icons/diamond_single.png';
 
     await dbAsync.run(
       'INSERT INTO products (id, game, nama_item, nominal, harga, icon, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)',

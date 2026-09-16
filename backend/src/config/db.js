@@ -152,6 +152,15 @@ async function initDatabase() {
     await seedProducts();
   }
 
+  // Ensure MLBB products point to diamond_single.png icon
+  try {
+    await dbAsync.run(
+      "UPDATE products SET icon = '/assets/icons/diamond_single.png' WHERE game = 'mlbb' AND (icon = '/assets/icons/diamond_small.png' OR icon IS NULL)"
+    );
+  } catch (e) {
+    // Ignore migration error
+  }
+
   // Ensure default admin user exists and has admin role
   const bcrypt = require('bcryptjs');
   const adminHash = await bcrypt.hash('admin123', 10);
@@ -374,7 +383,7 @@ async function seedProducts() {
   for (const item of mlDiamonds) {
     await dbAsync.run(
       `INSERT OR IGNORE INTO products (id, game, nama_item, nominal, harga, icon, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [item.id, 'mlbb', item.name, item.nominal, item.price, '/assets/icons/diamond_small.png', 1]
+      [item.id, 'mlbb', item.name, item.nominal, item.price, '/assets/icons/diamond_single.png', 1]
     );
   }
 
