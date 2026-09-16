@@ -24,7 +24,7 @@
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" id="global-search-input" placeholder="Cari Game (Mobile Legends, Valorant)..." autocomplete="off" />
+            <input type="search" id="global-search-input" name="search_game" placeholder="Cari Game (Mobile Legends, Valorant)..." autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </div>
         </div>
 
@@ -579,24 +579,26 @@
         <h3 class="modal-title" id="auth-modal-title">Masuk ke Akun Dar'sstore</h3>
         <button class="modal-close" id="btn-close-auth">&times;</button>
       </div>
-      <div class="modal-body">
-        <div class="form-group" id="auth-name-group" style="margin-bottom: 14px; display: none;">
-          <label for="auth-name">Nama Lengkap</label>
-          <input type="text" id="auth-name" class="form-input" placeholder="Masukkan nama Anda" />
+      <form id="auth-form" autocomplete="on" onsubmit="return false;">
+        <div class="modal-body">
+          <div class="form-group" id="auth-name-group" style="margin-bottom: 14px; display: none;">
+            <label for="auth-name">Nama Lengkap</label>
+            <input type="text" id="auth-name" name="name" class="form-input" placeholder="Masukkan nama Anda" autocomplete="name" />
+          </div>
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label for="auth-email">Email atau No. WhatsApp</label>
+            <input type="text" id="auth-email" name="username" class="form-input" placeholder="08123456789 atau email@domain.com" autocomplete="username" />
+          </div>
+          <div class="form-group" style="margin-bottom: 18px;">
+            <label for="auth-pass">Kata Sandi</label>
+            <input type="password" id="auth-pass" name="password" class="form-input" placeholder="Minimal 6 karakter" autocomplete="current-password" />
+          </div>
+          <button type="submit" class="btn-order-now" id="btn-submit-auth" style="width: 100%;">Masuk Sekarang</button>
+          <p style="text-align: center; font-size: 12.5px; color: var(--text-secondary); margin-top: 14px;">
+            <span id="auth-switch-text">Belum punya akun?</span> <a href="#" id="auth-switch-link" style="color: var(--accent-gold); font-weight: 700;">Daftar disini</a>
+          </p>
         </div>
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label for="auth-email">Email atau No. WhatsApp</label>
-          <input type="text" id="auth-email" class="form-input" placeholder="08123456789 atau email@domain.com" />
-        </div>
-        <div class="form-group" style="margin-bottom: 18px;">
-          <label for="auth-pass">Kata Sandi</label>
-          <input type="password" id="auth-pass" class="form-input" placeholder="Minimal 6 karakter" />
-        </div>
-        <button class="btn-order-now" id="btn-submit-auth" style="width: 100%;">Masuk Sekarang</button>
-        <p style="text-align: center; font-size: 12.5px; color: var(--text-secondary); margin-top: 14px;">
-          <span id="auth-switch-text">Belum punya akun?</span> <a href="#" id="auth-switch-link" style="color: var(--accent-gold); font-weight: 700;">Daftar disini</a>
-        </p>
-      </div>
+      </form>
     </div>
   </div>
 

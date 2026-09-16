@@ -1109,6 +1109,7 @@ function setupSearchAndInvoice() {
   // Global search input in header
   const globalSearch = document.getElementById('global-search-input');
   if (globalSearch) {
+    globalSearch.value = ''; // Always ensure clean state on load
     globalSearch.addEventListener('input', (e) => {
       const query = e.target.value.toLowerCase().trim();
       const cards = document.querySelectorAll('#games-grid-container .game-card');
