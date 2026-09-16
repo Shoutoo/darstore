@@ -1,14 +1,10 @@
 import {
   GAMES,
-  CATEGORIES,
-  NEWS_ARTICLES,
   ML_NOMINALS,
   VALO_REGIONS,
   VALO_NOMINALS,
   PAYMENT_GROUPS,
-  LEADERBOARD_DATA,
-  FAQS,
-  PROMOS
+  FAQS
 } from './data.js';
 
 // Format currency helper
@@ -21,35 +17,27 @@ function formatRupiah(amount) {
   }).format(amount).replace('IDR', 'Rp');
 }
 
-// LocalStorage key for transactions
-const STORAGE_TX_KEY = 'ourastore_transactions';
-
-function getStoredTransactions() {
-  try {
-    const raw = localStorage.getItem(STORAGE_TX_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+// Token management
+const TOKEN_KEY = 'darsstore_token';
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
 }
-
-function saveStoredTransaction(tx) {
-  const list = getStoredTransactions();
-  list.unshift(tx);
-  localStorage.setItem(STORAGE_TX_KEY, JSON.stringify(list));
+function setToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 // Application State
 const appState = {
   activeView: 'home-view',
-  activeCategory: 'Top Up Games',
-  activeValoRegion: 'id',
+  currentUser: null,
   
   ml: {
     selectedNominal: null,
     qty: 1,
     selectedPayment: null,
-    appliedPromo: null,
     userId: '',
     server: '',
     email: '',
@@ -58,9 +46,8 @@ const appState = {
   
   valo: {
     selectedNominal: null,
-    qty: 1,
+    qty: 1, // Fixed 1 per instructions
     selectedPayment: null,
-    appliedPromo: null,
     riotId: '',
     email: '',
     wa: ''
@@ -90,7 +77,7 @@ function switchView(targetViewId) {
   });
 
   if (targetViewId === 'cek-transaksi-view') {
-    renderRealtimeTable();
+    fetchRealtimeTable();
   }
 }
 
@@ -104,22 +91,109 @@ function handleHashChange() {
     switchView('valo-topup-view');
   } else if (hash === '#cek-transaksi') {
     switchView('cek-transaksi-view');
-  } else if (hash === '#leaderboard') {
-    switchView('leaderboard-view');
-  } else if (hash === '#kalkulator') {
-    openModal('calc-modal');
   }
+}
+
+// ==========================================================
+// AUTHENTICATION & PROFILE
+// ==========================================================
+async function checkCurrentUser() {
+  const token = getToken();
+  const authContainer = document.getElementById('nav-auth-container');
+  if (!authContainer) return;
+
+  if (!token) {
+    appState.currentUser = null;
+    renderAuthButtons(authContainer);
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/auth/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      appState.currentUser = data.user;
+      renderUserProfile(authContainer, data.user);
+    } else {
+      clearToken();
+      appState.currentUser = null;
+      renderAuthButtons(authContainer);
+    }
+  } catch (err) {
+    console.warn('Failed to verify user session with backend:', err);
+    renderAuthButtons(authContainer);
+  }
+}
+
+function renderAuthButtons(container) {
+  container.innerHTML = `
+    <button class="btn-auth" id="btn-login">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+      <span>Masuk</span>
+    </button>
+    <button class="btn-auth" id="btn-register">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+      <span>Daftar</span>
+    </button>
+  `;
+
+  document.getElementById('btn-login')?.addEventListener('click', () => openAuthModal('login'));
+  document.getElementById('btn-register')?.addEventListener('click', () => openAuthModal('register'));
+}
+
+function renderUserProfile(container, user) {
+  container.innerHTML = `
+    <div class="nav-user-badge">
+      <span style="font-size: 13px; font-weight: 700; color: var(--text-primary);">${user.nama}</span>
+      <span class="user-points-badge" title="Poin Loyalitas Dar'sstore">⭐ ${user.points || 0} Poin</span>
+      <button class="btn-logout" id="btn-logout" title="Keluar dari akun">Keluar</button>
+    </div>
+  `;
+
+  document.getElementById('btn-logout')?.addEventListener('click', () => {
+    clearToken();
+    appState.currentUser = null;
+    alert('Anda telah keluar dari akun.');
+    checkCurrentUser();
+  });
+}
+
+function openAuthModal(mode = 'login') {
+  const modal = document.getElementById('auth-modal');
+  const title = document.getElementById('auth-modal-title');
+  const submitBtn = document.getElementById('btn-submit-auth');
+  const switchLink = document.getElementById('auth-switch-link');
+  const switchText = document.getElementById('auth-switch-text');
+  const nameGroup = document.getElementById('auth-name-group');
+
+  if (mode === 'register') {
+    title.textContent = "Daftar Akun Baru Dar'sstore";
+    submitBtn.textContent = 'Daftar Sekarang';
+    switchText.textContent = 'Sudah punya akun?';
+    switchLink.textContent = 'Masuk disini';
+    nameGroup.style.display = 'block';
+  } else {
+    title.textContent = "Masuk ke Akun Dar'sstore";
+    submitBtn.textContent = 'Masuk Sekarang';
+    switchText.textContent = 'Belum punya akun?';
+    switchLink.textContent = 'Daftar disini';
+    nameGroup.style.display = 'none';
+  }
+
+  openModal('auth-modal');
 }
 
 // ==========================================================
 // RENDER HOMEPAGE
 // ==========================================================
 function renderHomepage() {
-  // 1. Popular cards
+  // 1. Popular cards (MLBB and Valorant)
   const popularContainer = document.getElementById('popular-grid-container');
   if (popularContainer) {
-    const popularGames = GAMES.filter(g => g.popular);
-    popularContainer.innerHTML = popularGames.map(game => `
+    popularContainer.innerHTML = GAMES.map(game => `
       <div class="popular-card" data-route="${game.route || '#home'}" data-game-id="${game.id}">
         <img src="${game.image}" alt="${game.name}" class="popular-avatar" />
         <div class="popular-info">
@@ -132,70 +206,23 @@ function renderHomepage() {
     popularContainer.querySelectorAll('.popular-card').forEach(card => {
       card.addEventListener('click', () => {
         const route = card.dataset.route;
-        if (route && route !== '#home') {
-          window.location.hash = route;
-        } else {
-          alert(`Top up ${card.querySelector('.popular-name').textContent} akan segera tersedia!`);
-        }
+        if (route) window.location.hash = route;
       });
     });
   }
 
-  // 2. Category tabs
-  const categoryContainer = document.getElementById('category-tabs-container');
-  if (categoryContainer) {
-    categoryContainer.innerHTML = CATEGORIES.map(cat => `
-      <button class="category-tab ${cat === appState.activeCategory ? 'active' : ''}" data-cat="${cat}">
-        ${cat}
-      </button>
-    `).join('');
-
-    categoryContainer.querySelectorAll('.category-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        categoryContainer.querySelectorAll('.category-tab').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        appState.activeCategory = btn.dataset.cat;
-        renderGamesGrid();
-      });
-    });
-  }
-
-  // 3. Games Grid
+  // 2. Games Grid (MLBB & Valorant only)
   renderGamesGrid();
-
-  // 4. News Grid
-  const newsContainer = document.getElementById('news-grid-container');
-  if (newsContainer) {
-    newsContainer.innerHTML = NEWS_ARTICLES.map(article => `
-      <article class="news-card" data-id="${article.id}">
-        <div class="news-thumbnail-wrap">
-          <img src="${article.image}" alt="${article.title}" class="news-thumbnail" />
-        </div>
-        <div class="news-card-content">
-          <h3 class="news-title">${article.title}</h3>
-          <div class="news-meta">
-            <span class="news-author">${article.author}</span>
-            <span class="news-subtitle">${article.subtitle}</span>
-          </div>
-        </div>
-      </article>
-    `).join('');
-  }
 }
 
 function renderGamesGrid() {
   const gamesGrid = document.getElementById('games-grid-container');
   if (!gamesGrid) return;
 
-  const filteredGames = appState.activeCategory === 'Top Up Games'
-    ? GAMES
-    : GAMES.filter(g => g.category === appState.activeCategory);
-
-  gamesGrid.innerHTML = filteredGames.map(game => `
+  gamesGrid.innerHTML = GAMES.map(game => `
     <div class="game-card" data-route="${game.route || '#home'}" data-game-id="${game.id}">
       <div class="game-poster-wrap">
         <img src="${game.image}" alt="${game.name}" class="game-poster" loading="lazy" />
-        ${game.badge ? `<span class="game-badge-top">${game.badge}</span>` : ''}
       </div>
       <div class="game-card-content">
         <div class="game-title">${game.name}</div>
@@ -207,46 +234,24 @@ function renderGamesGrid() {
   gamesGrid.querySelectorAll('.game-card').forEach(card => {
     card.addEventListener('click', () => {
       const route = card.dataset.route;
-      if (route && route !== '#home') {
-        window.location.hash = route;
-      } else {
-        const title = card.querySelector('.game-title').textContent;
-        alert(`Layanan top up untuk ${title} sedang dipersiapkan. Coba Mobile Legends atau Valorant!`);
-      }
+      if (route) window.location.hash = route;
     });
   });
 }
 
 // ==========================================================
-// RENDER MOBILE LEGENDS VIEW
+// RENDER MOBILE LEGENDS VIEW (Direct Diamonds Only)
 // ==========================================================
 function renderMLView() {
   const container = document.getElementById('ml-nominals-container');
   if (!container) return;
 
-  let html = '';
-
-  // 1. Special Item
-  html += `<div class="nominal-category-title">🎁 Special Item</div>`;
-  html += `<div class="nominals-grid">` + ML_NOMINALS.special.map(item => createNominalCardHTML(item, 'ml')).join('') + `</div>`;
-
-  // 2. First Top Up
-  html += `<div class="nominal-category-title">🎁 First Top Up (Double Diamonds)</div>`;
-  html += `<div class="nominals-grid">` + ML_NOMINALS.first_topup.map(item => createNominalCardHTML(item, 'ml')).join('') + `</div>`;
-
-  // 3. Weekly / Monthly Pack
-  html += `<div class="nominal-category-title">🎁 Weekly/Monthly Pack</div>`;
-  html += `<div class="nominals-grid">` + ML_NOMINALS.weekly_monthly.map(item => createNominalCardHTML(item, 'ml')).join('') + `</div>`;
-
-  // 4. Promo
-  html += `<div class="nominal-category-title">🎁 Promo (Limited Stock Only)</div>`;
-  html += `<div class="nominals-grid">` + ML_NOMINALS.promo.map(item => createNominalCardHTML(item, 'ml')).join('') + `</div>`;
-
-  // 5. Top Up Diamonds (shown first 24 items with view all toggle)
-  html += `<div class="nominal-category-title">💎 Top Up Diamonds</div>`;
-  html += `<div class="nominals-grid" id="ml-diamonds-grid">` + ML_NOMINALS.topup_diamonds.map(item => createNominalCardHTML(item, 'ml')).join('') + `</div>`;
-
-  container.innerHTML = html;
+  // Single clean grid of direct diamond nominals without bundling
+  container.innerHTML = `
+    <div class="nominals-grid" id="ml-diamonds-grid">
+      ${ML_NOMINALS.topup_diamonds.map(item => createNominalCardHTML(item, 'ml')).join('')}
+    </div>
+  `;
 
   // Bind click on nominal cards
   container.querySelectorAll('.nominal-card').forEach(card => {
@@ -254,16 +259,7 @@ function renderMLView() {
       container.querySelectorAll('.nominal-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       const itemId = card.dataset.id;
-      
-      // Find item in all ML categories
-      const allML = [
-        ...ML_NOMINALS.special,
-        ...ML_NOMINALS.first_topup,
-        ...ML_NOMINALS.weekly_monthly,
-        ...ML_NOMINALS.promo,
-        ...ML_NOMINALS.topup_diamonds
-      ];
-      appState.ml.selectedNominal = allML.find(i => i.id === itemId);
+      appState.ml.selectedNominal = ML_NOMINALS.topup_diamonds.find(i => i.id === itemId);
       updateSummary('ml');
     });
   });
@@ -276,39 +272,18 @@ function renderMLView() {
 }
 
 // ==========================================================
-// RENDER VALORANT VIEW
+// RENDER VALORANT VIEW (Indonesia Only, Unified Cards)
 // ==========================================================
 function renderValoView() {
-  // Region tabs
-  const regionTabs = document.getElementById('valo-region-tabs');
-  if (regionTabs) {
-    regionTabs.innerHTML = VALO_REGIONS.map(reg => `
-      <button class="region-tab ${reg.id === appState.activeValoRegion ? 'active' : ''}" data-reg="${reg.id}">
-        ${reg.name}
-      </button>
-    `).join('');
-
-    regionTabs.querySelectorAll('.region-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        regionTabs.querySelectorAll('.region-tab').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        appState.activeValoRegion = btn.dataset.reg;
-        renderValoNominals();
-      });
-    });
-  }
-
-  renderValoNominals();
-  renderPaymentAccordion('valo-payments-container', 'valo');
-  renderFAQs('valo-faq-list');
-}
-
-function renderValoNominals() {
   const container = document.getElementById('valo-nominals-container');
   if (!container) return;
 
-  const items = VALO_NOMINALS[appState.activeValoRegion] || VALO_NOMINALS['id'];
-  container.innerHTML = `<div class="nominals-grid">` + items.map(item => createNominalCardHTML(item, 'valo')).join('') + `</div>`;
+  const items = VALO_NOMINALS['id'];
+  container.innerHTML = `
+    <div class="nominals-grid">
+      ${items.map(item => createNominalCardHTML(item, 'valo')).join('')}
+    </div>
+  `;
 
   container.querySelectorAll('.nominal-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -319,6 +294,9 @@ function renderValoNominals() {
       updateSummary('valo');
     });
   });
+
+  renderPaymentAccordion('valo-payments-container', 'valo');
+  renderFAQs('valo-faq-list');
 }
 
 function createNominalCardHTML(item, gameKey) {
@@ -335,14 +313,14 @@ function createNominalCardHTML(item, gameKey) {
 }
 
 // ==========================================================
-// RENDER PAYMENT ACCORDION
+// RENDER PAYMENT ACCORDION (QRIS Only)
 // ==========================================================
 function renderPaymentAccordion(containerId, gameKey) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  container.innerHTML = PAYMENT_GROUPS.map((group, idx) => `
-    <div class="payment-group ${idx === 1 ? 'expanded' : ''}" data-group-id="${group.id}">
+  container.innerHTML = PAYMENT_GROUPS.map((group) => `
+    <div class="payment-group expanded" data-group-id="${group.id}">
       <div class="payment-group-header">
         <div class="payment-group-title">
           <span>${group.title}</span>
@@ -362,7 +340,7 @@ function renderPaymentAccordion(containerId, gameKey) {
             <div class="payment-method-info">
               <span class="payment-method-name">${method.name}</span>
               <span class="payment-method-price" data-fee="${method.fee}">
-                ${method.feeText || (method.fee === 0 ? 'Gratis Biaya' : `+ ${formatRupiah(method.fee)}`)}
+                ${method.fee === 0 ? 'Gratis Biaya' : `+ ${formatRupiah(method.fee)}`}
               </span>
             </div>
           </div>
@@ -400,7 +378,7 @@ function renderPaymentAccordion(containerId, gameKey) {
 }
 
 // ==========================================================
-// RENDER FAQS & LEADERBOARD
+// RENDER FAQS
 // ==========================================================
 function renderFAQs(containerId) {
   const container = document.getElementById(containerId);
@@ -426,77 +404,60 @@ function renderFAQs(containerId) {
   });
 }
 
-function renderLeaderboard() {
-  const dailyList = document.getElementById('leaderboard-daily-list');
-  const weeklyList = document.getElementById('leaderboard-weekly-list');
-  const monthlyList = document.getElementById('leaderboard-monthly-list');
-
-  if (dailyList) {
-    dailyList.innerHTML = LEADERBOARD_DATA.daily.map(row => createLeaderboardRowHTML(row)).join('');
-  }
-  if (weeklyList) {
-    weeklyList.innerHTML = LEADERBOARD_DATA.weekly.map(row => createLeaderboardRowHTML(row)).join('');
-  }
-  if (monthlyList) {
-    monthlyList.innerHTML = LEADERBOARD_DATA.monthly.map(row => createLeaderboardRowHTML(row)).join('');
-  }
-}
-
-function createLeaderboardRowHTML(row) {
-  return `
-    <div class="leaderboard-row">
-      <div class="leaderboard-user-info">
-        <span class="leaderboard-rank">${row.rank}.</span>
-        <span class="leaderboard-name">${row.name}</span>
-        <span>${row.flag}</span>
-      </div>
-      <div class="leaderboard-amount">${row.amount}</div>
-    </div>
-  `;
-}
-
 // ==========================================================
-// REALTIME TRANSACTIONS TABLE & INVOICE CHECK
+// REALTIME TRANSACTIONS TABLE & INVOICE CHECK (API)
 // ==========================================================
-function renderRealtimeTable() {
+async function fetchRealtimeTable() {
   const tbody = document.getElementById('realtime-transactions-tbody');
   if (!tbody) return;
 
-  const transactions = getStoredTransactions();
-  if (transactions.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="5">
-          <div class="table-empty-state">
-            <div class="table-empty-icon">📊</div>
-            <div class="table-empty-title">Data tidak ditemukan!</div>
-            <div class="table-empty-sub">Tidak ada aktifitasi data.</div>
-          </div>
-        </td>
-      </tr>
-    `;
-    return;
-  }
+  try {
+    const res = await fetch('/api/orders/history');
+    const data = await res.json();
 
-  tbody.innerHTML = transactions.map(tx => {
-    const maskedPhone = tx.wa ? tx.wa.slice(0, 4) + '****' + tx.wa.slice(-3) : '0812****890';
-    return `
-      <tr>
-        <td>${tx.date}</td>
-        <td><strong style="color: var(--accent-gold);">${tx.invoiceNumber}</strong></td>
-        <td>${maskedPhone}</td>
-        <td>${formatRupiah(tx.total)}</td>
-        <td>
-          <span class="invoice-status-badge ${tx.status === 'Berhasil' ? 'success' : 'pending'}">
-            ${tx.status}
-          </span>
-        </td>
-      </tr>
-    `;
-  }).join('');
+    if (!res.ok || !data.success || data.orders.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5">
+            <div class="table-empty-state">
+              <div class="table-empty-icon">📊</div>
+              <div class="table-empty-title">Data tidak ditemukan!</div>
+              <div class="table-empty-sub">Belum ada transaksi di sistem.</div>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = data.orders.map(tx => {
+      const dateFormatted = new Date(tx.created_at).toLocaleString('id-ID', {
+        dateStyle: 'short',
+        timeStyle: 'short'
+      });
+      const isSuccess = tx.status === 'Berhasil';
+      const isProcess = tx.status === 'Diproses';
+
+      return `
+        <tr>
+          <td>${dateFormatted}</td>
+          <td><strong style="color: var(--accent-gold); cursor: pointer;" onclick="document.getElementById('invoice-search-input').value='${tx.invoice_number}'; searchInvoice('${tx.invoice_number}')">${tx.invoice_number}</strong></td>
+          <td>${tx.masked_contact}</td>
+          <td>${formatRupiah(tx.total_harga)}</td>
+          <td>
+            <span class="invoice-status-badge ${isSuccess ? 'success' : (isProcess ? 'processing' : 'pending')}">
+              ${tx.status}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Failed to fetch realtime transactions:', err);
+  }
 }
 
-function searchInvoice(query) {
+async function searchInvoice(query) {
   const resultContainer = document.getElementById('invoice-result-container');
   if (!resultContainer) return;
 
@@ -506,89 +467,130 @@ function searchInvoice(query) {
     return;
   }
 
-  const allTx = getStoredTransactions();
-  // If not found in stored, provide an authentic demo result matching the sample format
-  let match = allTx.find(t => t.invoiceNumber.toUpperCase() === cleaned);
+  resultContainer.innerHTML = `
+    <div style="text-align: center; padding: 24px; color: var(--text-secondary);">
+      Mencari invoice ${cleaned}...
+    </div>
+  `;
 
-  if (!match) {
-    if (cleaned.startsWith('OS')) {
-      match = {
-        invoiceNumber: cleaned,
-        date: new Date().toLocaleString('id-ID'),
-        gameName: 'Mobile Legends',
-        item: 'Weekly Diamond Pass',
-        targetAccount: '12345678 (2024)',
-        paymentMethod: 'QRIS (All Payment)',
-        total: 28882,
-        status: 'Berhasil'
-      };
-    } else {
+  try {
+    const res = await fetch(`/api/orders?invoice=${encodeURIComponent(cleaned)}`);
+    const data = await res.json();
+
+    if (!res.ok || !data.success || !data.order) {
       resultContainer.innerHTML = `
         <div class="invoice-result-card" style="border-color: #ef4444; text-align: center; padding: 32px;">
           <div style="font-size: 32px; margin-bottom: 8px;">❌</div>
           <h3 style="color: #ef4444; margin-bottom: 8px;">Nomor Invoice Tidak Ditemukan!</h3>
           <p style="color: var(--text-secondary); font-size: 13.5px;">
-            Pastikan nomor invoice yang Anda masukkan sudah benar (Contoh: OSXXXXXXXXXXXXXXXX).
+            Pastikan nomor invoice yang Anda masukkan sudah benar (Contoh: DSXXXXXXXXXXXXXXXX).
           </p>
         </div>
       `;
       return;
     }
+
+    const order = data.order;
+    const isSuccess = order.status === 'Berhasil';
+    const isProcess = order.status === 'Diproses';
+    const targetAccount = order.game === 'mlbb'
+      ? `${order.game_user_id} (${order.server_id})`
+      : order.riot_id;
+    const dateFormatted = new Date(order.created_at).toLocaleString('id-ID', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
+
+    resultContainer.innerHTML = `
+      <div class="invoice-result-card">
+        <div class="invoice-result-header">
+          <div>
+            <div style="font-size: 12px; color: var(--text-muted);">Nomor Invoice</div>
+            <div style="font-size: 20px; font-weight: 800; color: var(--accent-gold); letter-spacing: 0.5px;">${order.invoice_number}</div>
+          </div>
+          <span class="invoice-status-badge ${isSuccess ? 'success' : (isProcess ? 'processing' : 'pending')}">
+            ${order.status}
+          </span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13.5px;">
+          <div class="summary-row">
+            <span>Game</span>
+            <strong>${order.game === 'mlbb' ? 'Mobile Legends: Bang Bang' : 'Valorant'}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Item Produk</span>
+            <strong>${order.nama_item}</strong>
+          </div>
+          <div class="summary-row">
+            <span>ID Akun Target</span>
+            <strong>${targetAccount}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Metode Pembayaran</span>
+            <strong>${order.payment_method}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Waktu Transaksi</span>
+            <span>${dateFormatted}</span>
+          </div>
+          <div class="summary-row total">
+            <span>Total Pembayaran</span>
+            <span>${formatRupiah(order.total_harga)}</span>
+          </div>
+        </div>
+
+        ${!isSuccess ? `
+          <div style="margin-top: 20px; padding: 14px; background: rgba(0, 97, 153, 0.12); border: 1px solid var(--accent-gold); border-radius: var(--radius-md); text-align: center;">
+            <div style="font-size: 13px; color: var(--accent-gold-light); margin-bottom: 8px;">
+              Pesanan menunggu pembayaran QRIS.
+            </div>
+            <button class="btn-order-now" style="margin: 0 auto; padding: 8px 18px; width: auto; font-size: 13px;" onclick="simulateInvoicePayment('${order.invoice_number}')">
+              ⚡ Konfirmasi Bayar Sekarang (Simulasi)
+            </button>
+          </div>
+        ` : ''}
+
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; gap: 12px;">
+          <a href="https://wa.me/6281234567890?text=Halo%20Dar'sstore,%20saya%20ingin%20cek%20invoice%20${order.invoice_number}" target="_blank" rel="noreferrer" class="btn-order-now" style="flex: 1; text-align: center; text-decoration: none; justify-content: center;">
+            Bantuan CS via WhatsApp
+          </a>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    resultContainer.innerHTML = `
+      <div style="color: #ef4444; padding: 20px; text-align: center;">
+        Gagal menghubungi server. Pastikan backend server aktif.
+      </div>
+    `;
   }
-
-  resultContainer.innerHTML = `
-    <div class="invoice-result-card">
-      <div class="invoice-result-header">
-        <div>
-          <div style="font-size: 12px; color: var(--text-muted);">Nomor Invoice</div>
-          <div style="font-size: 18px; font-weight: 800; color: var(--accent-gold);">${match.invoiceNumber}</div>
-        </div>
-        <span class="invoice-status-badge ${match.status === 'Berhasil' ? 'success' : 'pending'}">
-          ${match.status}
-        </span>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13.5px;">
-        <div class="summary-row">
-          <span>Game</span>
-          <strong>${match.gameName}</strong>
-        </div>
-        <div class="summary-row">
-          <span>Item Produk</span>
-          <strong>${match.item}</strong>
-        </div>
-        <div class="summary-row">
-          <span>ID Akun Target</span>
-          <strong>${match.targetAccount}</strong>
-        </div>
-        <div class="summary-row">
-          <span>Metode Pembayaran</span>
-          <strong>${match.paymentMethod}</strong>
-        </div>
-        <div class="summary-row">
-          <span>Waktu Transaksi</span>
-          <span>${match.date}</span>
-        </div>
-        <div class="summary-row total">
-          <span>Total Pembayaran</span>
-          <span>${formatRupiah(match.total)}</span>
-        </div>
-      </div>
-
-      <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; gap: 12px;">
-        <button class="btn-order-now" style="flex: 1;" onclick="alert('Pesanan telah terkirim otomatis ke akun game Anda!')">
-          ✓ Pesanan Selesai
-        </button>
-        <a href="https://wa.me/628123456789" target="_blank" rel="noreferrer" class="btn-load-more" style="display: inline-flex; align-items: center; gap: 6px;">
-          Bantuan CS
-        </a>
-      </div>
-    </div>
-  `;
 }
 
+// Global window helper for simulation from result card
+window.simulateInvoicePayment = async function(inv) {
+  try {
+    const res = await fetch('/api/webhook/simulate-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ invoice_number: inv })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(data.message);
+      searchInvoice(inv);
+      fetchRealtimeTable();
+      checkCurrentUser();
+    } else {
+      alert(data.message || 'Gagal simulasi pembayaran');
+    }
+  } catch (err) {
+    alert('Gagal menghubungi server.');
+  }
+};
+
 // ==========================================================
-// ORDER SUMMARY & CHECKOUT LOGIC
+// ORDER SUMMARY & CHECKOUT LOGIC (REAL BACKEND API)
 // ==========================================================
 function updateSummary(gameKey) {
   const state = appState[gameKey];
@@ -602,10 +604,14 @@ function updateSummary(gameKey) {
     return;
   }
 
-  const basePrice = state.selectedNominal.price * state.qty;
-  const fee = state.selectedPayment ? state.selectedPayment.fee : 0;
-  const discount = state.appliedPromo ? state.appliedPromo.discount : 0;
-  const total = Math.max(0, basePrice + fee - discount);
+  // Qty is 1 for Valorant always; MLBB can have qty
+  const qty = gameKey === 'valo' ? 1 : state.qty;
+  const basePrice = state.selectedNominal.price * qty;
+  const fee = state.selectedPayment ? state.selectedPayment.fee : 800;
+  const total = basePrice + fee;
+
+  // Calculate potential loyalty points
+  const pointsEst = Math.floor(total / 10000);
 
   summaryBox.innerHTML = `
     <div class="summary-details-list">
@@ -615,7 +621,7 @@ function updateSummary(gameKey) {
       </div>
       <div class="summary-row">
         <span>Jumlah</span>
-        <strong>x${state.qty}</strong>
+        <strong>x${qty}</strong>
       </div>
       <div class="summary-row">
         <span>Harga Produk</span>
@@ -627,23 +633,27 @@ function updateSummary(gameKey) {
           <span>${fee === 0 ? 'Gratis' : formatRupiah(fee)}</span>
         </div>
       ` : ''}
-      ${state.appliedPromo ? `
-        <div class="summary-row" style="color: #34d399;">
-          <span>Voucher (${state.appliedPromo.code})</span>
-          <span>- ${formatRupiah(discount)}</span>
-        </div>
-      ` : ''}
       <div class="summary-row total">
         <span>Total Bayar</span>
         <span>${formatRupiah(total)}</span>
       </div>
+      ${appState.currentUser ? `
+        <div class="summary-row" style="margin-top: 6px; font-size: 12px; color: var(--accent-gold-light);">
+          <span>⭐ Estimasi Poin Didapat:</span>
+          <strong>+${pointsEst} Poin</strong>
+        </div>
+      ` : `
+        <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 8px;">
+          💡 Masuk ke akun Anda untuk mendapatkan poin loyalty (+${pointsEst} poin).
+        </div>
+      `}
     </div>
   `;
 
   orderBtn.disabled = false;
 }
 
-function handleCheckout(gameKey) {
+async function handleCheckout(gameKey) {
   const state = appState[gameKey];
   if (!state.selectedNominal) {
     alert('Silakan pilih nominal produk terlebih dahulu!');
@@ -663,7 +673,7 @@ function handleCheckout(gameKey) {
   } else if (gameKey === 'valo') {
     const riotId = document.getElementById('valo-riotid').value.trim();
     if (!riotId || !riotId.includes('#')) {
-      alert('Silakan masukkan Riot ID yang valid dengan Tagline! (Contoh: Player#1234)');
+      alert('Silakan masukkan Riot ID yang valid beserta Tagline! (Contoh: Player#1234)');
       document.getElementById('valo-riotid').focus();
       return;
     }
@@ -671,7 +681,7 @@ function handleCheckout(gameKey) {
   }
 
   if (!state.selectedPayment) {
-    alert('Silakan pilih metode pembayaran pada Step 4!');
+    alert('Silakan pilih metode pembayaran QRIS!');
     return;
   }
 
@@ -683,86 +693,106 @@ function handleCheckout(gameKey) {
   }
   state.wa = '0' + wa.replace(/^0+/, '');
 
-  // Generate unique invoice number: OS + YearMonthDay + Random 6 hex chars
-  const now = new Date();
-  const dateStr = now.getFullYear().toString() +
-    String(now.getMonth() + 1).padStart(2, '0') +
-    String(now.getDate()).padStart(2, '0');
-  const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
-  const invoiceCode = `OS${dateStr}${rand}`;
-
-  const basePrice = state.selectedNominal.price * state.qty;
-  const fee = state.selectedPayment.fee;
-  const discount = state.appliedPromo ? state.appliedPromo.discount : 0;
-  const total = Math.max(0, basePrice + fee - discount);
-
-  const txData = {
-    invoiceNumber: invoiceCode,
-    date: now.toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }),
-    gameName: gameKey === 'ml' ? 'Mobile Legends' : 'Valorant',
-    item: `${state.selectedNominal.name} (x${state.qty})`,
-    targetAccount: gameKey === 'ml' ? `${state.userId} (${state.server})` : state.riotId,
-    paymentMethod: state.selectedPayment.name,
-    total: total,
-    wa: state.wa,
-    status: 'Menunggu Pembayaran'
-  };
-
-  saveStoredTransaction(txData);
-  appState.currentInvoice = txData;
-
-  // Show checkout modal
-  const modalBody = document.getElementById('checkout-modal-body');
-  if (modalBody) {
-    modalBody.innerHTML = `
-      <div style="text-align: center; margin-bottom: 20px;">
-        <div style="font-size: 13px; color: var(--text-muted);">NOMOR INVOICE</div>
-        <div style="font-size: 22px; font-weight: 800; color: var(--accent-gold); letter-spacing: 1px;">
-          ${txData.invoiceNumber}
-        </div>
-      </div>
-
-      <div style="background: #373b3f; border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px;">
-        <div class="summary-row" style="margin-bottom: 8px;">
-          <span>Game:</span>
-          <strong>${txData.gameName}</strong>
-        </div>
-        <div class="summary-row" style="margin-bottom: 8px;">
-          <span>Item:</span>
-          <strong>${txData.item}</strong>
-        </div>
-        <div class="summary-row" style="margin-bottom: 8px;">
-          <span>Akun Game:</span>
-          <strong>${txData.targetAccount}</strong>
-        </div>
-        <div class="summary-row" style="margin-bottom: 8px;">
-          <span>Pembayaran:</span>
-          <strong>${txData.paymentMethod}</strong>
-        </div>
-        <div class="summary-row total" style="padding-top: 10px;">
-          <span>Total Tagihan:</span>
-          <strong style="color: var(--accent-gold-light); font-size: 18px;">${formatRupiah(txData.total)}</strong>
-        </div>
-      </div>
-
-      <!-- Payment QR / VA instruction -->
-      <div class="qr-code-wrap">
-        <div style="font-size: 12px; color: #1a1a1a; font-weight: 700; margin-bottom: 8px;">
-          SCAN KODE QR UNTUK MEMBAYAR
-        </div>
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(txData.invoiceNumber)}" alt="QR Pembayaran" class="qr-code-img" />
-        <div style="font-size: 11px; color: #555; margin-top: 8px;">
-          Berlaku untuk semua aplikasi e-wallet & mobile banking
-        </div>
-      </div>
-
-      <p style="font-size: 12px; color: var(--text-muted); text-align: center;">
-        Silakan lakukan pembayaran dalam waktu <strong>15:00 menit</strong>. Pesanan Anda akan diproses secara instan (1-3 detik) setelah pembayaran berhasil.
-      </p>
-    `;
+  const orderBtn = document.getElementById(`${gameKey}-btn-order`);
+  if (orderBtn) {
+    orderBtn.disabled = true;
+    orderBtn.textContent = 'Membuat Pesanan...';
   }
 
-  openModal('checkout-modal');
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    const token = getToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        product_id: state.selectedNominal.id,
+        game: gameKey === 'ml' ? 'mlbb' : 'valorant',
+        game_user_id: state.userId || null,
+        server_id: state.server || null,
+        riot_id: state.riotId || null,
+        wa_email_guest: state.wa,
+        payment_method: state.selectedPayment.name,
+        qty: gameKey === 'valo' ? 1 : state.qty
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success || !data.order) {
+      alert(data.message || 'Gagal membuat pesanan.');
+      return;
+    }
+
+    const order = data.order;
+    appState.currentInvoice = order;
+
+    // Render checkout modal with real QRIS
+    const modalBody = document.getElementById('checkout-modal-body');
+    if (modalBody) {
+      modalBody.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 13px; color: var(--text-muted);">NOMOR INVOICE</div>
+          <div style="font-size: 22px; font-weight: 800; color: var(--accent-gold); letter-spacing: 1px;">
+            ${order.invoice_number}
+          </div>
+        </div>
+
+        <div style="background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px;">
+          <div class="summary-row" style="margin-bottom: 8px;">
+            <span>Game:</span>
+            <strong>${order.game === 'mlbb' ? 'Mobile Legends: Bang Bang' : 'Valorant'}</strong>
+          </div>
+          <div class="summary-row" style="margin-bottom: 8px;">
+            <span>Item:</span>
+            <strong>${order.nama_item}</strong>
+          </div>
+          <div class="summary-row" style="margin-bottom: 8px;">
+            <span>Akun Tujuan:</span>
+            <strong>${order.game === 'mlbb' ? `${order.game_user_id} (${order.server_id})` : order.riot_id}</strong>
+          </div>
+          <div class="summary-row" style="margin-bottom: 8px;">
+            <span>Metode Bayar:</span>
+            <strong>${order.payment_method}</strong>
+          </div>
+          <div class="summary-row total" style="padding-top: 10px;">
+            <span>Total Tagihan:</span>
+            <strong style="color: var(--accent-gold-light); font-size: 18px;">${formatRupiah(order.total_harga)}</strong>
+          </div>
+        </div>
+
+        <!-- Real QRIS Display -->
+        <div class="qr-code-wrap" style="background: #ffffff; padding: 18px; border-radius: var(--radius-lg); text-align: center; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.25);">
+          <div style="font-size: 13px; color: #16212c; font-weight: 800; margin-bottom: 10px; text-transform: uppercase;">
+            SCAN QRIS UNTUK MEMBAYAR
+          </div>
+          <img src="${order.qris_url || `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(order.invoice_number)}`}" alt="QRIS Pembayaran" class="qr-code-img" style="margin: 0 auto; width: 190px; height: 190px; border-radius: 8px;" />
+          <div style="font-size: 11.5px; color: #475569; margin-top: 10px; font-weight: 600;">
+            Mendukung GoPay, DANA, OVO, ShopeePay, LinkAja & Seluruh Mobile Banking
+          </div>
+        </div>
+
+        <p style="font-size: 12px; color: var(--text-muted); text-align: center; line-height: 1.5;">
+          Silakan lakukan pembayaran dalam waktu <strong>15:00 menit</strong>. Pesanan diproses otomatis dalam 1-3 detik setelah scan QRIS berhasil.
+        </p>
+      `;
+    }
+
+    openModal('checkout-modal');
+  } catch (err) {
+    console.error('Checkout error:', err);
+    alert('Gagal menghubungi server. Pastikan backend server aktif.');
+  } finally {
+    if (orderBtn) {
+      orderBtn.disabled = false;
+      orderBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+        <span>Pesan Sekarang!</span>
+      `;
+    }
+  }
 }
 
 // ==========================================================
@@ -799,11 +829,47 @@ function setupModals() {
   if (btnCopyInvoice) {
     btnCopyInvoice.addEventListener('click', () => {
       if (appState.currentInvoice) {
-        navigator.clipboard.writeText(appState.currentInvoice.invoiceNumber);
+        navigator.clipboard.writeText(appState.currentInvoice.invoice_number);
         btnCopyInvoice.textContent = '✓ Tersalin!';
         setTimeout(() => {
           btnCopyInvoice.textContent = 'Salin Invoice';
         }, 2000);
+      }
+    });
+  }
+
+  // Simulate payment button
+  const btnSimulate = document.getElementById('btn-simulate-pay');
+  if (btnSimulate) {
+    btnSimulate.addEventListener('click', async () => {
+      if (!appState.currentInvoice) return;
+      btnSimulate.disabled = true;
+      btnSimulate.textContent = 'Memproses...';
+
+      try {
+        const res = await fetch('/api/webhook/simulate-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invoice_number: appState.currentInvoice.invoice_number })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          alert('✓ Pembayaran QRIS Berhasil Dikonfirmasi!\nItem Diamond/Points telah otomatis masuk ke akun Anda.');
+          closeModal('checkout-modal');
+          window.location.hash = '#cek-transaksi';
+          document.getElementById('invoice-search-input').value = appState.currentInvoice.invoice_number;
+          searchInvoice(appState.currentInvoice.invoice_number);
+          fetchRealtimeTable();
+          checkCurrentUser();
+        } else {
+          alert(data.message || 'Gagal simulasi pembayaran');
+        }
+      } catch (err) {
+        alert('Gagal menghubungi server.');
+      } finally {
+        btnSimulate.disabled = false;
+        btnSimulate.textContent = '⚡ Simulasi Bayar QRIS (Demo)';
       }
     });
   }
@@ -817,197 +883,98 @@ function setupModals() {
       if (appState.currentInvoice) {
         const input = document.getElementById('invoice-search-input');
         if (input) {
-          input.value = appState.currentInvoice.invoiceNumber;
-          searchInvoice(appState.currentInvoice.invoiceNumber);
+          input.value = appState.currentInvoice.invoice_number;
+          searchInvoice(appState.currentInvoice.invoice_number);
         }
       }
     });
   }
 
-  // Kalkulator MLBB logic
-  const btnCalc = document.getElementById('btn-calculate-wr');
-  if (btnCalc) {
-    btnCalc.addEventListener('click', () => {
-      const totalMatch = parseInt(document.getElementById('calc-total-match').value);
-      const currentWR = parseFloat(document.getElementById('calc-current-wr').value);
-      const targetWR = parseFloat(document.getElementById('calc-target-wr').value);
-      const resultBox = document.getElementById('calc-result');
-
-      if (isNaN(totalMatch) || isNaN(currentWR) || isNaN(targetWR)) {
-        alert('Mohon isi semua data dengan angka yang valid!');
-        return;
-      }
-
-      if (targetWR <= currentWR) {
-        resultBox.style.display = 'block';
-        resultBox.innerHTML = `
-          <div style="color: #34d399; font-weight: 700; font-size: 14px;">
-            🎉 Target win rate Anda (${targetWR}%) sudah tercapai atau lebih rendah dari win rate saat ini (${currentWR}%)!
-          </div>
-        `;
-        return;
-      }
-
-      if (targetWR >= 100) {
-        resultBox.style.display = 'block';
-        resultBox.innerHTML = `
-          <div style="color: #ef4444; font-weight: 700; font-size: 14px;">
-            Target win rate 100% mustahil dicapai jika pernah mengalami kekalahan!
-          </div>
-        `;
-        return;
-      }
-
-      // Formula: matches_needed = (totalMatch * (targetWR - currentWR)) / (100 - targetWR)
-      const matchesNeeded = Math.ceil((totalMatch * (targetWR - currentWR)) / (100 - targetWR));
-
-      resultBox.style.display = 'block';
-      resultBox.innerHTML = `
-        <div style="font-size: 14px; line-height: 1.6;">
-          Anda memerlukan sekitar <strong style="color: var(--accent-gold); font-size: 18px;">${matchesNeeded}</strong> kemenangan beruntun (win streak) tanpa kalah untuk mencapai <strong>${targetWR}%</strong> win rate! 🔥
-        </div>
-      `;
-    });
-  }
-
-  // Auth modal buttons
-  const btnLogin = document.getElementById('btn-login');
-  const btnRegister = document.getElementById('btn-register');
+  // Auth modal switch mode (login <-> register)
+  const authSwitch = document.getElementById('auth-switch-link');
   const authTitle = document.getElementById('auth-modal-title');
   const authSubmit = document.getElementById('btn-submit-auth');
-  const authSwitch = document.getElementById('auth-switch-link');
-
-  if (btnLogin) {
-    btnLogin.addEventListener('click', () => {
-      if (authTitle) authTitle.textContent = 'Masuk ke Akun OURASTORE';
-      if (authSubmit) authSubmit.textContent = 'Masuk Sekarang';
-      openModal('auth-modal');
-    });
-  }
-
-  if (btnRegister) {
-    btnRegister.addEventListener('click', () => {
-      if (authTitle) authTitle.textContent = 'Daftar Akun Baru OURASTORE';
-      if (authSubmit) authSubmit.textContent = 'Daftar Sekarang';
-      openModal('auth-modal');
-    });
-  }
+  const authSwitchText = document.getElementById('auth-switch-text');
+  const nameGroup = document.getElementById('auth-name-group');
 
   if (authSwitch) {
     authSwitch.addEventListener('click', (e) => {
       e.preventDefault();
       if (authTitle.textContent.includes('Masuk')) {
-        authTitle.textContent = 'Daftar Akun Baru OURASTORE';
+        authTitle.textContent = "Daftar Akun Baru Dar'sstore";
         authSubmit.textContent = 'Daftar Sekarang';
+        authSwitchText.textContent = 'Sudah punya akun?';
         authSwitch.textContent = 'Masuk disini';
+        nameGroup.style.display = 'block';
       } else {
-        authTitle.textContent = 'Masuk ke Akun OURASTORE';
+        authTitle.textContent = "Masuk ke Akun Dar'sstore";
         authSubmit.textContent = 'Masuk Sekarang';
+        authSwitchText.textContent = 'Belum punya akun?';
         authSwitch.textContent = 'Daftar disini';
+        nameGroup.style.display = 'none';
       }
     });
   }
 
+  // Submit Auth Form (Real API)
   if (authSubmit) {
-    authSubmit.addEventListener('click', () => {
-      const email = document.getElementById('auth-email').value;
-      if (!email) {
-        alert('Silakan masukkan email atau no WhatsApp!');
+    authSubmit.addEventListener('click', async () => {
+      const isRegister = authTitle.textContent.includes('Daftar');
+      const identifier = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-pass').value;
+      const nama = document.getElementById('auth-name').value.trim();
+
+      if (!identifier || !password) {
+        alert('Silakan isi email/no. WhatsApp dan kata sandi.');
         return;
       }
-      alert('Selamat datang di OURASTORE! Anda telah berhasil masuk.');
-      closeModal('auth-modal');
+
+      authSubmit.disabled = true;
+      authSubmit.textContent = 'Memproses...';
+
+      try {
+        let endpoint = '/api/auth/login';
+        let body = { identifier, password };
+
+        if (isRegister) {
+          endpoint = '/api/auth/register';
+          const isEmail = identifier.includes('@');
+          body = {
+            nama: nama || (isEmail ? identifier.split('@')[0] : 'Member'),
+            email: isEmail ? identifier : null,
+            whatsapp: !isEmail ? identifier : null,
+            password
+          };
+        }
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          setToken(data.token);
+          alert(isRegister ? 'Registrasi berhasil! Selamat datang di Dar\'sstore.' : 'Login berhasil! Selamat datang kembali.');
+          closeModal('auth-modal');
+          checkCurrentUser();
+        } else {
+          alert(data.message || 'Gagal autentikasi.');
+        }
+      } catch (err) {
+        alert('Gagal terhubung ke backend server.');
+      } finally {
+        authSubmit.disabled = false;
+        authSubmit.textContent = isRegister ? 'Daftar Sekarang' : 'Masuk Sekarang';
+      }
     });
   }
-
-  // Available promos modal
-  const promosList = document.getElementById('promos-modal-list');
-  if (promosList) {
-    promosList.innerHTML = PROMOS.map(p => `
-      <div style="padding: 14px; background: #373b3f; border: 1px solid var(--border-card); border-radius: var(--radius-md); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-        <div>
-          <div style="font-weight: 800; color: var(--accent-gold);">${p.code}</div>
-          <div style="font-size: 12.5px; color: var(--text-secondary);">${p.desc}</div>
-        </div>
-        <button class="btn-order-now select-promo-btn" data-code="${p.code}" style="padding: 8px 16px; font-size: 12px; width: auto;">
-          Pakai
-        </button>
-      </div>
-    `).join('');
-
-    promosList.querySelectorAll('.select-promo-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const code = btn.dataset.code;
-        const activeGame = appState.activeView === 'ml-topup-view' ? 'ml' : 'valo';
-        const input = document.getElementById(`${activeGame}-promo-input`);
-        if (input) input.value = code;
-        applyPromo(code, activeGame);
-        closeModal('promos-modal');
-      });
-    });
-  }
-
-  document.getElementById('ml-btn-available-promos')?.addEventListener('click', () => openModal('promos-modal'));
-  document.getElementById('valo-btn-available-promos')?.addEventListener('click', () => openModal('promos-modal'));
-
-  // CS Chat modal
-  const floatingCs = document.getElementById('floating-cs-btn');
-  const summaryHelpML = document.getElementById('summary-help-btn-ml');
-  const summaryHelpValo = document.getElementById('summary-help-btn-valo');
-
-  [floatingCs, summaryHelpML, summaryHelpValo].forEach(el => {
-    if (el) el.addEventListener('click', () => openModal('cs-chat-modal'));
-  });
-
-  const btnSendCS = document.getElementById('btn-send-cs-msg');
-  const csInput = document.getElementById('cs-chat-input');
-  const csMsgBox = document.getElementById('cs-chat-messages');
-
-  if (btnSendCS && csInput && csMsgBox) {
-    const sendMsg = () => {
-      const text = csInput.value.trim();
-      if (!text) return;
-      csInput.value = '';
-
-      // Append user msg
-      const userBubble = document.createElement('div');
-      userBubble.style.cssText = 'background: var(--accent-gold); color: #17181a; font-weight: 600; padding: 10px 14px; border-radius: 12px 12px 2px 12px; max-width: 85%; align-self: flex-end; font-size: 13px; line-height: 1.5;';
-      userBubble.textContent = text;
-      csMsgBox.appendChild(userBubble);
-      csMsgBox.scrollTop = csMsgBox.scrollHeight;
-
-      // Automated reply after 600ms
-      setTimeout(() => {
-        const reply = document.createElement('div');
-        reply.style.cssText = 'background: #373b3f; padding: 12px 14px; border-radius: 12px 12px 12px 2px; max-width: 85%; font-size: 13px; color: var(--text-primary); line-height: 1.5;';
-        reply.innerHTML = `Terima kasih telah menghubungi kami! Pesan Anda telah diterima oleh tim CS OURASTORE. Anda juga bisa langsung chat kami via WhatsApp di <a href="https://wa.me/628123456789" target="_blank" style="color:var(--accent-gold); font-weight:700;">WhatsApp CS 24 Jam</a> untuk respon kilat. ⚡`;
-        csMsgBox.appendChild(reply);
-        csMsgBox.scrollTop = csMsgBox.scrollHeight;
-      }, 600);
-    };
-
-    btnSendCS.addEventListener('click', sendMsg);
-    csInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendMsg();
-    });
-  }
-}
-
-// Promo application helper
-function applyPromo(code, gameKey) {
-  const found = PROMOS.find(p => p.code.toUpperCase() === code.trim().toUpperCase());
-  if (found) {
-    appState[gameKey].appliedPromo = found;
-    alert(`Voucher ${found.code} berhasil dipasang! Anda hemat ${formatRupiah(found.discount)}.`);
-  } else {
-    appState[gameKey].appliedPromo = null;
-    alert('Kode promo tidak valid atau telah kedaluwarsa.');
-  }
-  updateSummary(gameKey);
 }
 
 // ==========================================================
-// QUANTITY COUNTER CONTROLS
+// QUANTITY COUNTER CONTROLS (MLBB ONLY)
 // ==========================================================
 function setupCounters() {
   // ML Quantity
@@ -1030,39 +997,9 @@ function setupCounters() {
     });
   }
 
-  // Valorant Quantity
-  const valoMinus = document.getElementById('valo-qty-minus');
-  const valoPlus = document.getElementById('valo-qty-plus');
-  const valoInput = document.getElementById('valo-qty-input');
-
-  if (valoMinus && valoPlus && valoInput) {
-    valoMinus.addEventListener('click', () => {
-      if (appState.valo.qty > 1) {
-        appState.valo.qty--;
-        valoInput.value = appState.valo.qty;
-        updateSummary('valo');
-      }
-    });
-    valoPlus.addEventListener('click', () => {
-      appState.valo.qty++;
-      valoInput.value = appState.valo.qty;
-      updateSummary('valo');
-    });
-  }
-
   // Order buttons
   document.getElementById('ml-btn-order')?.addEventListener('click', () => handleCheckout('ml'));
   document.getElementById('valo-btn-order')?.addEventListener('click', () => handleCheckout('valo'));
-
-  // Promo apply buttons
-  document.getElementById('ml-btn-apply-promo')?.addEventListener('click', () => {
-    const code = document.getElementById('ml-promo-input').value;
-    applyPromo(code, 'ml');
-  });
-  document.getElementById('valo-btn-apply-promo')?.addEventListener('click', () => {
-    const code = document.getElementById('valo-promo-input').value;
-    applyPromo(code, 'valo');
-  });
 }
 
 // ==========================================================
@@ -1097,7 +1034,7 @@ function setupCarousel() {
 
   dots.forEach(dot => {
     dot.addEventListener('click', () => {
-      const idx = parseInt(dot.dataset.index);
+      const idx = parseInt(dot.dataset.index, 10);
       showSlide(idx);
     });
   });
@@ -1127,7 +1064,6 @@ function setupSearchAndInvoice() {
           <div class="game-card" data-route="${game.route || '#home'}" data-game-id="${game.id}">
             <div class="game-poster-wrap">
               <img src="${game.image}" alt="${game.name}" class="game-poster" />
-              ${game.badge ? `<span class="game-badge-top">${game.badge}</span>` : ''}
             </div>
             <div class="game-card-content">
               <div class="game-title">${game.name}</div>
@@ -1139,7 +1075,7 @@ function setupSearchAndInvoice() {
         gamesGrid.querySelectorAll('.game-card').forEach(card => {
           card.addEventListener('click', () => {
             const route = card.dataset.route;
-            if (route && route !== '#home') window.location.hash = route;
+            if (route) window.location.hash = route;
           });
         });
       }
@@ -1180,7 +1116,7 @@ function setupThemeToggle() {
   const html = document.documentElement;
   
   // Load saved theme
-  const savedTheme = localStorage.getItem('ourastore_theme') || 'dark';
+  const savedTheme = localStorage.getItem('darsstore_theme') || 'dark';
   html.setAttribute('data-theme', savedTheme);
 
   if (btn) {
@@ -1188,7 +1124,7 @@ function setupThemeToggle() {
       const current = html.getAttribute('data-theme');
       const next = current === 'dark' ? 'light' : 'dark';
       html.setAttribute('data-theme', next);
-      localStorage.setItem('ourastore_theme', next);
+      localStorage.setItem('darsstore_theme', next);
     });
   }
 }
@@ -1200,30 +1136,15 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHomepage();
   renderMLView();
   renderValoView();
-  renderLeaderboard();
   setupCarousel();
   setupCounters();
   setupModals();
   setupSearchAndInvoice();
   setupThemeToggle();
+  checkCurrentUser();
 
   window.addEventListener('hashchange', handleHashChange);
   handleHashChange();
 
-  // Kalkulator nav link click
-  document.getElementById('nav-kalkulator')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    openModal('calc-modal');
-  });
-
-  // Artikel nav link click
-  document.getElementById('nav-artikel')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    window.location.hash = '#home';
-    setTimeout(() => {
-      document.getElementById('section-news')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  });
-
-  console.log('OURASTORE Web App initialized successfully.');
+  console.log("Dar'sstore Web Application initialized successfully.");
 });

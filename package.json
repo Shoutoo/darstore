@@ -1,10 +1,11 @@
 {
-  "name": "ourastore",
+  "name": "darsstore",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server": "node backend/src/server.js",
     "build": "vite build",
     "preview": "vite preview"
   },

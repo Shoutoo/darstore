@@ -10,42 +10,6 @@ export const GAMES = [
     route: '#ml'
   },
   {
-    id: 'magic_chess',
-    name: 'Magic Chess',
-    shortName: 'Magic Chess Go Go',
-    publisher: 'Vizta Games',
-    image: '/assets/games/magic_chess.png',
-    popular: true,
-    category: 'Top Up Games'
-  },
-  {
-    id: 'pubg_mobile',
-    name: 'PUBG Mobile',
-    shortName: 'PUBG Mobile',
-    publisher: 'Tencent Games',
-    image: '/assets/games/pubg_mobile.png',
-    popular: true,
-    category: 'Top Up Games'
-  },
-  {
-    id: 'free_fire',
-    name: 'Free Fire',
-    shortName: 'Free Fire',
-    publisher: 'Garena',
-    image: '/assets/games/free_fire.jpg',
-    popular: true,
-    category: 'Top Up Games'
-  },
-  {
-    id: 'free_fire_max',
-    name: 'Free Fire MAX',
-    shortName: 'Free Fire MAX',
-    publisher: 'Garena',
-    image: '/assets/games/free_fire_max.png',
-    popular: false,
-    category: 'Top Up Games'
-  },
-  {
     id: 'valorant',
     name: 'Valorant',
     shortName: 'Valorant',
@@ -54,162 +18,10 @@ export const GAMES = [
     popular: true,
     category: 'Top Up Games',
     route: '#valo'
-  },
-  {
-    id: 'blood_strike',
-    name: 'Blood Strike',
-    shortName: 'Blood Strike',
-    publisher: 'NetEase Games',
-    image: '/assets/games/blood_strike.jpg',
-    popular: false,
-    category: 'Top Up Games'
-  },
-  {
-    id: 'codm',
-    name: 'Call of Duty Mobile',
-    shortName: 'Call of Duty Mobile',
-    publisher: 'Garena',
-    image: '/assets/games/cod_mobile.jpg',
-    popular: false,
-    category: 'Top Up Games'
-  },
-  {
-    id: 'delta_force_garena',
-    name: 'Delta Force',
-    badge: 'Garena',
-    shortName: 'Delta Force Garena',
-    publisher: 'Garena',
-    image: '/assets/games/delta_force_garena.jpg',
-    popular: false,
-    category: 'Top Up Games'
-  },
-  {
-    id: 'delta_force_steam',
-    name: 'Delta Force',
-    badge: 'Steam',
-    shortName: 'Delta Force Steam',
-    publisher: 'Team Jade',
-    image: '/assets/games/delta_force_steam.jpg',
-    popular: false,
-    category: 'Top Up Games'
-  },
-  {
-    id: 'honor_of_kings',
-    name: 'Honor of Kings',
-    shortName: 'Honor of Kings',
-    publisher: 'Level Infinite',
-    image: '/assets/games/honor_of_kings.jpg',
-    popular: false,
-    category: 'Top Up Games'
-  },
-  {
-    id: 'point_blank',
-    name: 'Point Blank',
-    shortName: 'Point Blank',
-    publisher: 'Zepetto',
-    image: '/assets/games/point_blank.jpg',
-    popular: false,
-    category: 'Top Up Games'
-  },
-  {
-    id: 'joki_eceran',
-    name: 'Joki Rank Eceran',
-    shortName: 'Joki Rank Eceran',
-    publisher: 'Oura Store',
-    image: '/assets/games/joki_eceran.png',
-    popular: true,
-    category: 'Joki MLBB'
-  },
-  {
-    id: 'joki_paketan',
-    name: 'Joki Rank Paketan',
-    shortName: 'Joki Rank Paketan',
-    publisher: 'Oura Store',
-    image: '/assets/games/joki_paketan.png',
-    popular: true,
-    category: 'Joki MLBB'
-  },
-  {
-    id: 'roblox',
-    name: 'ROBLOX',
-    shortName: 'ROBLOX',
-    publisher: 'Roblox Corporation',
-    image: '/assets/games/roblox.jpg',
-    popular: true,
-    category: 'Top Up Games'
-  }
-];
-
-export const CATEGORIES = [
-  'Top Up Games',
-  'Joki MLBB',
-  'Joki HOK',
-  'Top Up via LINK',
-  'Pulsa & Data',
-  'Voucher',
-  'Entertainment'
-];
-
-export const NEWS_ARTICLES = [
-  {
-    id: 'atlas',
-    title: 'Build Atlas Roam tersakit 2026 lengkap dengan item, emblem, talent, dan battle spell terbaik. Cek ...',
-    author: 'Jurnalis Oura',
-    subtitle: 'Build Atlas Roam Terbaik 2026: Musuh Auto Panik',
-    image: '/assets/news/news_atlas.png',
-    date: '16 September 2026'
-  },
-  {
-    id: 'lemon_btr',
-    title: 'Lemon dan BTR Nnael resmi menjadi Brand Ambassador MLBB Season 42. Simak pengumuman, ...',
-    author: 'Jurnalis Oura',
-    subtitle: 'Lemon dan BTR Nnael Resmi Jadi Brand Ambassador MLBB Season 42',
-    image: '/assets/news/news_lemon.jpg',
-    date: '16 September 2026'
-  },
-  {
-    id: 'zodiac',
-    title: 'Urutan skin Zodiac Mobile Legends 2026 lengkap dengan jadwal rilis, hero, periode zodiak, serta tips ...',
-    author: 'Jurnalis Oura',
-    subtitle: 'Urutan Skin Zodiac Mobile Legends, Jadwal Rilis & Heronya!',
-    image: '/assets/news/news_zodiac.png',
-    date: '15 September 2026'
   }
 ];
 
 export const ML_NOMINALS = {
-  special: [
-    { id: 'ml_sp_1', name: 'Weekly Diamond Pass', price: 28082, icon: '/assets/icons/weekly_diamond_pass.png', tag: 'Fast' },
-    { id: 'ml_sp_2', name: '2x Weekly Diamond Pass', price: 56178, icon: '/assets/icons/weekly_diamond_pass.png', tag: 'Fast' },
-    { id: 'ml_sp_3', name: '3x Weekly Diamond Pass', price: 90257, icon: '/assets/icons/weekly_diamond_pass.png', tag: 'Fast' },
-    { id: 'ml_sp_4', name: '4x Weekly Diamond Pass', price: 120356, icon: '/assets/icons/weekly_diamond_pass.png', tag: 'Fast' },
-    { id: 'ml_sp_5', name: 'Twilight Pass', price: 145200, icon: '/assets/icons/twilight_pass.png', tag: 'Fast' },
-    { id: 'ml_sp_6', name: '5x Weekly Diamond Pass', price: 160449, icon: '/assets/icons/weekly_diamond_pass.png', tag: 'Fast' },
-  ],
-  first_topup: [
-    { id: 'ml_ft_1', name: '50 (50+50) Diamonds - First Top Up', price: 14659, icon: '/assets/icons/diamond_small.png', tag: 'Double' },
-    { id: 'ml_ft_2', name: '250 (250+250) Diamonds - First Top Up', price: 43865, icon: '/assets/icons/diamond_medium.png', tag: 'Double' },
-    { id: 'ml_ft_3', name: '500 (500+500) Diamonds - First Top Up', price: 72845, icon: '/assets/icons/diamond_large.png', tag: 'Double' },
-    { id: 'ml_ft_4', name: '1000 (1000+1000) Diamonds - First Top Up', price: 147000, icon: '/assets/icons/diamond_pack_1.png', tag: 'Double' },
-  ],
-  weekly_monthly: [
-    { id: 'ml_wm_1', name: 'Weekly Elite Pack', price: 14659, icon: '/assets/icons/diamond_small.png', tag: 'Promo' },
-    { id: 'ml_wm_2', name: 'Monthly Epic Pack', price: 72432, icon: '/assets/icons/diamond_large.png', tag: 'Promo' },
-  ],
-  promo: [
-    { id: 'ml_pr_1', name: '5 (5+0) Diamonds [PROMO]', price: 1500, icon: '/assets/icons/diamond_single.png', tag: 'PROMO' },
-    { id: 'ml_pr_2', name: '12 (11+1) Diamonds [PROMO]', price: 3520, icon: '/assets/icons/diamond_small.png', tag: 'PROMO' },
-    { id: 'ml_pr_3', name: '18 (17+1) Diamonds [PROMO]', price: 5100, icon: '/assets/icons/diamond_small.png', tag: 'PROMO' },
-    { id: 'ml_pr_4', name: '28 (25+3) Diamonds [PROMO]', price: 8410, icon: '/assets/icons/diamond_small.png', tag: 'PROMO' },
-    { id: 'ml_pr_5', name: '44 (40+4) Diamonds [PROMO]', price: 13189, icon: '/assets/icons/diamond_medium.png', tag: 'PROMO' },
-    { id: 'ml_pr_6', name: '59 (53+6) Diamonds [PROMO]', price: 17556, icon: '/assets/icons/diamond_medium.png', tag: 'PROMO' },
-    { id: 'ml_pr_7', name: '85 (77+8) Diamonds [PROMO]', price: 25570, icon: '/assets/icons/diamond_large.png', tag: 'PROMO' },
-    { id: 'ml_pr_8', name: '240 (217+23) Diamonds [PROMO]', price: 71556, icon: '/assets/icons/diamond_pack_1.png', tag: 'PROMO' },
-    { id: 'ml_pr_9', name: '296 (256+40) Diamonds [PROMO]', price: 85484, icon: '/assets/icons/diamond_pack_2.png', tag: 'PROMO' },
-    { id: 'ml_pr_10', name: '408 (367+41) Diamonds [PROMO]', price: 121100, icon: '/assets/icons/diamond_pack_3.png', tag: 'PROMO' },
-    { id: 'ml_pr_11', name: '875 (774+101) Diamonds [PROMO]', price: 253971, icon: '/assets/icons/diamond_pack_4.png', tag: 'PROMO' },
-    { id: 'ml_pr_12', name: '2010 (1708+302) Diamonds [PROMO]', price: 547497, icon: '/assets/icons/diamond_pack_5.png', tag: 'PROMO' },
-  ],
   topup_diamonds: [
     { id: 'ml_dm_1', name: '5 (5+0) Diamonds', price: 1694, icon: '/assets/icons/diamond_single.png' },
     { id: 'ml_dm_2', name: '10 (9+1) Diamonds', price: 3387, icon: '/assets/icons/diamond_single.png' },
@@ -367,11 +179,7 @@ export const ML_NOMINALS = {
 };
 
 export const VALO_REGIONS = [
-  { id: 'id', name: 'Region Indonesia' },
-  { id: 'my', name: 'Region Malaysia' },
-  { id: 'th', name: 'Region Thailand' },
-  { id: 'sg', name: 'Region Singapore' },
-  { id: 'ph', name: 'Region Filipina' }
+  { id: 'id', name: 'Region Indonesia' }
 ];
 
 export const VALO_NOMINALS = {
@@ -407,54 +215,14 @@ export const VALO_NOMINALS = {
     { id: 'vp_id_29', name: '16700 Points', price: 1658756, icon: '/assets/icons/vp_icon.png' },
     { id: 'vp_id_30', name: '18400 Points', price: 1823468, icon: '/assets/icons/vp_icon.png' },
     { id: 'vp_id_31', name: '20000 Points', price: 1983336, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_id_32', name: '22000 Points', price: 2129640, icon: '/assets/icons/vp_icon.png' },
-  ],
-  my: [
-    { id: 'vp_my_1', name: '475 VP', price: 80407, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_my_2', name: '1000 VP', price: 165483, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_my_3', name: '2050 VP', price: 322873, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_my_4', name: '3650 VP', price: 563630, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_my_5', name: '5350 VP', price: 803970, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_my_6', name: '11000 VP', price: 1611776, icon: '/assets/icons/vp_icon.png' },
-  ],
-  th: [
-    { id: 'vp_th_1', name: '475 VP', price: 73348, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_th_2', name: '1000 VP', price: 146695, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_th_3', name: '3650 VP', price: 519173, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_th_4', name: '5350 VP', price: 744909, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_th_5', name: '11000 VP', price: 1489864, icon: '/assets/icons/vp_icon.png' },
-  ],
-  sg: [
-    { id: 'vp_sg_1', name: '475 VP', price: 95795, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_sg_2', name: '1000 VP', price: 191888, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_sg_3', name: '2050 VP', price: 370346, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_sg_4', name: '3650 VP', price: 644897, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_sg_5', name: '5350 VP', price: 919448, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_sg_6', name: '11000 VP', price: 1852920, icon: '/assets/icons/vp_icon.png' },
-  ],
-  ph: [
-    { id: 'vp_ph_1', name: '475 VP', price: 57103, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_ph_2', name: '1000 VP', price: 114490, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_ph_3', name: '2050 VP', price: 229267, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_ph_4', name: '3650 VP', price: 401431, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_ph_5', name: '5350 VP', price: 573596, icon: '/assets/icons/vp_icon.png' },
-    { id: 'vp_ph_6', name: '11000 VP', price: 1147476, icon: '/assets/icons/vp_icon.png' },
+    { id: 'vp_id_32', name: '22000 Points', price: 2129640, icon: '/assets/icons/vp_icon.png' }
   ]
 };
 
 export const PAYMENT_GROUPS = [
   {
-    id: 'oura_coin',
-    title: 'Oura Coin',
-    badge: 'BEST PRICE',
-    minPrice: 0,
-    methods: [
-      { id: 'oura_coin_balance', name: 'Saldo Oura Coin', fee: 0, feeText: 'Max: 0,00 Oura Coin', image: '/assets/logo/ourastore_logo.png' }
-    ]
-  },
-  {
     id: 'qris_ewallet',
-    title: 'QRIS OVO DANA GOPAY SHOPEEPAY, DLL',
+    title: 'QRIS & E-Wallet (Instan)',
     badge: 'BEST PRICE',
     minPrice: 1000,
     methods: [
@@ -463,125 +231,42 @@ export const PAYMENT_GROUPS = [
       { id: 'dana', name: 'DANA', fee: 1000, image: '/assets/payments/qris_dana.png' },
       { id: 'ovo', name: 'OVO', fee: 1000, image: '/assets/payments/qris_ovo.png' },
       { id: 'shopeepay', name: 'ShopeePay', fee: 1000, image: '/assets/payments/qris_shopeepay.png' },
-      { id: 'linkaja', name: 'LinkAja', fee: 1000, image: '/assets/payments/qris_linkaja.png' },
-    ]
-  },
-  {
-    id: 'virtual_account',
-    title: 'Virtual Account',
-    minPrice: 10000,
-    methods: [
-      { id: 'va_bca', name: 'BCA Virtual Account', fee: 3500, image: '/assets/payments/qris_bca.png' },
-      { id: 'va_mandiri', name: 'Mandiri Virtual Account', fee: 3500, image: '/assets/payments/va_mandiri.png' },
-      { id: 'va_briva', name: 'BRI Virtual Account', fee: 3500, image: '/assets/payments/va_briva.png' },
-      { id: 'va_bni', name: 'BNI Virtual Account', fee: 3500, image: '/assets/payments/va_bni.png' },
-      { id: 'va_permata', name: 'Permata Virtual Account', fee: 3500, image: '/assets/payments/va_permata.png' },
-      { id: 'va_cimb', name: 'CIMB Niaga VA', fee: 3500, image: '/assets/payments/va_cimb.png' },
-      { id: 'va_bsi', name: 'BSI Virtual Account', fee: 3500, image: '/assets/payments/va_bsi.png' },
-      { id: 'va_danamon', name: 'Danamon VA', fee: 3500, image: '/assets/payments/va_danamon.png' },
-      { id: 'va_seabank', name: 'SeaBank VA', fee: 3000, image: '/assets/payments/va_seabank.jpg' },
-      { id: 'va_bnc', name: 'Bank Neo Commerce', fee: 3000, image: '/assets/payments/va_bnc.png' },
-      { id: 'va_sinarmas', name: 'Sinarmas VA', fee: 3500, image: '/assets/payments/va_sinarmas.png' }
-    ]
-  },
-  {
-    id: 'convenience_store',
-    title: 'Convenience Store',
-    minPrice: 10000,
-    methods: [
-      { id: 'cs_alfamart', name: 'Alfamart', fee: 4000, image: '/assets/payments/cs_alfamart.png' },
-      { id: 'cs_indomaret', name: 'Indomaret', fee: 4000, image: '/assets/payments/cs_indomaret.png' },
-      { id: 'cs_lawson', name: 'Lawson', fee: 4000, image: '/assets/payments/cs_lawson.jpg' },
-      { id: 'cs_alfamidi', name: 'Alfamidi', fee: 4000, image: '/assets/payments/cs_alfamidi.jpg' },
-      { id: 'cs_superindo', name: 'Super Indo', fee: 4000, image: '/assets/payments/cs_superindo.png' }
+      { id: 'linkaja', name: 'LinkAja', fee: 1000, image: '/assets/payments/qris_linkaja.png' }
     ]
   }
 ];
-
-export const LEADERBOARD_DATA = {
-  daily: [
-    { rank: 1, name: 'Pre**********', amount: 'Rp 4.520.000', flag: '🇮🇩' },
-    { rank: 2, name: 'Joc**********', amount: 'Rp 3.890.000', flag: '🇮🇩' },
-    { rank: 3, name: 'Mat**********', amount: 'Rp 3.250.000', flag: '🇮🇩' },
-    { rank: 4, name: 'Ach**********', amount: 'Rp 2.950.000', flag: '🇮🇩' },
-    { rank: 5, name: 'Mar**********', amount: 'Rp 2.450.000', flag: '🇮🇩' },
-    { rank: 6, name: 'Adi**********', amount: 'Rp 2.100.000', flag: '🇮🇩' },
-    { rank: 7, name: 'Alf**********', amount: 'Rp 1.850.000', flag: '🇮🇩' },
-    { rank: 8, name: 'edy**********', amount: 'Rp 1.620.000', flag: '🇮🇩' },
-    { rank: 9, name: 'faz**********', amount: 'Rp 1.450.000', flag: '🇮🇩' },
-    { rank: 10, name: 'NUR**********', amount: 'Rp 1.250.000', flag: '🇮🇩' }
-  ],
-  weekly: [
-    { rank: 1, name: 'Wil**********', amount: 'Rp 18.750.000', flag: '🇮🇩' },
-    { rank: 2, name: 'Pre**********', amount: 'Rp 15.420.000', flag: '🇮🇩' },
-    { rank: 3, name: 'Idr**********', amount: 'Rp 12.890.000', flag: '🇮🇩' },
-    { rank: 4, name: 'Joc**********', amount: 'Rp 11.250.000', flag: '🇮🇩' },
-    { rank: 5, name: 'Mat**********', amount: 'Rp 9.850.000', flag: '🇮🇩' },
-    { rank: 6, name: 'Ach**********', amount: 'Rp 8.900.000', flag: '🇮🇩' },
-    { rank: 7, name: 'Arh**********', amount: 'Rp 7.650.000', flag: '🇮🇩' },
-    { rank: 8, name: 'Mar**********', amount: 'Rp 6.820.000', flag: '🇮🇩' },
-    { rank: 9, name: 'Muh**********', amount: 'Rp 6.150.000', flag: '🇮🇩' },
-    { rank: 10, name: 'Adi**********', amount: 'Rp 5.750.000', flag: '🇮🇩' }
-  ],
-  monthly: [
-    { rank: 1, name: 'Bud**********', amount: 'Rp 54.320.000', flag: '🇮🇩' },
-    { rank: 2, name: 'Bry**********', amount: 'Rp 48.910.000', flag: '🇮🇩' },
-    { rank: 3, name: 'Sel**********', amount: 'Rp 42.500.000', flag: '🇮🇩' },
-    { rank: 4, name: 'Pre**********', amount: 'Rp 39.800.000', flag: '🇮🇩' },
-    { rank: 5, name: 'Wil**********', amount: 'Rp 35.600.000', flag: '🇮🇩' },
-    { rank: 6, name: 'Mis**********', amount: 'Rp 31.250.000', flag: '🇮🇩' },
-    { rank: 7, name: 'Fat**********', amount: 'Rp 28.900.000', flag: '🇮🇩' },
-    { rank: 8, name: 'aji**********', amount: 'Rp 25.400.000', flag: '🇮🇩' },
-    { rank: 9, name: 'PRA**********', amount: 'Rp 23.850.000', flag: '🇮🇩' },
-    { rank: 10, name: 'Ach**********', amount: 'Rp 21.500.000', flag: '🇮🇩' }
-  ]
-};
 
 export const FAQS = [
   {
-    q: 'Bagaimana cara top up di Oura Store?',
-    a: 'Pilih game yang diinginkan, masukkan data akun game (User ID & Server/Zone ID atau Riot ID), pilih nominal yang diinginkan, tentukan jumlah pembelian, pilih metode pembayaran yang sesuai, masukkan nomor WhatsApp Anda, masukkan kode promo jika ada, lalu klik "Pesan Sekarang!". Lakukan pembayaran sesuai petunjuk dan item akan masuk secara instan dalam hitungan 1-3 detik!'
+    q: "Bagaimana cara top up di Dar'sstore?",
+    a: "Pilih game yang diinginkan (Mobile Legends atau Valorant), masukkan data akun game (User ID & Server/Zone ID untuk MLBB, atau Riot ID untuk Valorant), pilih nominal diamond/points yang diinginkan, pilih metode pembayaran QRIS, masukkan nomor WhatsApp Anda, lalu klik \"Pesan Sekarang!\". Lakukan pembayaran QRIS dan item akan masuk secara instan dalam hitungan 1-3 detik!"
   },
   {
-    q: 'Metode pembayaran apa saja yang ada di Oura Store?',
-    a: 'OURASTORE menyediakan metode pembayaran terlengkap mulai dari Oura Coin, QRIS (BCA, GoPay, OVO, DANA, ShopeePay, LinkAja), Virtual Account (BCA, Mandiri, BRI, BNI, Permata, CIMB, BSI, Danamon), hingga gerai Convenience Store (Alfamart, Indomaret, Lawson, Alfamidi).'
+    q: "Metode pembayaran apa saja yang ada di Dar'sstore?",
+    a: "Dar'sstore menyediakan metode pembayaran cepat QRIS yang mendukung semua aplikasi e-wallet (GoPay, DANA, OVO, ShopeePay, LinkAja) serta seluruh aplikasi Mobile Banking (BCA, Mandiri, BRI, BNI, CIMB, dan lainnya) dengan scan QR."
   },
   {
-    q: 'Mengapa harus top up di Oura Store?',
-    a: 'OURASTORE adalah platform top up game resmi, aman, termurah, dan terpercaya di Indonesia. Proses kilat otomatis 1-3 detik, sistem online 24 jam nonstop, jaminan garansi 100%, serta layanan Customer Service yang selalu siap melayani Anda.'
+    q: "Mengapa harus top up di Dar'sstore?",
+    a: "Dar'sstore adalah platform top up game resmi, aman, termurah, dan terpercaya di Indonesia. Proses kilat otomatis 1-3 detik, sistem online 24 jam nonstop, garansi 100%, dan point reward untuk member terdaftar."
   },
   {
-    q: 'Berapa lama proses top up di Oura Store?',
-    a: 'Proses pengisian dilakukan secara otomatis oleh sistem server kami dan rata-rata selesai dalam waktu 1 hingga 3 detik setelah pembayaran terkonfirmasi lunas.'
+    q: "Berapa lama proses top up di Dar'sstore?",
+    a: "Proses pengisian dilakukan secara otomatis oleh sistem server kami dan rata-rata selesai dalam waktu 1 hingga 3 detik setelah pembayaran QRIS terkonfirmasi."
   },
   {
-    q: 'Apakah top up di Oura Store aman?',
-    a: 'Sangat aman dan terpercaya! Top up di OURASTORE hanya memerlukan User ID atau Riot ID resmi Anda tanpa pernah meminta kata sandi / password akun game Anda.'
+    q: "Apakah top up di Dar'sstore aman?",
+    a: "Sangat aman dan terpercaya! Top up di Dar'sstore hanya memerlukan User ID atau Riot ID resmi Anda tanpa pernah meminta kata sandi / password akun game Anda."
   },
   {
-    q: 'Bagaimana cara cek transaksi di Oura Store?',
-    a: 'Klik menu "Cek Transaksi" pada navigasi atas website kami, lalu masukkan nomor Invoice yang Anda dapatkan saat melakukan pemesanan (format OSXXXXXXXXXXXXXXXX), dan klik "Cari Invoice" untuk melihat rincian serta status pesanan Anda secara realtime.'
+    q: "Bagaimana cara cek transaksi di Dar'sstore?",
+    a: "Klik menu \"Cek Transaksi\" pada navigasi atas website, lalu masukkan nomor Invoice yang Anda dapatkan saat melakukan pemesanan (format DSXXXXXXXX), dan klik \"Cari Invoice\" untuk melihat rincian serta status pesanan Anda secara realtime."
   },
   {
-    q: 'Apakah ada promo di Oura Store?',
-    a: 'Tentu! Kami selalu mengadakan flash sale harian, promo diskon diamond, potongan harga khusus pengguna baru, serta cashback menarik setiap minggunya. Cek menu Promo atau bagian Berita untuk info promo terupdate.'
+    q: "Jika ada kendala bagaimana cara menghubungi Customer Service Dar'sstore?",
+    a: "Anda cukup mengklik tombol \"WHATSAPP CS\" di pojok kanan bawah website ini untuk terhubung langsung dengan Customer Service resmi kami, atau kirim email ke support@darsstore.com."
   },
   {
-    q: 'Jika ada kendala bagaimana cara chat Customer Service Oura Store?',
-    a: 'Anda cukup mengklik tombol melayang "CHAT CS" di pojok kanan bawah website ini, atau hubungi WhatsApp resmi layanan bantuan kami yang aktif 24 jam.'
-  },
-  {
-    q: 'Berapa batas pembelian weekly diamond pass?',
-    a: 'Setiap akun Mobile Legends dapat mengaktifkan Weekly Diamond Pass maksimal akumulasi hingga 70 hari (10x pembelian Weekly Pass). Pembelian lebih dari batas tersebut akan dikonversi menjadi 80 diamond biasa oleh sistem Moonton.'
-  },
-  {
-    q: 'Apa penjelasan diamond yang dalam kurung misalnya: 277 (250+27) diamonds?',
-    a: 'Angka di luar kurung (277) adalah total diamond yang akan diterima oleh akun Anda. Angka pertama di dalam kurung (250) adalah diamond dasar dan angka kedua (+27) adalah bonus diamond gratis tambahan yang kami berikan untuk Anda!'
+    q: "Apa penjelasan diamond yang dalam kurung misalnya: 70 (63+7) Diamonds?",
+    a: "Angka di luar kurung (70) adalah total diamond yang akan diterima akun Anda. Angka pertama di dalam kurung (63) adalah diamond dasar dan angka kedua (+7) adalah bonus diamond tambahan gratis untuk Anda!"
   }
-];
-
-export const PROMOS = [
-  { code: 'OURABARU', discount: 5000, minSpend: 25000, desc: 'Diskon Rp 5.000 untuk pengguna baru' },
-  { code: 'KILATMLBB', discount: 10000, minSpend: 100000, desc: 'Diskon Rp 10.000 khusus Top Up Mobile Legends' },
-  { code: 'VALOPOINT', discount: 15000, minSpend: 150000, desc: 'Diskon Rp 15.000 khusus Points Valorant' }
 ];
