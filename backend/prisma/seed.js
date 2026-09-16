@@ -222,6 +222,22 @@ async function main() {
   });
 
   console.log(`Successfully seeded ${result.count} products to database!`);
+
+  // Seed default admin user
+  const bcrypt = require('bcryptjs');
+  const adminPasswordHash = await bcrypt.hash('admin123', 10);
+  await prisma.user.upsert({
+    where: { email: 'admin@darstore.com' },
+    update: { passwordHash: adminPasswordHash, nama: "Admin Dar'sstore" },
+    create: {
+      nama: "Admin Dar'sstore",
+      email: 'admin@darstore.com',
+      whatsapp: '081234567899',
+      passwordHash: adminPasswordHash,
+      points: 100
+    }
+  });
+  console.log('Default Admin user ready: admin@darstore.com / admin123');
 }
 
 main()

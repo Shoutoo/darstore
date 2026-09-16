@@ -121,6 +121,18 @@ async function initDatabase() {
     console.log('Seeding initial products into database...');
     await seedProducts();
   }
+
+  // Ensure default admin user exists
+  const adminUser = await dbAsync.get('SELECT id FROM users WHERE email = ?', ['admin@darstore.com']);
+  if (!adminUser) {
+    const bcrypt = require('bcryptjs');
+    const adminHash = await bcrypt.hash('admin123', 10);
+    await dbAsync.run(
+      'INSERT INTO users (nama, email, whatsapp, password_hash, points) VALUES (?, ?, ?, ?, ?)',
+      ['Admin Dar\'sstore', 'admin@darstore.com', '081234567899', adminHash, 100]
+    );
+    console.log('Default Admin user initialized: admin@darstore.com / admin123');
+  }
 }
 
 async function seedProducts() {
