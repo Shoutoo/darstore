@@ -99,7 +99,20 @@
           <p class="section-subtitle">Pilih game favoritmu untuk top up instan dan terpercaya.</p>
         </div>
         <div class="popular-grid" id="popular-grid-container">
-          <!-- Rendered dynamically by JS -->
+          <a href="#ml" class="popular-card" data-route="#ml" data-game-id="mlbb">
+            <img src="/assets/games/mobile_legends.jpg" alt="Mobile Legends: Bang Bang" class="popular-avatar" />
+            <div class="popular-info">
+              <div class="popular-name">Mobile Legends</div>
+              <div class="popular-pub">Moonton</div>
+            </div>
+          </a>
+          <a href="#valo" class="popular-card" data-route="#valo" data-game-id="valorant">
+            <img src="/assets/games/valorant.jpg" alt="Valorant" class="popular-avatar" />
+            <div class="popular-info">
+              <div class="popular-name">Valorant</div>
+              <div class="popular-pub">Riot Games</div>
+            </div>
+          </a>
         </div>
       </div>
     </section>
@@ -114,7 +127,27 @@
           </h2>
         </div>
         <div class="games-grid" id="games-grid-container">
-          <!-- Rendered dynamically by JS -->
+          <a href="#ml" class="game-card" data-route="#ml" data-game-id="mlbb">
+            <div class="game-poster-wrap">
+              <img src="/assets/games/mobile_legends.jpg" alt="Mobile Legends: Bang Bang" class="game-poster" loading="lazy" />
+            </div>
+            <div class="game-card-content">
+              <div class="game-title">Mobile Legends: Bang Bang</div>
+              <div class="game-pub">Moonton</div>
+            </div>
+          </a>
+          <a href="#valo" class="game-card" data-route="#valo" data-game-id="valorant">
+            <div class="game-poster-wrap">
+              <img src="/assets/games/valorant.jpg" alt="Valorant" class="game-poster" loading="lazy" />
+            </div>
+            <div class="game-card-content">
+              <div class="game-title">Valorant</div>
+              <div class="game-pub">Riot Games</div>
+            </div>
+          </a>
+          <div class="search-empty-state" id="games-search-empty" style="display: none; grid-column: 1 / -1; text-align: center; padding: 32px; color: var(--text-secondary); background: var(--bg-card); border-radius: var(--radius-md); border: 1px dashed var(--border-subtle);">
+            Tidak ada game yang cocok dengan pencarian
+          </div>
         </div>
       </div>
     </section>

@@ -224,9 +224,10 @@ function openAuthModal(mode = 'login') {
 // RENDER HOMEPAGE
 // ==========================================================
 function renderHomepage() {
-  // 1. Popular cards (MLBB and Valorant)
+  // Static HTML is already present in index.html for maximum stability and speed.
+  // We re-hydrate only if the containers are unexpectedly empty.
   const popularContainer = document.getElementById('popular-grid-container');
-  if (popularContainer) {
+  if (popularContainer && popularContainer.children.length === 0) {
     popularContainer.innerHTML = GAMES.map(game => `
       <a href="${game.route || '#home'}" class="popular-card" data-route="${game.route || '#home'}" data-game-id="${game.id}">
         <img src="${game.image}" alt="${game.name}" class="popular-avatar" />
@@ -236,18 +237,12 @@ function renderHomepage() {
         </div>
       </a>
     `).join('');
-
-    popularContainer.querySelectorAll('.popular-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        e.preventDefault();
-        const route = card.dataset.route || card.getAttribute('href');
-        navigateToRoute(route);
-      });
-    });
   }
 
-  // 2. Games Grid (MLBB & Valorant only)
-  renderGamesGrid();
+  const gamesGrid = document.getElementById('games-grid-container');
+  if (gamesGrid && gamesGrid.querySelectorAll('.game-card').length === 0) {
+    renderGamesGrid();
+  }
 }
 
 function renderGamesGrid() {
@@ -264,15 +259,11 @@ function renderGamesGrid() {
         <div class="game-pub">${game.publisher}</div>
       </div>
     </a>
-  `).join('');
-
-  gamesGrid.querySelectorAll('.game-card').forEach(card => {
-    card.addEventListener('click', (e) => {
-      e.preventDefault();
-      const route = card.dataset.route || card.getAttribute('href');
-      navigateToRoute(route);
-    });
-  });
+  `).join('') + `
+    <div class="search-empty-state" id="games-search-empty" style="display: none; grid-column: 1 / -1; text-align: center; padding: 32px; color: var(--text-secondary); background: var(--bg-card); border-radius: var(--radius-md); border: 1px dashed var(--border-subtle);">
+      Tidak ada game yang cocok dengan pencarian
+    </div>
+  `;
 }
 
 // ==========================================================
@@ -1120,31 +1111,20 @@ function setupSearchAndInvoice() {
   if (globalSearch) {
     globalSearch.addEventListener('input', (e) => {
       const query = e.target.value.toLowerCase().trim();
-      if (appState.activeView !== 'home-view') {
-        window.location.hash = '#home';
-      }
-      const gamesGrid = document.getElementById('games-grid-container');
-      if (gamesGrid) {
-        const matched = GAMES.filter(g => g.name.toLowerCase().includes(query) || g.publisher.toLowerCase().includes(query));
-        gamesGrid.innerHTML = matched.map(game => `
-          <a href="${game.route || '#home'}" class="game-card" data-route="${game.route || '#home'}" data-game-id="${game.id}">
-            <div class="game-poster-wrap">
-              <img src="${game.image}" alt="${game.name}" class="game-poster" />
-            </div>
-            <div class="game-card-content">
-              <div class="game-title">${game.name}</div>
-              <div class="game-pub">${game.publisher}</div>
-            </div>
-          </a>
-        `).join('');
+      const cards = document.querySelectorAll('#games-grid-container .game-card');
+      const emptyState = document.getElementById('games-search-empty');
+      let visibleCount = 0;
 
-        gamesGrid.querySelectorAll('.game-card').forEach(card => {
-          card.addEventListener('click', (e) => {
-            e.preventDefault();
-            const route = card.dataset.route || card.getAttribute('href');
-            navigateToRoute(route);
-          });
-        });
+      cards.forEach(card => {
+        const title = card.querySelector('.game-title')?.textContent.toLowerCase() || '';
+        const pub = card.querySelector('.game-pub')?.textContent.toLowerCase() || '';
+        const match = !query || title.includes(query) || pub.includes(query);
+        card.style.display = match ? 'flex' : 'none';
+        if (match) visibleCount++;
+      });
+
+      if (emptyState) {
+        emptyState.style.display = (visibleCount === 0 && query) ? 'block' : 'none';
       }
     });
   }
@@ -1199,6 +1179,21 @@ function setupThemeToggle() {
 // ==========================================================
 // INITIALIZATION
 // ==========================================================
+// Global delegated click listener for in-app routing
+document.addEventListener('click', (e) => {
+  const target = e.target.closest('.game-card, .popular-card, a[href^="#"]');
+  if (!target) return;
+
+  // Let middle clicks or modifier keys open naturally in new tab
+  if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
+
+  const route = target.dataset.route || target.getAttribute('href');
+  if (route && route.length > 1 && route !== '#') {
+    e.preventDefault();
+    navigateToRoute(route);
+  }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
   renderHomepage();
   renderMLView();
