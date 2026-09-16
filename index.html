@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OURASTORE - Tempat Top Up Games Cepat, Aman & Terpercaya</title>
+  <meta name="description" content="OURA STORE adalah tempat top up games yang aman, murah dan terpercaya. Proses cepat 1-3 Detik. Open 24 jam. Payment terlengkap." />
+  <link rel="icon" type="image/png" href="/assets/logo/ourastore_logo.png" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+
+  <!-- ==================== HEADER / NAVBAR ==================== -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-top">
+        <a href="#home" class="brand-logo" id="header-logo-link">
+          <img src="/assets/logo/ourastore_logo.png" alt="OURASTORE" id="main-logo-img" />
+        </a>
+
+        <div class="header-search">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="global-search-input" placeholder="Cari Game atau Voucher..." autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="currency-badge" id="currency-selector" title="Pilih Mata Uang">
+          <span class="flag-icon"></span>
+          <span>ID / IDR</span>
+        </div>
+      </div>
+
+      <nav class="nav-bottom">
+        <ul class="nav-links">
+          <li>
+            <a href="#home" class="nav-link active" data-target="home-view" id="nav-topup">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+              <span>Topup</span>
+            </a>
+          </li>
+          <li>
+            <a href="#cek-transaksi" class="nav-link" data-target="cek-transaksi-view" id="nav-cek-transaksi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><circle cx="11" cy="14" r="3"></circle><line x1="13.5" y1="16.5" x2="17" y2="20"></line></svg>
+              <span>Cek Transaksi</span>
+            </a>
+          </li>
+          <li>
+            <a href="#leaderboard" class="nav-link" data-target="leaderboard-view" id="nav-leaderboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-2.34"></path><path d="M18 14.66V17c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1v-2.34"></path><path d="M6 2v7a6 6 0 0 0 12 0V2"></path></svg>
+              <span>Leaderboard</span>
+            </a>
+          </li>
+          <li>
+            <a href="#home" class="nav-link" id="nav-artikel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              <span>Artikel</span>
+            </a>
+          </li>
+          <li>
+            <a href="#kalkulator" class="nav-link" id="nav-kalkulator">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><path d="M8 10h.01"></path><path d="M12 10h.01"></path><path d="M16 10h.01"></path><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path></svg>
+              <span>Kalkulator</span>
+            </a>
+          </li>
+        </ul>
+
+        <div class="nav-auth">
+          <button class="btn-auth" id="btn-login">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+            <span>Masuk</span>
+          </button>
+          <button class="btn-auth" id="btn-register">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+            <span>Daftar</span>
+          </button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ==================== VIEW 1: HOMEPAGE ==================== -->
+  <main id="home-view" class="view-section">
+    <!-- Hero Banner Slider -->
+    <section class="hero-carousel-section">
+      <div class="container">
+        <div class="carousel-container" id="hero-carousel">
+          <button class="carousel-control carousel-prev" id="carousel-prev-btn" aria-label="Slide sebelumnya">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <div class="carousel-slide">
+            <img src="/assets/banners/hanzo_starlight.png" alt="Starlight Hanzo Fangs of Slaughter" id="carousel-img" />
+          </div>
+          <button class="carousel-control carousel-next" id="carousel-next-btn" aria-label="Slide selanjutnya">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+          <div class="carousel-dots">
+            <span class="carousel-dot active" data-index="0"></span>
+            <span class="carousel-dot" data-index="1"></span>
+            <span class="carousel-dot" data-index="2"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Populer Sekarang Section -->
+    <section class="popular-section">
+      <div class="container">
+        <div class="section-title-wrap">
+          <h2 class="section-title">
+            <span class="section-badge-sq"></span>
+            POPULER SEKARANG!
+          </h2>
+          <p class="section-subtitle">Berikut adalah beberapa produk yang paling populer saat ini.</p>
+        </div>
+        <div class="popular-grid" id="popular-grid-container">
+          <!-- Rendered dynamically by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Game Catalog Section -->
+    <section class="catalog-section" id="section-catalog">
+      <div class="container">
+        <div class="category-tabs" id="category-tabs-container">
+          <!-- Rendered dynamically by JS -->
+        </div>
+        <div class="games-grid" id="games-grid-container">
+          <!-- Rendered dynamically by JS -->
+        </div>
+        <div class="load-more-wrap">
+          <button class="btn-load-more" id="btn-load-more">Tampilkan Lainnya...</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- News & Articles Section -->
+    <section class="news-section" id="section-news">
+      <div class="container">
+        <div class="section-title-wrap">
+          <h2 class="section-title" style="font-size: 18px; line-height: 1.4;">
+            OURASTORE NEWS: ASUPAN INFO GAMING & ESPORTS TERUPDATE BUAT KALIAN!!
+          </h2>
+          <p class="section-subtitle">
+            Dapatkan info terlengkap buat kalian para gamer! Temukan panduan bermain game favoritmu agar makin jago, berita terkini mengenai update patch, promo top-up harian, serta keseruan bersama komunitas gamer terupdate.
+          </p>
+        </div>
+        <div class="news-grid" id="news-grid-container">
+          <!-- Rendered dynamically by JS -->
+        </div>
+        <div class="load-more-wrap" style="margin-top: 24px;">
+          <button class="btn-load-more" id="btn-view-all-news">Lihat Semua Artikel</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== VIEW 2: TOP UP MOBILE LEGENDS ==================== -->
+  <main id="ml-topup-view" class="view-section" style="display: none;">
+    <div class="topup-hero-banner">
+      <img src="/assets/banners/ml_banner.png" alt="Mobile Legends Banner" />
+    </div>
+
+    <div class="game-profile-bar">
+      <div class="container game-profile-inner">
+        <div class="game-profile-left">
+          <img src="/assets/games/mobile_legends.jpg" alt="Mobile Legends" class="game-avatar-large" />
+          <div>
+            <h1 class="game-title-large">MOBILE LEGENDS</h1>
+            <p class="game-pub-large">Moonton</p>
+          </div>
+        </div>
+        <div class="game-badges-list">
+          <span class="feature-badge">⚡ Proses Cepat</span>
+          <span class="feature-badge">Layanan Chat 24/7</span>
+          <span class="feature-badge gold">Pembayaran Aman!</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="topup-layout">
+        <div class="topup-form-col">
+          <!-- Step 1: Data Akun -->
+          <div class="step-card" id="ml-step-1">
+            <div class="step-header">
+              <span class="step-number">1</span>
+              <h2 class="step-title">Masukkan Data Akun</h2>
+            </div>
+            <div class="account-inputs-grid">
+              <div class="form-group">
+                <label for="ml-userid">User ID</label>
+                <input type="text" id="ml-userid" class="form-input" placeholder="Masukkan User ID" />
+              </div>
+              <div class="form-group">
+                <label for="ml-server">Server / Zone ID</label>
+                <input type="text" id="ml-server" class="form-input" placeholder="Masukkan Server" />
+              </div>
+            </div>
+            <p class="input-helper">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              Untuk mengetahui User ID Anda, silakan klik menu profile di bagian kiri atas pada menu utama game. User ID tercantum di bawah nama karakter (Contoh: 12345678 (1234)).
+            </p>
+          </div>
+
+          <!-- Step 2: Pilih Nominal -->
+          <div class="step-card" id="ml-step-2">
+            <div class="step-header">
+              <span class="step-number">2</span>
+              <h2 class="step-title">Pilih Nominal</h2>
+            </div>
+            <div id="ml-nominals-container">
+              <!-- Rendered dynamically by JS -->
+            </div>
+          </div>
+
+          <!-- Step 3: Jumlah Pembelian -->
+          <div class="step-card" id="ml-step-3">
+            <div class="step-header">
+              <span class="step-number">3</span>
+              <h2 class="step-title">Masukkan Jumlah Pembelian</h2>
+            </div>
+            <div class="counter-box">
+              <button class="counter-btn" id="ml-qty-minus">-</button>
+              <input type="text" class="counter-value" id="ml-qty-input" value="1" readonly />
+              <button class="counter-btn" id="ml-qty-plus">+</button>
+            </div>
+          </div>
+
+          <!-- Step 4: Pilih Pembayaran -->
+          <div class="step-card" id="ml-step-4">
+            <div class="step-header">
+              <span class="step-number">4</span>
+              <h2 class="step-title">Pilih Pembayaran</h2>
+            </div>
+            <div id="ml-payments-container">
+              <!-- Rendered dynamically by JS -->
+            </div>
+          </div>
+
+          <!-- Step 5: Detail Kontak -->
+          <div class="step-card" id="ml-step-5">
+            <div class="step-header">
+              <span class="step-number">5</span>
+              <h2 class="step-title">Detail Kontak</h2>
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label for="ml-email">Email</label>
+              <input type="email" id="ml-email" class="form-input" placeholder="example@gmail.com" />
+            </div>
+            <div class="form-group">
+              <label for="ml-wa">No. WhatsApp</label>
+              <div class="phone-input-wrap">
+                <span class="country-code"><span class="flag-icon"></span> +62</span>
+                <input type="tel" id="ml-wa" placeholder="8123456789" />
+              </div>
+              <p class="input-helper" style="color: #fbbf24;">
+                **Nomor ini akan dihubungi jika terjadi masalah verifikasi atau pesanan Anda.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 6: Kode Promo -->
+          <div class="step-card" id="ml-step-6">
+            <div class="step-header">
+              <span class="step-number">6</span>
+              <h2 class="step-title">Kode Promo</h2>
+            </div>
+            <div class="promo-input-row">
+              <input type="text" id="ml-promo-input" class="form-input" placeholder="Ketik Kode Promo Kamu" />
+              <button class="btn-apply-promo" id="ml-btn-apply-promo">Gunakan</button>
+            </div>
+            <button class="btn-view-promos" id="ml-btn-available-promos">
+              🎟️ Pakai Promo Yang Tersedia
+            </button>
+          </div>
+
+          <!-- Deskripsi & FAQ -->
+          <div class="description-box">
+            <h3>Deskripsi Mobile Legends</h3>
+            <p>Top up Diamond Mobile Legends harga paling murah. Cara topup:</p>
+            <ol>
+              <li>Masukkan Data Akun (User ID & Server)</li>
+              <li>Pilih Nominal</li>
+              <li>Masukkan jumlah</li>
+              <li>Pilih Pembayaran</li>
+              <li>Tulis Kode Promo (jika ada)</li>
+              <li>Masukkan No WhatsApp</li>
+              <li>Klik Order Now & lakukan Pembayaran</li>
+              <li>Produk otomatis masuk ke akun game anda secara instan</li>
+            </ol>
+          </div>
+
+          <div class="faq-section">
+            <h3 style="margin-bottom: 16px; font-size: 17px;">Kamu Punya Pertanyaan?</h3>
+            <div class="faq-list" id="ml-faq-list">
+              <!-- Rendered dynamically by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky Summary Right Column -->
+        <aside class="sticky-summary">
+          <div class="rating-box">
+            <div class="rating-score-row">
+              <span class="rating-score">4.99</span>
+              <span class="rating-stars">★★★★★</span>
+            </div>
+            <span class="rating-count">Berdasarkan total 32.29rb rating</span>
+          </div>
+
+          <div class="cs-help-box" id="summary-help-btn-ml">
+            <div class="cs-help-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+            </div>
+            <div>
+              <div class="cs-help-title">Butuh Bantuan?</div>
+              <div class="cs-help-sub">Kamu bisa hubungi admin disini.</div>
+            </div>
+          </div>
+
+          <div class="order-summary-box">
+            <div id="ml-summary-content">
+              <div class="summary-empty-state">
+                Belum ada item produk yang dipilih.
+              </div>
+            </div>
+            <button class="btn-order-now" id="ml-btn-order" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+              <span>Pesan Sekarang!</span>
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== VIEW 3: TOP UP VALORANT ==================== -->
+  <main id="valo-topup-view" class="view-section" style="display: none;">
+    <div class="topup-hero-banner">
+      <img src="/assets/banners/valo_banner.jpg" alt="Valorant Banner" />
+    </div>
+
+    <div class="game-profile-bar">
+      <div class="container game-profile-inner">
+        <div class="game-profile-left">
+          <img src="/assets/games/valorant.jpg" alt="Valorant" class="game-avatar-large" />
+          <div>
+            <h1 class="game-title-large">VALORANT</h1>
+            <p class="game-pub-large">Riot Games</p>
+          </div>
+        </div>
+        <div class="game-badges-list">
+          <span class="feature-badge">⚡ Proses Cepat</span>
+          <span class="feature-badge">Layanan Chat 24/7</span>
+          <span class="feature-badge gold">Pembayaran Aman!</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="topup-layout">
+        <div class="topup-form-col">
+          <!-- Step 1: Riot ID -->
+          <div class="step-card" id="valo-step-1">
+            <div class="step-header">
+              <span class="step-number">1</span>
+              <h2 class="step-title">Masukkan Data Akun</h2>
+            </div>
+            <div class="form-group">
+              <label for="valo-riotid">Riot ID</label>
+              <input type="text" id="valo-riotid" class="form-input" placeholder="Masukkan Riot ID (Contoh: Player#1234)" />
+            </div>
+            <p class="input-helper">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              Please make sure you fill the correct account data with Tagline (e.g. Username#TAG).
+            </p>
+          </div>
+
+          <!-- Step 2: Pilih Nominal by Region -->
+          <div class="step-card" id="valo-step-2">
+            <div class="step-header">
+              <span class="step-number">2</span>
+              <h2 class="step-title">Pilih Nominal</h2>
+            </div>
+            <div class="region-tabs" id="valo-region-tabs">
+              <!-- Rendered dynamically by JS -->
+            </div>
+            <div id="valo-nominals-container">
+              <!-- Rendered dynamically by JS -->
+            </div>
+          </div>
+
+          <!-- Step 3: Jumlah Pembelian -->
+          <div class="step-card" id="valo-step-3">
+            <div class="step-header">
+              <span class="step-number">3</span>
+              <h2 class="step-title">Masukkan Jumlah Pembelian</h2>
+            </div>
+            <div class="counter-box">
+              <button class="counter-btn" id="valo-qty-minus">-</button>
+              <input type="text" class="counter-value" id="valo-qty-input" value="1" readonly />
+              <button class="counter-btn" id="valo-qty-plus">+</button>
+            </div>
+          </div>
+
+          <!-- Step 4: Pilih Pembayaran -->
+          <div class="step-card" id="valo-step-4">
+            <div class="step-header">
+              <span class="step-number">4</span>
+              <h2 class="step-title">Pilih Pembayaran</h2>
+            </div>
+            <div id="valo-payments-container">
+              <!-- Rendered dynamically by JS -->
+            </div>
+          </div>
+
+          <!-- Step 5: Detail Kontak -->
+          <div class="step-card" id="valo-step-5">
+            <div class="step-header">
+              <span class="step-number">5</span>
+              <h2 class="step-title">Detail Kontak</h2>
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label for="valo-email">Email</label>
+              <input type="email" id="valo-email" class="form-input" placeholder="example@gmail.com" />
+            </div>
+            <div class="form-group">
+              <label for="valo-wa">No. WhatsApp</label>
+              <div class="phone-input-wrap">
+                <span class="country-code"><span class="flag-icon"></span> +62</span>
+                <input type="tel" id="valo-wa" placeholder="8123456789" />
+              </div>
+              <p class="input-helper" style="color: #fbbf24;">
+                **Nomor ini akan dihubungi jika terjadi masalah verifikasi pesanan Anda.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 6: Kode Promo -->
+          <div class="step-card" id="valo-step-6">
+            <div class="step-header">
+              <span class="step-number">6</span>
+              <h2 class="step-title">Kode Promo</h2>
+            </div>
+            <div class="promo-input-row">
+              <input type="text" id="valo-promo-input" class="form-input" placeholder="Ketik Kode Promo Kamu" />
+              <button class="btn-apply-promo" id="valo-btn-apply-promo">Gunakan</button>
+            </div>
+            <button class="btn-view-promos" id="valo-btn-available-promos">
+              🎟️ Pakai Promo Yang Tersedia
+            </button>
+          </div>
+
+          <!-- Deskripsi & FAQ -->
+          <div class="description-box">
+            <h3>Deskripsi Valorant</h3>
+            <p>Top up Valorant harga paling murah. Cara topup:</p>
+            <ol>
+              <li>Masukkan Data Akun (Riot ID #TAG)</li>
+              <li>Pilih Nominal</li>
+              <li>Masukkan jumlah</li>
+              <li>Pilih Pembayaran</li>
+              <li>Tulis Kode Promo (jika ada)</li>
+              <li>Masukkan No WhatsApp</li>
+              <li>Klik Order Now & lakukan Pembayaran</li>
+              <li>Produk otomatis masuk ke akun game anda</li>
+            </ol>
+          </div>
+
+          <div class="faq-section">
+            <h3 style="margin-bottom: 16px; font-size: 17px;">Kamu Punya Pertanyaan?</h3>
+            <div class="faq-list" id="valo-faq-list">
+              <!-- Rendered dynamically by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky Summary Right Column -->
+        <aside class="sticky-summary">
+          <div class="rating-box">
+            <div class="rating-score-row">
+              <span class="rating-score">4.99</span>
+              <span class="rating-stars">★★★★★</span>
+            </div>
+            <span class="rating-count">Berdasarkan total 32.29rb rating</span>
+          </div>
+
+          <div class="cs-help-box" id="summary-help-btn-valo">
+            <div class="cs-help-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+            </div>
+            <div>
+              <div class="cs-help-title">Butuh Bantuan?</div>
+              <div class="cs-help-sub">Kamu bisa hubungi admin disini.</div>
+            </div>
+          </div>
+
+          <div class="order-summary-box">
+            <div id="valo-summary-content">
+              <div class="summary-empty-state">
+                Belum ada item produk yang dipilih.
+              </div>
+            </div>
+            <button class="btn-order-now" id="valo-btn-order" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+              <span>Pesan Sekarang!</span>
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== VIEW 4: CEK TRANSAKSI ==================== -->
+  <main id="cek-transaksi-view" class="view-section" style="display: none;">
+    <div class="container cek-transaksi-page">
+      <div class="page-center-header">
+        <h1>Cek Invoice Kamu dengan Mudah dan Cepat</h1>
+        <p>Lihat detail pembelian kamu menggunakan nomor Invoice.</p>
+      </div>
+
+      <div class="invoice-search-card">
+        <div class="search-card-label">Cari detail pembelian kamu disini</div>
+        <div class="invoice-input-row">
+          <input type="text" id="invoice-search-input" placeholder="Masukkan nomor Invoice Kamu (Contoh: OSXXXXXXXXXXXXXXXX)" />
+          <button class="btn-paste" id="btn-paste-invoice" title="Tempel dari Clipboard">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+          </button>
+        </div>
+        <button class="btn-search-invoice" id="btn-search-invoice">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span>Cari Invoice</span>
+        </button>
+      </div>
+
+      <!-- Container Result -->
+      <div id="invoice-result-container"></div>
+
+      <!-- Real-Time Transactions Table Section -->
+      <div class="realtime-section-title">
+        <h2>Transaksi Real-Time</h2>
+        <p>Berikut ini Real-Time data pesanan masuk terbaru OURASTORE.</p>
+      </div>
+
+      <div class="realtime-table-wrap">
+        <table class="realtime-table">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Nomor Invoice</th>
+              <th>No. Handphone</th>
+              <th>Harga</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="realtime-transactions-tbody">
+            <!-- Empty state default from SVG -->
+            <tr>
+              <td colspan="5">
+                <div class="table-empty-state">
+                  <div class="table-empty-icon">📊</div>
+                  <div class="table-empty-title">Data tidak ditemukan!</div>
+                  <div class="table-empty-sub">Tidak ada aktifitasi data.</div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== VIEW 5: LEADERBOARD ==================== -->
+  <main id="leaderboard-view" class="view-section" style="display: none;">
+    <div class="container leaderboard-page">
+      <div class="page-center-header">
+        <span class="leaderboard-badge">Leaderboard</span>
+        <h1 style="font-size: 28px;">Top 10 Pembelian Terbanyak di OURASTORE</h1>
+        <p>Berikut ini adalah daftar 10 pembelian terbanyak yang dilakukan oleh pelanggan kami. Data ini diambil dari sistem kami dan selalu diperbaharui.</p>
+      </div>
+
+      <div class="leaderboard-grid">
+        <!-- Col 1: Hari Ini -->
+        <div class="leaderboard-column-card">
+          <div class="leaderboard-col-header">Top 10 - Hari Ini</div>
+          <div class="leaderboard-list" id="leaderboard-daily-list">
+            <!-- Rendered dynamically by JS -->
+          </div>
+        </div>
+
+        <!-- Col 2: Minggu Ini -->
+        <div class="leaderboard-column-card">
+          <div class="leaderboard-col-header">Top 10 - Minggu Ini</div>
+          <div class="leaderboard-list" id="leaderboard-weekly-list">
+            <!-- Rendered dynamically by JS -->
+          </div>
+        </div>
+
+        <!-- Col 3: Bulan Ini -->
+        <div class="leaderboard-column-card">
+          <div class="leaderboard-col-header">Top 10 - Bulan Ini</div>
+          <div class="leaderboard-list" id="leaderboard-monthly-list">
+            <!-- Rendered dynamically by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== FLOATING CHAT CS WIDGET ==================== -->
+  <button class="floating-cs-btn" id="floating-cs-btn" aria-label="Chat Customer Service">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+    <span>CHAT CS</span>
+  </button>
+
+  <!-- ==================== SITE FOOTER ==================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-top-grid">
+        <div class="footer-brand-col">
+          <img src="/assets/logo/ourastore_logo_footer.png" alt="OURASTORE" style="height: 48px;" />
+          <p class="footer-brand-desc">
+            OURA STORE adalah tempat top up games yang aman, murah dan terpercaya. Proses cepat 1-3 Detik. Open 24 jam. Payment terlengkap. Jika ada kendala silahkan klik logo CS pada kanan bawah di website ini.
+          </p>
+          <div class="social-links">
+            <a href="https://instagram.com" target="_blank" rel="noreferrer" class="social-link" title="Instagram">
+              <img src="/assets/social/instagram.png" alt="Instagram" />
+            </a>
+            <a href="https://tiktok.com" target="_blank" rel="noreferrer" class="social-link" title="TikTok">
+              <img src="/assets/social/tiktok.png" alt="TikTok" />
+            </a>
+            <a href="mailto:support@ourastore.com" class="social-link" title="Gmail">
+              <img src="/assets/social/gmail.png" alt="Gmail" />
+            </a>
+            <a href="https://youtube.com" target="_blank" rel="noreferrer" class="social-link" title="YouTube">
+              <img src="/assets/social/youtube.png" alt="YouTube" />
+            </a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">Peta Situs</h4>
+          <ul class="footer-col-links">
+            <li><a href="#home">Beranda</a></li>
+            <li><a href="#cek-transaksi">Cek Transaksi</a></li>
+            <li><a href="#cs">Hubungi Kami</a></li>
+            <li><a href="#ulasan">Ulasan</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">Dukungan</h4>
+          <ul class="footer-col-links">
+            <li><a href="https://wa.me/628123456789" target="_blank" rel="noreferrer">Whatsapp</a></li>
+            <li><a href="https://instagram.com" target="_blank" rel="noreferrer">Instagram</a></li>
+            <li><a href="mailto:support@ourastore.com">Email</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">Legalitas</h4>
+          <ul class="footer-col-links">
+            <li><a href="#privacy">Kebijakan Pribadi</a></li>
+            <li><a href="#terms">Syarat & Ketentuan</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2026 OURASTORE. All rights reserved.</span>
+        <button class="theme-toggle-btn" id="theme-toggle-btn" title="Ganti Tema Gelap / Terang">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== MODALS ==================== -->
+  <!-- 1. Checkout / Invoice Modal -->
+  <div class="modal-backdrop" id="checkout-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Pesanan Berhasil Dibuat!</h3>
+        <button class="modal-close" id="btn-close-checkout">&times;</button>
+      </div>
+      <div class="modal-body" id="checkout-modal-body">
+        <!-- Rendered dynamically by JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-load-more" id="btn-copy-invoice-code">Salin Invoice</button>
+        <button class="btn-order-now" id="btn-goto-check-trans" style="padding: 10px 20px;">Cek Status Pesanan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Kalkulator MLBB Modal -->
+  <div class="modal-backdrop" id="calc-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Kalkulator Win Rate Mobile Legends</h3>
+        <button class="modal-close" id="btn-close-calc">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+          Gunakan kalkulator ini untuk menghitung berapa kemenangan beruntun (win streak) yang Anda butuhkan untuk mencapai target win rate impian Anda!
+        </p>
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="calc-total-match">Total Pertandingan Saat Ini</label>
+          <input type="number" id="calc-total-match" class="form-input" placeholder="Contoh: 350" value="350" />
+        </div>
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="calc-current-wr">Total Win Rate Saat Ini (%)</label>
+          <input type="number" id="calc-current-wr" class="form-input" placeholder="Contoh: 54.5" value="54.5" step="0.1" />
+        </div>
+        <div class="form-group" style="margin-bottom: 18px;">
+          <label for="calc-target-wr">Target Win Rate Yang Diinginkan (%)</label>
+          <input type="number" id="calc-target-wr" class="form-input" placeholder="Contoh: 60" value="60" step="0.1" />
+        </div>
+        <button class="btn-order-now" id="btn-calculate-wr" style="width: 100%;">Hitung Win Streak</button>
+        <div id="calc-result" style="margin-top: 20px; padding: 16px; background: #373b3f; border-radius: var(--radius-md); display: none;">
+          <!-- Result here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Auth Modal (Masuk / Daftar) -->
+  <div class="modal-backdrop" id="auth-modal">
+    <div class="modal-box" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="auth-modal-title">Masuk ke Akun OURASTORE</h3>
+        <button class="modal-close" id="btn-close-auth">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="auth-email">Email atau No. WhatsApp</label>
+          <input type="text" id="auth-email" class="form-input" placeholder="08123456789 atau email@domain.com" />
+        </div>
+        <div class="form-group" style="margin-bottom: 18px;">
+          <label for="auth-pass">Kata Sandi</label>
+          <input type="password" id="auth-pass" class="form-input" placeholder="••••••••" />
+        </div>
+        <button class="btn-order-now" id="btn-submit-auth" style="width: 100%;">Masuk Sekarang</button>
+        <p style="text-align: center; font-size: 12.5px; color: var(--text-secondary); margin-top: 14px;">
+          Belum punya akun? <a href="#" id="auth-switch-link" style="color: var(--accent-gold); font-weight: 700;">Daftar disini</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Available Promos Modal -->
+  <div class="modal-backdrop" id="promos-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Voucher & Promo Tersedia</h3>
+        <button class="modal-close" id="btn-close-promos">&times;</button>
+      </div>
+      <div class="modal-body" id="promos-modal-list">
+        <!-- Rendered dynamically by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. CS Live Chat Modal -->
+  <div class="modal-backdrop" id="cs-chat-modal">
+    <div class="modal-box" style="max-width: 420px;">
+      <div class="modal-header" style="background-color: #212224;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 10px; height: 10px; border-radius: 50%; background: #10b981;"></div>
+          <h3 class="modal-title" style="font-size: 15px;">Customer Service OURASTORE (Online)</h3>
+        </div>
+        <button class="modal-close" id="btn-close-cs">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px;">
+        <div id="cs-chat-messages" style="height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; padding-right: 4px;">
+          <div style="background: #373b3f; padding: 12px 14px; border-radius: 12px 12px 12px 2px; max-width: 85%; font-size: 13px; color: var(--text-primary); line-height: 1.5;">
+            Halo Gamers! Selamat datang di Layanan Bantuan OURASTORE 24 Jam. Ada yang bisa kami bantu seputar pesanan atau top up Anda hari ini? 🎮
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="cs-chat-input" class="form-input" placeholder="Tulis pesan Anda disini..." style="padding: 10px 14px; font-size: 13px;" />
+          <button class="btn-order-now" id="btn-send-cs-msg" style="padding: 10px 16px; width: auto;">Kirim</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main JavaScript module -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
