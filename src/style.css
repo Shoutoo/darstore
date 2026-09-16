@@ -503,6 +503,8 @@ img {
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  text-decoration: none;
+  color: inherit;
   transition: all var(--transition-normal);
 }
 
@@ -602,6 +604,8 @@ img {
   overflow: hidden;
   border: 1px solid var(--border-card);
   cursor: pointer;
+  text-decoration: none;
+  color: inherit;
   transition: all var(--transition-normal);
   display: flex;
   flex-direction: column;

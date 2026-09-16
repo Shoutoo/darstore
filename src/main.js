@@ -59,6 +59,23 @@ const appState = {
 // ==========================================================
 // ROUTER / VIEW SWITCHING
 // ==========================================================
+function navigateToRoute(route) {
+  if (!route) return;
+  
+  let targetViewId = 'home-view';
+  if (route === '#ml') targetViewId = 'ml-topup-view';
+  else if (route === '#valo') targetViewId = 'valo-topup-view';
+  else if (route === '#cek-transaksi') targetViewId = 'cek-transaksi-view';
+
+  // Instant view transition
+  switchView(targetViewId);
+
+  // Sync hash without triggering broken or duplicate transitions
+  if (window.location.hash !== route) {
+    window.location.hash = route;
+  }
+}
+
 function switchView(targetViewId) {
   const views = document.querySelectorAll('.view-section');
   views.forEach(v => {
@@ -66,7 +83,11 @@ function switchView(targetViewId) {
   });
   
   appState.activeView = targetViewId;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  // Instant scroll to top to prevent landing at bottom of page or cancelled smooth scroll
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
 
   // Update header nav active state
   document.querySelectorAll('.nav-link').forEach(link => {
@@ -78,6 +99,14 @@ function switchView(targetViewId) {
 
   if (targetViewId === 'cek-transaksi-view') {
     fetchRealtimeTable();
+  } else if (targetViewId === 'ml-topup-view') {
+    if (!appState.mlProducts || appState.mlProducts.length === 0) {
+      renderMLView();
+    }
+  } else if (targetViewId === 'valo-topup-view') {
+    if (!appState.valoProducts || appState.valoProducts.length === 0) {
+      renderValoView();
+    }
   }
 }
 
@@ -199,19 +228,20 @@ function renderHomepage() {
   const popularContainer = document.getElementById('popular-grid-container');
   if (popularContainer) {
     popularContainer.innerHTML = GAMES.map(game => `
-      <div class="popular-card" data-route="${game.route || '#home'}" data-game-id="${game.id}">
+      <a href="${game.route || '#home'}" class="popular-card" data-route="${game.route || '#home'}" data-game-id="${game.id}">
         <img src="${game.image}" alt="${game.name}" class="popular-avatar" />
         <div class="popular-info">
           <div class="popular-name">${game.shortName}</div>
           <div class="popular-pub">${game.publisher}</div>
         </div>
-      </div>
+      </a>
     `).join('');
 
     popularContainer.querySelectorAll('.popular-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const route = card.dataset.route;
-        if (route) window.location.hash = route;
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        const route = card.dataset.route || card.getAttribute('href');
+        navigateToRoute(route);
       });
     });
   }
@@ -225,7 +255,7 @@ function renderGamesGrid() {
   if (!gamesGrid) return;
 
   gamesGrid.innerHTML = GAMES.map(game => `
-    <div class="game-card" data-route="${game.route || '#home'}" data-game-id="${game.id}">
+    <a href="${game.route || '#home'}" class="game-card" data-route="${game.route || '#home'}" data-game-id="${game.id}">
       <div class="game-poster-wrap">
         <img src="${game.image}" alt="${game.name}" class="game-poster" loading="lazy" />
       </div>
@@ -233,13 +263,14 @@ function renderGamesGrid() {
         <div class="game-title">${game.name}</div>
         <div class="game-pub">${game.publisher}</div>
       </div>
-    </div>
+    </a>
   `).join('');
 
   gamesGrid.querySelectorAll('.game-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const route = card.dataset.route;
-      if (route) window.location.hash = route;
+    card.addEventListener('click', (e) => {
+      e.preventDefault();
+      const route = card.dataset.route || card.getAttribute('href');
+      navigateToRoute(route);
     });
   });
 }
@@ -1096,7 +1127,7 @@ function setupSearchAndInvoice() {
       if (gamesGrid) {
         const matched = GAMES.filter(g => g.name.toLowerCase().includes(query) || g.publisher.toLowerCase().includes(query));
         gamesGrid.innerHTML = matched.map(game => `
-          <div class="game-card" data-route="${game.route || '#home'}" data-game-id="${game.id}">
+          <a href="${game.route || '#home'}" class="game-card" data-route="${game.route || '#home'}" data-game-id="${game.id}">
             <div class="game-poster-wrap">
               <img src="${game.image}" alt="${game.name}" class="game-poster" />
             </div>
@@ -1104,13 +1135,14 @@ function setupSearchAndInvoice() {
               <div class="game-title">${game.name}</div>
               <div class="game-pub">${game.publisher}</div>
             </div>
-          </div>
+          </a>
         `).join('');
 
         gamesGrid.querySelectorAll('.game-card').forEach(card => {
-          card.addEventListener('click', () => {
-            const route = card.dataset.route;
-            if (route) window.location.hash = route;
+          card.addEventListener('click', (e) => {
+            e.preventDefault();
+            const route = card.dataset.route || card.getAttribute('href');
+            navigateToRoute(route);
           });
         });
       }
