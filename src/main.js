@@ -145,8 +145,13 @@ function renderAuthButtons(container) {
 }
 
 function renderUserProfile(container, user) {
+  const adminBadge = user.role === 'admin'
+    ? `<a href="/admin.html" class="user-points-badge" style="background: var(--accent-gold); color: #fff; text-decoration: none; font-weight: 700;" title="Buka Dashboard Administrator">🛡️ Admin</a>`
+    : '';
+
   container.innerHTML = `
     <div class="nav-user-badge">
+      ${adminBadge}
       <span style="font-size: 13px; font-weight: 700; color: var(--text-primary);">${user.nama}</span>
       <span class="user-points-badge" title="Poin Loyalitas Dar'sstore">⭐ ${user.points || 0} Poin</span>
       <button class="btn-logout" id="btn-logout" title="Keluar dari akun">Keluar</button>

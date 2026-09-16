@@ -104,14 +104,44 @@ async function initDatabase() {
     CREATE TABLE IF NOT EXISTS point_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
-      order_id INTEGER NOT NULL,
+      order_id INTEGER NULL,
       points_earned INTEGER NOT NULL,
       description TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id),
       FOREIGN KEY (order_id) REFERENCES orders (id)
     );
+
+    CREATE TABLE IF NOT EXISTS admin_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      admin_id INTEGER NOT NULL,
+      action TEXT NOT NULL,
+      target_type TEXT NOT NULL,
+      target_id INTEGER NOT NULL,
+      detail TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (admin_id) REFERENCES users (id)
+    );
+
+    CREATE TABLE IF NOT EXISTS store_settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT UNIQUE NOT NULL,
+      value TEXT NOT NULL,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
+
+  // Migrate existing users table if role / is_blocked columns missing
+  try {
+    await dbAsync.run("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'");
+  } catch (e) {
+    // Column already exists, ignore
+  }
+  try {
+    await dbAsync.run("ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0");
+  } catch (e) {
+    // Column already exists, ignore
+  }
 
   console.log('Database tables verified/created successfully.');
 
@@ -122,16 +152,29 @@ async function initDatabase() {
     await seedProducts();
   }
 
-  // Ensure default admin user exists
-  const adminUser = await dbAsync.get('SELECT id FROM users WHERE email = ?', ['admin@darstore.com']);
+  // Ensure default admin user exists and has admin role
+  const bcrypt = require('bcryptjs');
+  const adminHash = await bcrypt.hash('admin123', 10);
+  const adminUser = await dbAsync.get('SELECT id, role FROM users WHERE email = ?', ['admin@darstore.com']);
   if (!adminUser) {
-    const bcrypt = require('bcryptjs');
-    const adminHash = await bcrypt.hash('admin123', 10);
     await dbAsync.run(
-      'INSERT INTO users (nama, email, whatsapp, password_hash, points) VALUES (?, ?, ?, ?, ?)',
-      ['Admin Dar\'sstore', 'admin@darstore.com', '081234567899', adminHash, 100]
+      'INSERT INTO users (nama, email, whatsapp, password_hash, points, role, is_blocked) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      ['Admin Dar\'sstore', 'admin@darstore.com', '081234567899', adminHash, 100, 'admin', 0]
     );
-    console.log('Default Admin user initialized: admin@darstore.com / admin123');
+    console.log('Default Admin user initialized: admin@darstore.com / admin123 (role: admin)');
+  } else if (adminUser.role !== 'admin') {
+    await dbAsync.run("UPDATE users SET role = 'admin', password_hash = ? WHERE id = ?", [adminHash, adminUser.id]);
+    console.log('Updated admin user role to admin');
+  }
+
+  // Seed default store settings if empty
+  const settingsCount = await dbAsync.get('SELECT COUNT(*) as count FROM store_settings');
+  if (settingsCount && settingsCount.count === 0) {
+    await dbAsync.run("INSERT OR IGNORE INTO store_settings (key, value) VALUES (?, ?)", ['cs_whatsapp', '081234567890']);
+    await dbAsync.run("INSERT OR IGNORE INTO store_settings (key, value) VALUES (?, ?)", ['cs_email', 'support@darstore.com']);
+    await dbAsync.run("INSERT OR IGNORE INTO store_settings (key, value) VALUES (?, ?)", ['store_name', "Dar'sstore"]);
+    await dbAsync.run("INSERT OR IGNORE INTO store_settings (key, value) VALUES (?, ?)", ['tripay_mode', 'sandbox']);
+    await dbAsync.run("INSERT OR IGNORE INTO store_settings (key, value) VALUES (?, ?)", ['digiflazz_mode', 'development']);
   }
 }
 

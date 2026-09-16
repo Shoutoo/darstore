@@ -9,7 +9,8 @@ function generateToken(user) {
       id: user.id,
       nama: user.nama,
       email: user.email,
-      whatsapp: user.whatsapp
+      whatsapp: user.whatsapp,
+      role: user.role || 'user'
     },
     JWT_SECRET,
     { expiresIn: '30d' }
@@ -49,12 +50,12 @@ exports.register = async (req, res) => {
 
     const password_hash = await bcrypt.hash(password, 10);
     const result = await dbAsync.run(
-      `INSERT INTO users (nama, email, whatsapp, password_hash, points) VALUES (?, ?, ?, ?, 0)`,
+      `INSERT INTO users (nama, email, whatsapp, password_hash, points, role, is_blocked) VALUES (?, ?, ?, ?, 0, 'user', 0)`,
       [displayName, cleanEmail, cleanWA, password_hash]
     );
 
     const newUser = await dbAsync.get(
-      'SELECT id, nama, email, whatsapp, points, created_at FROM users WHERE id = ?',
+      'SELECT id, nama, email, whatsapp, points, role, created_at FROM users WHERE id = ?',
       [result.id]
     );
 
@@ -90,6 +91,13 @@ exports.login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Akun tidak ditemukan. Silakan periksa kembali email atau no. WhatsApp Anda.' });
     }
 
+    if (user.is_blocked || user.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: 'Akun Anda telah dinonaktifkan/diblokir oleh Administrator.'
+      });
+    }
+
     const validPass = await bcrypt.compare(password, user.password_hash);
     if (!validPass) {
       return res.status(401).json({ success: false, message: 'Kata sandi salah.' });
@@ -106,7 +114,8 @@ exports.login = async (req, res) => {
         nama: user.nama,
         email: user.email,
         whatsapp: user.whatsapp,
-        points: user.points
+        points: user.points,
+        role: user.role || 'user'
       }
     });
   } catch (err) {
@@ -118,7 +127,7 @@ exports.login = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const user = await dbAsync.get(
-      'SELECT id, nama, email, whatsapp, points, created_at FROM users WHERE id = ?',
+      'SELECT id, nama, email, whatsapp, points, role, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
 

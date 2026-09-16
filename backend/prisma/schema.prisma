@@ -12,12 +12,18 @@ enum GameType {
   valorant
 }
 
+enum UserRole {
+  user
+  admin
+}
+
 enum OrderStatus {
   pending
   paid
   processing
   success
   failed
+  refunded
 }
 
 model User {
@@ -26,11 +32,14 @@ model User {
   email         String         @unique
   passwordHash  String         @map("password_hash")
   whatsapp      String?
+  role          UserRole       @default(user)
+  isBlocked     Boolean        @default(false) @map("is_blocked")
   points        Int            @default(0)
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
   orders        Order[]
   pointHistory  PointHistory[]
+  adminLogs     AdminLog[]
 
   @@map("users")
 }
@@ -91,12 +100,36 @@ model PaymentLog {
 model PointHistory {
   id            Int      @id @default(autoincrement())
   userId        Int      @map("user_id")
-  orderId       Int      @map("order_id")
+  orderId       Int?     @map("order_id")
   pointsEarned  Int      @map("points_earned")
+  description   String?
   createdAt     DateTime @default(now()) @map("created_at")
 
   user          User     @relation(fields: [userId], references: [id])
-  order         Order    @relation(fields: [orderId], references: [id])
+  order         Order?   @relation(fields: [orderId], references: [id])
 
   @@map("point_history")
+}
+
+model AdminLog {
+  id         Int      @id @default(autoincrement())
+  adminId    Int      @map("admin_id")
+  action     String
+  targetType String   @map("target_type")
+  targetId   Int      @map("target_id")
+  detail     Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin      User     @relation(fields: [adminId], references: [id])
+
+  @@map("admin_logs")
+}
+
+model StoreSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("store_settings")
 }
