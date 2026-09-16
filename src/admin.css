@@ -1,24 +1,26 @@
 /* ==========================================================
    DAR'SSTORE ADMIN DASHBOARD STYLES
-   Color Scheme: Navy Dark (#16212c), Dar's Blue (#006199)
+   Color Scheme: Dark Neutral (#262727), Dar's Blue (#006199)
+   Matches Storefront Foundation Design System
    ========================================================== */
 
 :root {
-  --bg-admin-main: #121a22;
-  --bg-admin-sidebar: #16212c;
-  --bg-admin-card: #1e2a36;
-  --bg-admin-card-hover: #263440;
-  --bg-admin-input: #1c2830;
-  --border-admin: #304250;
-  --border-admin-subtle: #26333d;
+  --bg-admin-main: #212121;
+  --bg-admin-sidebar: #262727;
+  --bg-admin-card: #313438;
+  --bg-admin-card-hover: #383c41;
+  --bg-admin-input: #373b3f;
+  --border-admin: #43474d;
+  --border-admin-subtle: #3c4045;
 
   --accent-blue: #006199;
-  --accent-blue-hover: #1483bf;
+  --accent-blue-hover: #1479b3;
+  --accent-blue-light: #5ec8f2;
   --accent-blue-glow: rgba(0, 97, 153, 0.35);
 
   --text-main: #ffffff;
   --text-muted: #9ba8b8;
-  --text-dim: #6c7c90;
+  --text-dim: #737373;
 
   --badge-green: #10b981;
   --badge-green-bg: rgba(16, 185, 129, 0.15);
@@ -34,7 +36,7 @@
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
-  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.25);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
 * {
@@ -63,7 +65,7 @@ h1, h2, h3, h4, .brand-title {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at top, #1e2f42 0%, var(--bg-admin-main) 100%);
+  background: radial-gradient(circle at top, #313438 0%, var(--bg-admin-main) 100%);
   padding: 20px;
 }
 
