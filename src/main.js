@@ -240,45 +240,75 @@ function renderGamesGrid() {
 }
 
 // ==========================================================
-// RENDER MOBILE LEGENDS VIEW (Direct Diamonds Only)
+// RENDER MOBILE LEGENDS VIEW (Database API)
 // ==========================================================
-function renderMLView() {
+async function renderMLView() {
   const container = document.getElementById('ml-nominals-container');
   if (!container) return;
 
-  // Single clean grid of direct diamond nominals without bundling
+  let items = ML_NOMINALS.topup_diamonds;
+
+  try {
+    const res = await fetch('/api/products?game=mlbb');
+    const data = await res.json();
+    if (res.ok && data.success && data.products.length > 0) {
+      items = data.products.map(p => ({
+        id: p.id.toString(),
+        name: p.nama_item || p.namaItem,
+        price: p.harga,
+        icon: p.icon || '/assets/icons/diamond_small.png'
+      }));
+      appState.mlProducts = items;
+    }
+  } catch (err) {
+    console.warn('Fetching MLBB products from database:', err);
+  }
+
   container.innerHTML = `
     <div class="nominals-grid" id="ml-diamonds-grid">
-      ${ML_NOMINALS.topup_diamonds.map(item => createNominalCardHTML(item, 'ml')).join('')}
+      ${items.map(item => createNominalCardHTML(item, 'ml')).join('')}
     </div>
   `;
 
-  // Bind click on nominal cards
   container.querySelectorAll('.nominal-card').forEach(card => {
     card.addEventListener('click', () => {
       container.querySelectorAll('.nominal-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       const itemId = card.dataset.id;
-      appState.ml.selectedNominal = ML_NOMINALS.topup_diamonds.find(i => i.id === itemId);
+      appState.ml.selectedNominal = (appState.mlProducts || items).find(i => i.id === itemId);
       updateSummary('ml');
     });
   });
 
-  // Render Payments Accordion for ML
   renderPaymentAccordion('ml-payments-container', 'ml');
-
-  // Render FAQs
   renderFAQs('ml-faq-list');
 }
 
 // ==========================================================
-// RENDER VALORANT VIEW (Indonesia Only, Unified Cards)
+// RENDER VALORANT VIEW (Database API)
 // ==========================================================
-function renderValoView() {
+async function renderValoView() {
   const container = document.getElementById('valo-nominals-container');
   if (!container) return;
 
-  const items = VALO_NOMINALS['id'];
+  let items = VALO_NOMINALS['id'];
+
+  try {
+    const res = await fetch('/api/products?game=valorant');
+    const data = await res.json();
+    if (res.ok && data.success && data.products.length > 0) {
+      items = data.products.map(p => ({
+        id: p.id.toString(),
+        name: p.nama_item || p.namaItem,
+        price: p.harga,
+        icon: p.icon || '/assets/icons/vp_icon.png'
+      }));
+      appState.valoProducts = items;
+    }
+  } catch (err) {
+    console.warn('Fetching Valorant products from database:', err);
+  }
+
   container.innerHTML = `
     <div class="nominals-grid">
       ${items.map(item => createNominalCardHTML(item, 'valo')).join('')}
@@ -290,7 +320,7 @@ function renderValoView() {
       container.querySelectorAll('.nominal-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       const itemId = card.dataset.id;
-      appState.valo.selectedNominal = items.find(i => i.id === itemId);
+      appState.valo.selectedNominal = (appState.valoProducts || items).find(i => i.id === itemId);
       updateSummary('valo');
     });
   });

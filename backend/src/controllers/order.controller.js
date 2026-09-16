@@ -1,4 +1,5 @@
 const { dbAsync } = require('../config/db');
+const { dbService } = require('../config/prisma');
 const paymentGateway = require('../services/paymentGateway');
 
 function generateInvoiceNumber() {
@@ -45,7 +46,30 @@ exports.createOrder = async (req, res) => {
     }
 
     // Look up product in database
-    const product = await dbAsync.get('SELECT * FROM products WHERE id = ? AND is_active = 1', [product_id]);
+    let product = null;
+    if (dbService.isPostgres() && dbService.getPrisma()) {
+      try {
+        const numId = parseInt(product_id, 10);
+        const p = await dbService.getPrisma().product.findFirst({
+          where: isNaN(numId) ? { namaItem: { contains: String(product_id) } } : { id: numId }
+        });
+        if (p) {
+          product = {
+            id: p.id,
+            game: p.game,
+            nama_item: p.namaItem,
+            harga: p.harga,
+            nominal: p.nominal
+          };
+        }
+      } catch (e) {
+        console.warn('Prisma product lookup failed:', e.message);
+      }
+    }
+    if (!product) {
+      product = await dbAsync.get('SELECT * FROM products WHERE (id = ? OR nama_item LIKE ?) AND is_active = 1', [product_id, `%${product_id}%`]);
+    }
+
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -65,39 +89,29 @@ exports.createOrder = async (req, res) => {
     const tempOrder = {
       invoice_number,
       total_harga,
-      product_id,
+      product_id: product.id,
       nama_item: `${product.nama_item} (x${quantity})`
     };
 
     const qrisData = await paymentGateway.createQrisTransaction(tempOrder);
 
-    // Save to orders table
-    const result = await dbAsync.run(
-      `INSERT INTO orders (
-        invoice_number, user_id, product_id, game, nama_item,
-        game_user_id, server_id, riot_id, wa_email_guest,
-        status, payment_method, payment_ref, qris_string, qris_url, total_harga
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        invoice_number,
-        user_id,
-        product_id,
-        game,
-        tempOrder.nama_item,
-        game_user_id || null,
-        server_id || null,
-        riot_id || null,
-        wa_email_guest,
-        'Menunggu Pembayaran',
-        payment_method,
-        qrisData.payment_ref,
-        qrisData.qris_string,
-        qrisData.qris_url,
-        total_harga
-      ]
-    );
-
-    const createdOrder = await dbAsync.get('SELECT * FROM orders WHERE id = ?', [result.id]);
+    // Save to database via dbService
+    const createdOrder = await dbService.createOrder({
+      invoice_number,
+      user_id,
+      product_id: product.id,
+      game,
+      nama_item: tempOrder.nama_item,
+      game_user_id: game_user_id || null,
+      server_id: server_id || null,
+      riot_id: riot_id || null,
+      wa_email_guest,
+      payment_method,
+      payment_ref: qrisData.payment_ref,
+      qris_string: qrisData.qris_string,
+      qris_url: qrisData.qris_url,
+      total_harga
+    });
 
     return res.status(201).json({
       success: true,
@@ -120,10 +134,7 @@ exports.getOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Nomor invoice diperlukan.' });
     }
 
-    const order = await dbAsync.get(
-      'SELECT * FROM orders WHERE UPPER(invoice_number) = ?',
-      [invoice.trim().toUpperCase()]
-    );
+    const order = await dbService.getOrderByInvoice(invoice);
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Nomor Invoice tidak ditemukan.' });
@@ -141,15 +152,14 @@ exports.getOrder = async (req, res) => {
 
 exports.getOrderHistory = async (req, res) => {
   try {
-    const orders = await dbAsync.all(
-      'SELECT id, invoice_number, wa_email_guest, total_harga, status, created_at FROM orders ORDER BY id DESC LIMIT 20'
-    );
+    const orders = await dbService.getOrderHistory(20);
 
     // Mask phone number for privacy: e.g. 0812****890
     const formatted = orders.map(o => {
       let masked = '0812****890';
-      if (o.wa_email_guest) {
-        const str = o.wa_email_guest.trim();
+      const contact = o.wa_email_guest || o.contactWa || o.contactEmail;
+      if (contact) {
+        const str = contact.trim();
         if (str.includes('@')) {
           const parts = str.split('@');
           masked = parts[0].slice(0, 2) + '***@' + parts[1];
@@ -159,11 +169,11 @@ exports.getOrderHistory = async (req, res) => {
       }
       return {
         id: o.id,
-        invoice_number: o.invoice_number,
+        invoice_number: o.invoice_number || o.invoiceNumber,
         masked_contact: masked,
-        total_harga: o.total_harga,
+        total_harga: o.total_harga || o.totalHarga,
         status: o.status,
-        created_at: o.created_at
+        created_at: o.created_at || o.createdAt
       };
     });
 
@@ -180,16 +190,9 @@ exports.getOrderHistory = async (req, res) => {
 exports.getProducts = async (req, res) => {
   try {
     const { game } = req.query;
-    let sql = 'SELECT * FROM products WHERE is_active = 1';
-    const params = [];
-    if (game) {
-      sql += ' AND game = ?';
-      params.push(game);
-    }
-    sql += ' ORDER BY nominal ASC';
-    const products = await dbAsync.all(sql, params);
+    const products = await dbService.getProducts(game);
     return res.json({ success: true, products });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Gagal memuat produk.' });
+    return res.status(500).json({ success: false, message: 'Gagal memuat produk dari database.' });
   }
 };
