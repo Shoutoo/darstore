@@ -31,16 +31,10 @@
       }
     },
     {
-      "source": "/((?!api/|admin\\.html|assets/).*)",
+      "source": "/(.*)",
       "destination": {
         "service": "frontend",
         "path": "/index.html"
-      }
-    },
-    {
-      "source": "/(.*)",
-      "destination": {
-        "service": "frontend"
       }
     }
   ]
