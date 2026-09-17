@@ -1,4 +1,3 @@
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
@@ -19,18 +18,24 @@ if (DATABASE_URL && (DATABASE_URL.startsWith('postgres://') || DATABASE_URL.star
   }
 }
 
-// Fallback SQLite instance
+// Fallback SQLite instance (lazy-loaded for local dev only)
 const dbPath = process.env.DB_PATH || path.join(__dirname, '../../database.sqlite');
 let db = null;
 if (!pgPool) {
-  db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-      console.error('Failed to connect to SQLite database:', err);
-    } else {
-      console.log(`Connected to SQLite database at ${dbPath}`);
-    }
-  });
+  try {
+    const sqlite3 = require('sqlite3').verbose();
+    db = new sqlite3.Database(dbPath, (err) => {
+      if (err) {
+        console.error('Failed to connect to SQLite database:', err);
+      } else {
+        console.log(`Connected to SQLite database at ${dbPath}`);
+      }
+    });
+  } catch (err) {
+    console.warn('[DATABASE] SQLite native driver not available, running in cloud-only mode:', err.message);
+  }
 }
+
 
 function toPgSql(sql) {
   let paramIndex = 1;
