@@ -64,12 +64,13 @@ exports.getDashboardStats = async (req, res) => {
     orders.forEach(o => {
       const isSuccess = o.status === 'Berhasil' || o.status === 'success' || o.status === 'paid' || o.status === 'Diproses';
       const orderDate = new Date(o.created_at);
+      const orderDateStr = o.created_at ? (o.created_at instanceof Date ? o.created_at.toISOString().slice(0, 10) : String(o.created_at).slice(0, 10)) : '';
 
       if (isSuccess) {
         revenueTotal += (o.total_harga || 0);
         if (orderDate >= oneMonthAgo) revenueMonth += (o.total_harga || 0);
         if (orderDate >= oneWeekAgo) revenueWeek += (o.total_harga || 0);
-        if (o.created_at && o.created_at.startsWith(todayStr)) revenueToday += (o.total_harga || 0);
+        if (orderDateStr === todayStr) revenueToday += (o.total_harga || 0);
 
         // Product stats
         const key = o.nama_item || o.product_id;
@@ -97,7 +98,8 @@ exports.getDashboardStats = async (req, res) => {
       let dayCount = 0;
 
       orders.forEach(o => {
-        if (o.created_at && o.created_at.startsWith(dayStr)) {
+        const orderDateStr = o.created_at ? (o.created_at instanceof Date ? o.created_at.toISOString().slice(0, 10) : String(o.created_at).slice(0, 10)) : '';
+        if (orderDateStr === dayStr) {
           dayCount++;
           if (o.status === 'Berhasil' || o.status === 'success' || o.status === 'paid') {
             dayRev += (o.total_harga || 0);
