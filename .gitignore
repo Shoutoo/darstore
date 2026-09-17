@@ -22,3 +22,6 @@ supabase/.temp/
 # Temporary scratch files
 scratch/
 
+
+.vercel
+.env*
