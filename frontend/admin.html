@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dar'sstore - Gaming Admin Console 2.0</title>
+  
+  <!-- Tailwind CSS v3 with Plugins -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  
+  <!-- Google Fonts: Outfit, Plus Jakarta Sans, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/assets/logo/darsstore_emblem.svg">
+  <link rel="alternate icon" type="image/png" href="/assets/logo/darsstore_logo.png">
+  
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dars: {
+              navy: '#0b0e14',
+              surface: '#11161f',
+              card: '#161c27',
+              inner: '#1b2332',
+              border: '#242e42',
+              borderLight: '#2f3b52',
+              primary: '#006199',
+              primaryHover: '#1479b3',
+              accent: '#38bdf8',
+              glow: '#0284c7',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              crimson: '#f43f5e'
+            }
+          },
+          fontFamily: {
+            outfit: ['Outfit', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          },
+          boxShadow: {
+            'glow-blue': '0 0 25px -5px rgba(0, 97, 153, 0.4)',
+            'glow-accent': '0 0 20px -3px rgba(56, 189, 248, 0.35)',
+            'card-subtle': '0 8px 30px rgba(0, 0, 0, 0.45)'
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Custom Cyber Admin Stylesheet -->
+  <link rel="stylesheet" href="/src/admin.css">
+</head>
+
+<body class="text-slate-100 font-sans min-h-screen lg:h-screen lg:overflow-hidden flex items-center justify-center p-2 sm:p-3 md:p-4 lg:p-5 antialiased selection:bg-sky-500 selection:text-white bg-[#080a0f]">
+  <div id="admin-app" class="w-full h-full max-w-[1600px] flex justify-center items-center">
+
+    <!-- ==========================================================
+         1. ADMIN LOGIN VIEW (Shown if not authenticated)
+         ========================================================== -->
+    <div id="admin-login-screen" class="w-full min-h-[85vh] flex items-center justify-center p-4" style="display: none;">
+      <div class="w-full max-w-md bg-[#0d1117]/95 border border-dars-border rounded-[32px] p-8 md:p-10 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+        <!-- Ambient glow -->
+        <div class="absolute -top-24 -left-24 w-64 h-64 bg-sky-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 text-center mb-8">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 via-dars-primary to-blue-800 flex items-center justify-center mx-auto mb-4 shadow-glow-accent p-2">
+            <img src="/assets/logo/darsstore_emblem.svg" alt="Dar'sstore Logo" class="w-full h-full object-contain filter drop-shadow">
+          </div>
+          <h2 class="font-outfit font-extrabold text-2xl tracking-tight text-white">Dar'sstore Admin</h2>
+          <p class="text-xs text-slate-400 mt-1">Portal Khusus Pengelola & Administrator</p>
+        </div>
+
+        <form id="admin-login-form" class="relative z-10 space-y-4">
+          <div id="login-error-msg" class="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-medium" style="display: none;"></div>
+          
+          <div class="form-group">
+            <label for="admin-email" class="text-xs font-semibold text-slate-300">Email / No. WhatsApp</label>
+            <input type="text" id="admin-email" placeholder="admin@darstore.com" required autocomplete="username"
+                   class="w-full bg-[#161c27] border border-dars-border rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 transition-colors">
+          </div>
+
+          <div class="form-group">
+            <label for="admin-pass" class="text-xs font-semibold text-slate-300">Kata Sandi</label>
+            <input type="password" id="admin-pass" placeholder="••••••••" required autocomplete="current-password"
+                   class="w-full bg-[#161c27] border border-dars-border rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 transition-colors">
+          </div>
+
+          <button type="submit" id="btn-submit-login"
+                  class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-sky-500 to-dars-primary hover:from-sky-400 hover:to-dars-primaryHover text-white font-bold text-sm tracking-wide shadow-glow-blue transition-all">
+            Masuk ke Panel Admin
+          </button>
+        </form>
+
+        <div class="relative z-10 mt-6 text-center">
+          <a href="/" class="text-xs text-slate-400 hover:text-sky-400 transition-colors">
+            ← Kembali ke Halaman Toko
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================
+         2. MAIN CONSOLE CONTAINER SHELL (Fixed Viewport, No Page Overflow)
+         ========================================================== -->
+    <div id="admin-main-screen" class="w-full h-full lg:h-[94vh] bg-[#0d1117]/95 border border-dars-border rounded-2xl md:rounded-[32px] shadow-2xl p-3 sm:p-4 md:p-5 lg:p-6 backdrop-blur-xl relative flex flex-row gap-3 sm:gap-4 md:gap-6 overflow-hidden" style="display: none;">
+      <!-- Ambient Background Glows -->
+      <div class="absolute -top-32 -left-32 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- BEGIN: Left Vertical Icon Rail / Sidebar (Fixed Height) -->
+      <aside class="w-14 sm:w-16 md:w-[70px] shrink-0 h-full flex flex-col justify-between py-1 border-r border-dars-border/60 pr-2 sm:pr-3 overflow-y-auto" data-purpose="mini-sidebar">
+        <div class="flex flex-col items-center gap-4 w-full">
+          <!-- Logo Branding Emblem -->
+          <a class="group relative flex items-center justify-center" href="#" title="Dar'sstore Gaming Admin">
+            <div class="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-sky-400 via-dars-primary to-blue-800 flex items-center justify-center shadow-glow-accent transition-transform duration-300 group-hover:scale-105 p-2">
+              <img src="/assets/logo/darsstore_emblem.svg" alt="Dar'sstore Logo" class="w-full h-full object-contain filter drop-shadow">
+            </div>
+          </a>
+
+          <!-- Navigation Rail Menu -->
+          <nav class="sidebar-menu flex flex-col items-center gap-2.5 mt-1 w-full">
+            <!-- Dashboard -->
+            <button class="nav-item active" data-view="dashboard" title="Dashboard Overview">
+              <span class="nav-indicator"></span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
+            <!-- Kelola Produk -->
+            <button class="nav-item" data-view="products" title="Katalog Game & Diamond">
+              <span class="nav-indicator"></span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
+            <!-- Kelola Transaksi -->
+            <button class="nav-item" data-view="orders" title="Semua Transaksi & Pesanan">
+              <span class="nav-indicator"></span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
+            <!-- Kelola User -->
+            <button class="nav-item" data-view="users" title="Pelanggan & Poin Loyalitas">
+              <span class="nav-indicator"></span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
+            <!-- Pengaturan Payment -->
+            <button class="nav-item" data-view="payment" title="Tripay Payment Gateway">
+              <span class="nav-indicator"></span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+              </svg>
+            </button>
+
+            <!-- Provider Top Up (H2H) -->
+            <button class="nav-item" data-view="provider" title="Digiflazz Provider H2H">
+              <span class="nav-indicator"></span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
+            <!-- Laporan & Omset -->
+            <button class="nav-item" data-view="reports" title="Laporan & Profit Analitik">
+              <span class="nav-indicator"></span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
+            <!-- Audit Trail Logs -->
+            <button class="nav-item" data-view="logs" title="Audit Trail Log Aktivitas">
+              <span class="nav-indicator"></span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
+            <!-- Pengaturan Umum -->
+            <button class="nav-item" data-view="settings" title="Pengaturan Toko & Kontak">
+              <span class="nav-indicator"></span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+              </svg>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Sidebar Footer Actions -->
+        <div class="mt-4 flex flex-col items-center gap-2.5">
+          <a href="/" target="_blank" class="w-10 h-10 rounded-2xl bg-dars-card border border-dars-border text-slate-400 hover:text-sky-400 hover:border-sky-400/40 flex items-center justify-center transition-all" title="Buka Storefront Toko">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+
+          <button id="btn-logout-admin" class="w-10 h-10 rounded-2xl bg-dars-card border border-dars-border text-rose-400 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all" title="Keluar / Logout">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </aside>
+      <!-- END: Left Vertical Icon Rail / Sidebar -->
+
+      <!-- BEGIN: Main Content Area (Fixed Shell with Scrollable Center Viewport) -->
+      <main class="flex-1 h-full min-w-0 flex flex-col overflow-hidden">
+
+        <!-- Top Bar Navigation (Fixed at top) -->
+        <header class="shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pb-3 border-b border-dars-border/40" data-purpose="top-navigation-bar">
+          <div class="flex items-center gap-3">
+            <h1 class="font-outfit font-extrabold text-2xl tracking-tight text-white flex items-center gap-1.5">
+              Dar's<span class="text-sky-400">store</span>
+            </h1>
+            <span class="text-[10px] font-mono font-bold uppercase bg-sky-500/20 text-sky-400 border border-sky-500/30 px-2 py-0.5 rounded-full">CONSOLE</span>
+            <span class="hidden sm:inline text-slate-500">|</span>
+            <p id="page-subtitle" class="hidden sm:inline text-xs text-slate-400">Ringkasan statistik transaksi dan performa toko.</p>
+          </div>
+
+          <!-- Topbar Right Controls -->
+          <div class="flex items-center justify-between md:justify-end gap-2.5 shrink-0 flex-wrap">
+            <!-- Live Digiflazz Provider Balance Chip -->
+            <div class="flex items-center gap-2 bg-[#161c26] border border-dars-border rounded-full py-1.5 px-3.5" title="Saldo Digiflazz Provider Saat Ini">
+              <span class="relative flex h-2.5 w-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <span class="text-xs text-slate-400 font-medium">Saldo API:</span>
+              <span id="header-provider-balance" class="text-xs font-mono font-bold text-emerald-400">Rp 15.400.000</span>
+            </div>
+
+            <!-- Refresh Button -->
+            <button id="btn-refresh-data" class="flex items-center gap-1.5 bg-[#161c26] border border-dars-border hover:border-sky-400/50 text-slate-300 hover:text-white rounded-full py-1.5 px-3 text-xs font-semibold transition-all">
+              <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M23 4v6h-6M20.49 15a9 9 0 11-2.12-9.36L23 10" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Refresh</span>
+            </button>
+
+            <!-- Profile Pill -->
+            <div class="flex items-center gap-2.5 bg-[#161c26] border border-dars-border rounded-full py-1 pl-3 pr-1.5">
+              <div class="text-right hidden sm:block">
+                <p class="text-xs font-semibold text-white leading-tight" id="admin-user-name">Admin Dar's</p>
+                <p class="text-[10px] text-sky-400 font-mono leading-tight">Superadmin</p>
+              </div>
+              <div class="relative">
+                <div class="w-8 h-8 rounded-full ring-2 ring-sky-500/40 bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center font-outfit font-bold text-xs text-white" id="admin-user-avatar">
+                  A
+                </div>
+                <span class="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 border border-[#0d1117] rounded-full"></span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- Hidden Page Title for dynamic JS updater -->
+        <h2 id="page-title" class="sr-only">Dashboard Overview</h2>
+
+        <!-- BEGIN: Scrollable Content Viewport (Unified & Isolated) -->
+        <div class="flex-1 min-h-0 overflow-y-auto pr-1 sm:pr-2 pt-4 pb-4">
+
+          <!-- ========================================================
+               VIEW: DASHBOARD
+               ======================================================== -->
+          <section id="view-dashboard" class="content-section active space-y-5 w-full">
+
+            <!-- Top Hero Row (3 Chunky Cards) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5 w-full">
+              <!-- Card 1: Omset Penjualan Hari Ini -->
+              <div class="lg:col-span-5 rounded-[28px] p-6 text-white relative overflow-hidden bg-gradient-to-br from-[#006199] via-[#0275b8] to-[#1479b3] shadow-glow-blue flex flex-col justify-between min-h-[210px]">
+                <div class="absolute inset-0 wavy-lines opacity-25 pointer-events-none"></div>
+                <div class="relative z-10">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-sky-100/90 font-sans">Omset Penjualan Hari Ini</span>
+                    <span class="p-1.5 rounded-full bg-white/15 backdrop-blur-md">
+                      <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="mt-2">
+                    <div class="font-outfit font-extrabold text-3xl md:text-4xl tracking-tight" id="stat-revenue-today">Rp 0</div>
+                    <p class="text-xs text-sky-200 mt-1 font-medium flex items-center gap-1.5">
+                      <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                      <span>Total Transaksi: <strong id="stat-total-orders" class="text-white font-mono">0</strong> Trx</span>
+                    </p>
+                  </div>
+                </div>
+                <!-- Action Pills -->
+                <div class="relative z-10 pt-3 flex items-center gap-2.5">
+                  <button class="px-4 py-2 rounded-full bg-white text-[#006199] hover:bg-sky-50 text-xs font-bold font-sans shadow-md hover:shadow-lg transition-all" onclick="document.querySelector('.nav-item[data-view=orders]').click()">
+                    Semua Transaksi
+                  </button>
+                  <button class="px-4 py-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white text-xs font-semibold font-sans transition-all border border-white/20" onclick="document.querySelector('.nav-item[data-view=reports]').click()">
+                    Laporan Kas
+                  </button>
+                </div>
+              </div>
+
+              <!-- Card 2: Payment & Provider Status -->
+              <div class="lg:col-span-4 rounded-[28px] p-6 text-white relative overflow-hidden bg-gradient-to-br from-[#f43f5e] via-[#e11d48] to-[#be123c] flex flex-col justify-between min-h-[210px]">
+                <div class="absolute inset-0 wavy-lines-crimson opacity-30 pointer-events-none"></div>
+                <div class="relative z-10 flex items-start justify-between">
+                  <div>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-rose-100 font-sans">Payment & Provider</span>
+                    <p class="text-xs text-rose-200/90 font-mono mt-0.5">Tripay Live • QRIS & VA</p>
+                  </div>
+                  <div class="bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/15 flex items-center gap-2">
+                    <span class="text-[10px] font-mono tracking-wider text-white uppercase font-bold">LIVE API</span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  </div>
+                </div>
+                <!-- Virtual Sleek Card Representation -->
+                <div class="relative z-10 my-2 bg-gradient-to-r from-indigo-950/90 to-purple-950/90 border border-white/20 rounded-xl p-3 shadow-lg">
+                  <div class="flex justify-between items-center text-[10px] text-white/80 font-mono">
+                    <span>GATEWAY: TRIPAY ID</span>
+                    <span class="font-bold text-amber-300">MDR 0.7%</span>
+                  </div>
+                  <div class="font-mono text-sm tracking-widest text-white mt-1 font-bold">
+                    •••• •••• •••• 5678
+                  </div>
+                  <div class="flex justify-between items-center text-[9px] text-slate-300 mt-1.5 font-mono">
+                    <span>STATUS: ONLINE</span>
+                    <span class="text-emerald-400 font-bold">STABLE 99.9%</span>
+                  </div>
+                </div>
+                <div class="relative z-10 flex items-center justify-between text-xs pt-1">
+                  <span class="text-rose-100 font-medium">Saldo Provider Siap</span>
+                  <button class="px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-semibold" onclick="document.querySelector('.nav-item[data-view=provider]').click()">
+                    Cek Provider →
+                  </button>
+                </div>
+              </div>
+
+              <!-- Card 3: Omset Minggu Ini & Donut Chart -->
+              <div class="lg:col-span-3 bg-dars-card border border-dars-border rounded-[28px] p-5 flex flex-col justify-between min-h-[210px]">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="text-xs uppercase tracking-wider text-slate-400 font-bold font-sans">Omset 7 Hari</h3>
+                    <p class="font-outfit text-2xl font-extrabold text-white mt-0.5" id="stat-revenue-week">Rp 0</p>
+                  </div>
+                  <span class="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">+12%</span>
+                </div>
+                <!-- SVG Donut Chart -->
+                <div class="py-1 flex items-center justify-center relative">
+                  <svg class="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" fill="transparent" r="38" stroke="#1f2937" stroke-width="12"></circle>
+                    <circle cx="50" cy="50" fill="transparent" r="38" stroke="#38bdf8" stroke-dasharray="238.76" stroke-dashoffset="95.5" stroke-linecap="round" stroke-width="12"></circle>
+                    <circle cx="50" cy="50" fill="transparent" r="38" stroke="#006199" stroke-dasharray="238.76" stroke-dashoffset="179" stroke-linecap="round" stroke-width="12" transform="rotate(216 50 50)"></circle>
+                    <circle cx="50" cy="50" fill="transparent" r="38" stroke="#f59e0b" stroke-dasharray="238.76" stroke-dashoffset="202" stroke-linecap="round" stroke-width="12" transform="rotate(306 50 50)"></circle>
+                  </svg>
+                  <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span class="text-[9px] font-mono text-sky-400 font-bold">TOP GAME</span>
+                    <span class="text-[9px] text-slate-300">MLBB 62%</span>
+                  </div>
+                </div>
+                <!-- Game Legend Pills -->
+                <div class="grid grid-cols-3 gap-1 pt-1 text-center font-sans border-t border-dars-border/60">
+                  <div class="p-0.5">
+                    <div class="text-[10px] text-slate-400 flex items-center justify-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span> MLBB</div>
+                    <div class="text-xs font-bold text-white font-mono mt-0.5">62%</div>
+                  </div>
+                  <div class="p-0.5">
+                    <div class="text-[10px] text-slate-400 flex items-center justify-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-[#006199]"></span> VALO</div>
+                    <div class="text-xs font-bold text-white font-mono mt-0.5">28%</div>
+                  </div>
+                  <div class="p-0.5">
+                    <div class="text-[10px] text-slate-400 flex items-center justify-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Lain</div>
+                    <div class="text-xs font-bold text-white font-mono mt-0.5">10%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Status Summary Bar -->
+            <div class="bg-dars-card border border-dars-border rounded-2xl p-3.5 flex items-center justify-between flex-wrap gap-3 w-full">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-1">Status Order:</span>
+                <div class="badge-status badge-pending"><span>Menunggu:</span> <strong id="chip-count-pending">0</strong></div>
+                <div class="badge-status badge-processing"><span>Diproses:</span> <strong id="chip-count-processing">0</strong></div>
+                <div class="badge-status badge-success"><span>Berhasil:</span> <strong id="chip-count-success">0</strong></div>
+                <div class="badge-status badge-failed"><span>Gagal:</span> <strong id="chip-count-failed">0</strong></div>
+                <div class="badge-status badge-refunded"><span>Refund:</span> <strong id="chip-count-refunded">0</strong></div>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-slate-400 font-mono">
+                <span>Pelanggan Terdaftar:</span>
+                <strong id="stat-total-users" class="text-sky-400 text-sm font-bold">0</strong>
+              </div>
+            </div>
+
+            <!-- Middle Row: 3 Comparison Graphs -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 w-full">
+              <!-- MLBB Chart -->
+              <div class="bg-dars-card border border-dars-border rounded-[28px] p-5 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-bold text-xs">🎮</div>
+                    <div>
+                      <h4 class="font-outfit font-bold text-sm text-white flex items-center gap-1">Mobile Legends <span class="text-[10px] text-emerald-400 font-mono">▲</span></h4>
+                      <p class="text-[11px] text-slate-400 font-mono">Kategori Terpopuler</p>
+                    </div>
+                  </div>
+                  <span class="text-xs font-mono font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20">62% Vol</span>
+                </div>
+                <div class="mt-4 pt-2">
+                  <div class="flex items-end justify-between h-20 gap-1.5 px-2">
+                    <div class="w-full bg-[#1b2332] rounded-full h-12 flex items-end justify-center"><div class="w-full bg-sky-500/40 rounded-full h-7"></div></div>
+                    <div class="w-full bg-[#1b2332] rounded-full h-18 flex items-end justify-center"><div class="w-full bg-sky-500/70 rounded-full h-12"></div></div>
+                    <div class="w-full bg-[#1b2332] rounded-full h-20 flex items-end justify-center"><div class="w-full bg-sky-400 rounded-full h-20 shadow-glow-accent"></div></div>
+                    <div class="w-full bg-[#1b2332] rounded-full h-10 flex items-end justify-center"><div class="w-full bg-rose-500 rounded-full h-4"></div></div>
+                    <div class="w-full bg-[#1b2332] rounded-full h-16 flex items-end justify-center"><div class="w-full bg-sky-500/60 rounded-full h-10"></div></div>
+                    <div class="w-full bg-[#1b2332] rounded-full h-18 flex items-end justify-center"><div class="w-full bg-sky-400/90 rounded-full h-15"></div></div>
+                  </div>
+                  <div class="flex justify-between text-[10px] text-slate-400 font-mono mt-2 px-1 border-t border-dars-border/50 pt-1">
+                    <span>Pagi</span><span>Siang (Peak)</span><span>Malam</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Valorant Chart -->
+              <div class="bg-dars-card border border-dars-border rounded-[28px] p-5 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 font-bold text-xs">🎯</div>
+                    <div>
+                      <h4 class="font-outfit font-bold text-sm text-white flex items-center gap-1">Valorant Points <span class="text-[10px] text-emerald-400 font-mono">▲</span></h4>
+                      <p class="text-[11px] text-slate-400 font-mono">Riot Direct Top Up</p>
+                    </div>
+                  </div>
+                  <span class="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">28% Vol</span>
+                </div>
+                <div class="mt-4 pt-2">
+                  <div class="flex items-end justify-between h-20 gap-1.5 px-2">
+                    <div class="w-full bg-[#1b2332] rounded-full h-10 flex items-end justify-center"><div class="w-full bg-indigo-500/50 rounded-full h-6"></div></div>
+                    <div class="w-full bg-[#1b2332] rounded-full h-16 flex items-end justify-center"><div class="w-full bg-sky-500/60 rounded-full h-11"></div></div>
+                    <div class="w-full bg-[#1b2332] rounded-full h-20 flex items-end justify-center"><div class="w-full bg-emerald-400 rounded-full h-20 shadow-lg shadow-emerald-500/20"></div></div>
+                    <div class="w-full bg-[#1b2332] rounded-full h-14 flex items-end justify-center"><div class="w-full bg-sky-500/70 rounded-full h-9"></div></div>
+                    <div class="w-full bg-[#1b2332] rounded-full h-18 flex items-end justify-center"><div class="w-full bg-sky-400/80 rounded-full h-14"></div></div>
+                    <div class="w-full bg-[#1b2332] rounded-full h-8 flex items-end justify-center"><div class="w-full bg-rose-500 rounded-full h-3"></div></div>
+                  </div>
+                  <div class="flex justify-between text-[10px] text-slate-400 font-mono mt-2 px-1 border-t border-dars-border/50 pt-1">
+                    <span>10:00</span><span>16:00 Sore</span><span>23:00</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Real 7-Day Trend Chart -->
+              <div class="bg-dars-card border border-dars-border rounded-[28px] p-5 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-xs">💎</div>
+                    <div>
+                      <h4 class="font-outfit font-bold text-sm text-white">Trend Omset 7 Hari</h4>
+                      <p class="text-[11px] text-slate-400 font-mono">Grafik Data Riil Toko</p>
+                    </div>
+                  </div>
+                  <span class="text-xs font-mono font-bold text-emerald-400">Live Sync</span>
+                </div>
+                <div class="simple-bar-chart" id="dashboard-chart-container">
+                  <!-- Dynamically injected -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Split Row: Top Products & Live Orders -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5 w-full">
+              <!-- Left: Top Best-Selling Items -->
+              <div class="lg:col-span-6 bg-dars-card border border-dars-border rounded-[28px] p-5 flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between mb-3.5">
+                    <div>
+                      <h3 class="font-outfit font-bold text-base text-white">Paket Diamond & Points Terlaris</h3>
+                      <p class="text-xs text-slate-400">Top item paling banyak dipesan</p>
+                    </div>
+                    <span class="text-xs font-mono text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-full border border-sky-500/20">Rankings</span>
+                  </div>
+                  <div id="top-products-container" class="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                    <div class="text-center text-slate-500 text-xs py-4">Memuat data produk terlaris...</div>
+                  </div>
+                </div>
+                <div class="pt-3 text-[11px] text-slate-400 flex items-center justify-between border-t border-dars-border/40 mt-3">
+                  <span>Katalog aktif terverifikasi</span>
+                  <button class="text-sky-400 hover:underline font-medium" onclick="document.querySelector('.nav-item[data-view=products]').click()">Kelola Produk →</button>
+                </div>
+              </div>
+
+              <!-- Right: Real-time Live Orders Feed -->
+              <div class="lg:col-span-6 bg-dars-card border border-dars-border rounded-[28px] p-5 flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                      <h3 class="font-outfit font-bold text-base text-white">Transaksi Real-time (Live)</h3>
+                    </div>
+                    <button id="link-goto-orders" class="text-xs font-mono text-sky-400 hover:underline">Lihat Semua →</button>
+                  </div>
+                  <div class="table-scroll-container max-h-[280px] min-h-0">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th>Invoice</th>
+                          <th>Item</th>
+                          <th>Total</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody id="recent-orders-tbody">
+                        <tr><td colspan="4" class="text-center text-slate-500 py-4">Memuat pesanan...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="pt-2 text-[11px] text-slate-400 flex items-center justify-between border-t border-dars-border/40 mt-3">
+                  <span class="font-mono text-[10px] text-emerald-400">● Callback Tripay Siap</span>
+                  <button class="text-sky-400 hover:underline font-medium" onclick="document.querySelector('.nav-item[data-view=orders]').click()">Buka Manajemen Transaksi →</button>
+                </div>
+              </div>
+            </div>
+
+          </section>
+
+          <!-- ========================================================
+               VIEW: PRODUCTS (Sticky Header & Scrollable List)
+               ======================================================== -->
+          <section id="view-products" class="content-section space-y-4 w-full">
+            <div class="bg-dars-card border border-dars-border rounded-2xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
+              <div class="flex items-center gap-3 flex-wrap flex-1">
+                <div class="pill-group" id="filter-product-game">
+                  <button class="pill-btn active" data-game="all">Semua Game</button>
+                  <button class="pill-btn" data-game="mlbb">Mobile Legends</button>
+                  <button class="pill-btn" data-game="valorant">Valorant</button>
+                </div>
+                <input type="text" id="search-products-input" class="search-field flex-1 max-w-sm" placeholder="Cari nama item / nominal...">
+              </div>
+              <button class="btn-primary-action shrink-0" id="btn-open-add-product">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Tambah Produk</span>
+              </button>
+            </div>
+
+            <!-- Sticky Table Container -->
+            <div class="bg-dars-card border border-dars-border rounded-[24px] overflow-hidden shadow-card-subtle w-full">
+              <div class="table-scroll-container">
+                <table class="data-table" id="products-table">
+                  <thead>
+                    <tr>
+                      <th>Game</th>
+                      <th>Nama Item</th>
+                      <th>Nominal</th>
+                      <th>Harga (Rp)</th>
+                      <th>Status Aktif</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="products-tbody">
+                    <tr><td colspan="6" class="text-center text-slate-500 py-6">Memuat katalog produk...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ========================================================
+               VIEW: ORDERS (Sticky Header & Scrollable List)
+               ======================================================== -->
+          <section id="view-orders" class="content-section space-y-4 w-full">
+            <div class="bg-dars-card border border-dars-border rounded-2xl p-4 space-y-3 w-full">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="pill-group" id="filter-order-status">
+                  <button class="pill-btn active" data-status="all">Semua</button>
+                  <button class="pill-btn" data-status="pending">Menunggu</button>
+                  <button class="pill-btn" data-status="processing">Diproses</button>
+                  <button class="pill-btn" data-status="success">Berhasil</button>
+                  <button class="pill-btn" data-status="failed">Gagal</button>
+                  <button class="pill-btn" data-status="refunded">Refund</button>
+                </div>
+                <select id="filter-order-game" class="select-field">
+                  <option value="all">Semua Game</option>
+                  <option value="mlbb">Mobile Legends</option>
+                  <option value="valorant">Valorant</option>
+                </select>
+              </div>
+              <div class="flex flex-wrap items-center gap-3">
+                <input type="text" id="search-orders-input" class="search-field flex-1 min-w-[200px]" placeholder="Cari Invoice / No. WA / User ID Game...">
+                <div class="flex items-center gap-2">
+                  <input type="date" id="filter-order-date-from" class="select-field text-xs" title="Dari Tanggal">
+                  <span class="text-xs text-slate-400">s/d</span>
+                  <input type="date" id="filter-order-date-to" class="select-field text-xs" title="Sampai Tanggal">
+                  <button class="btn-subtle" id="btn-apply-order-filters">Filter</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sticky Table Container -->
+            <div class="bg-dars-card border border-dars-border rounded-[24px] overflow-hidden shadow-card-subtle w-full">
+              <div class="table-scroll-container">
+                <table class="data-table" id="orders-table">
+                  <thead>
+                    <tr>
+                      <th>Invoice</th>
+                      <th>Tanggal</th>
+                      <th>Game</th>
+                      <th>Item</th>
+                      <th>Target Akun</th>
+                      <th>Kontak</th>
+                      <th>Total</th>
+                      <th>Status</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="orders-tbody">
+                    <tr><td colspan="9" class="text-center text-slate-500 py-6">Memuat daftar pesanan...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ========================================================
+               VIEW: USERS (Sticky Header & Scrollable List)
+               ======================================================== -->
+          <section id="view-users" class="content-section space-y-4 w-full">
+            <div class="bg-dars-card border border-dars-border rounded-2xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
+              <input type="text" id="search-users-input" class="search-field flex-1 max-w-md" placeholder="Cari nama pengguna / email / no. WA...">
+              <div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+                <span>Loyalitas Pelanggan & Hak Akses Akun</span>
+              </div>
+            </div>
+
+            <!-- Sticky Table Container -->
+            <div class="bg-dars-card border border-dars-border rounded-[24px] overflow-hidden shadow-card-subtle w-full">
+              <div class="table-scroll-container">
+                <table class="data-table" id="users-table">
+                  <thead>
+                    <tr>
+                      <th>Nama</th>
+                      <th>Email</th>
+                      <th>WhatsApp</th>
+                      <th>Poin</th>
+                      <th>Total Order</th>
+                      <th>Total Belanja</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-tbody">
+                    <tr><td colspan="9" class="text-center text-slate-500 py-6">Memuat data pengguna...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ========================================================
+               VIEW: PAYMENT SETTINGS (Full-Width Symmetrical Grid)
+               ======================================================== -->
+          <section id="view-payment" class="content-section space-y-4 w-full">
+            <div class="bg-dars-card border border-dars-border rounded-[28px] p-6 shadow-card-subtle space-y-5 w-full">
+              <div class="flex items-center justify-between pb-4 border-b border-dars-border">
+                <div>
+                  <h3 class="font-outfit font-bold text-lg text-white">Status Tripay Payment Gateway (QRIS)</h3>
+                  <p class="text-xs text-slate-400">Konfigurasi jalur pembayaran otomatis dan verifikasi webhook signature.</p>
+                </div>
+                <span class="badge-status badge-success">Terintegrasi</span>
+              </div>
+
+              <!-- 4-Column Balanced Grid -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                <div class="bg-[#11161f] border border-dars-border p-4 rounded-2xl">
+                  <span class="text-xs text-slate-400 block mb-1">Nama Gateway</span>
+                  <strong class="text-base text-white font-outfit" id="pay-gateway-name">Tripay Indonesia</strong>
+                </div>
+                <div class="bg-[#11161f] border border-dars-border p-4 rounded-2xl">
+                  <span class="text-xs text-slate-400 block mb-1">Mode Operasi</span>
+                  <strong class="text-base text-sky-400 font-mono" id="pay-mode">Sandbox (Development)</strong>
+                </div>
+                <div class="bg-[#11161f] border border-dars-border p-4 rounded-2xl">
+                  <span class="text-xs text-slate-400 block mb-1">Merchant Code</span>
+                  <strong class="text-base text-white font-mono" id="pay-merchant-code">T2026DAR</strong>
+                </div>
+                <div class="bg-[#11161f] border border-dars-border p-4 rounded-2xl">
+                  <span class="text-xs text-slate-400 block mb-1">API Key Status</span>
+                  <strong class="text-base text-emerald-400 font-mono" id="pay-api-key">DEV_TRIPAY_KEY (Masked)</strong>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-200 text-xs flex items-start gap-3 w-full">
+                <svg class="w-5 h-5 text-sky-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <p class="leading-relaxed">
+                  Kredensial payment gateway disimpan aman pada file konfigurasi server <code>backend/.env</code> untuk mencegah kebocoran kunci privat. Sistem otomatis memproses callback QRIS secara aman melalui verifikasi webhook signature HMAC-SHA256.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ========================================================
+               VIEW: PROVIDER TOP UP (Full-Width 2-Column Balanced Grid)
+               ======================================================== -->
+          <section id="view-provider" class="content-section space-y-4 w-full">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full">
+              <!-- Left 7 cols: Balance & Status Hero -->
+              <div class="lg:col-span-7 bg-dars-card border border-dars-border rounded-[28px] p-6 shadow-card-subtle flex flex-col justify-between space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-dars-border">
+                  <div>
+                    <h3 class="font-outfit font-bold text-lg text-white">Status Provider API Digiflazz (H2H)</h3>
+                    <p class="text-xs text-slate-400">Jalur injeksi otomatis item Mobile Legends dan voucher game.</p>
+                  </div>
+                  <span class="badge-status badge-success">Online</span>
+                </div>
+
+                <div class="bg-gradient-to-br from-[#161c27] to-[#11161f] border border-dars-border rounded-2xl p-6 text-center">
+                  <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Saldo Provider Saat Ini</span>
+                  <h2 class="font-outfit font-extrabold text-3xl md:text-4xl text-emerald-400 my-2" id="provider-balance-val">Rp 15.400.000</h2>
+                  <p class="text-xs text-slate-400">Diperbarui secara otomatis melalui endpoint cek saldo H2H.</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                  <div class="p-3 bg-[#11161f] rounded-xl border border-dars-border text-center">
+                    <span class="text-[11px] text-slate-400 block">Status Koneksi H2H</span>
+                    <strong class="text-xs text-emerald-400 font-mono">200 OK (Stable)</strong>
+                  </div>
+                  <div class="p-3 bg-[#11161f] rounded-xl border border-dars-border text-center">
+                    <span class="text-[11px] text-slate-400 block">Rata-rata Respon</span>
+                    <strong class="text-xs text-sky-400 font-mono">~1.2 Detik</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right 5 cols: Queue & Architecture Info -->
+              <div class="lg:col-span-5 bg-dars-card border border-dars-border rounded-[28px] p-6 shadow-card-subtle flex flex-col justify-between space-y-4">
+                <div class="pb-3 border-b border-dars-border">
+                  <h4 class="font-outfit font-bold text-base text-white">Mekanisme Antrian Otomatis</h4>
+                  <p class="text-xs text-slate-400">Background Worker & Failover Protection</p>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-200 text-xs space-y-2">
+                  <p class="leading-relaxed">
+                    Antrian otomatis <code>processOrderQueue.js</code> memanggil Digiflazz saat pembayaran QRIS status 'PAID'.
+                  </p>
+                  <p class="leading-relaxed">
+                    Jika saldo provider menipis atau provider sedang maintenance, order otomatis masuk ke antrian retry tanpa menggagalkan transaksi customer.
+                  </p>
+                </div>
+
+                <div class="p-3 bg-[#11161f] rounded-xl border border-dars-border text-xs text-slate-400">
+                  <span class="text-slate-300 font-semibold block mb-1">Webhook Handler:</span>
+                  <code class="text-sky-400 text-[11px] font-mono">/api/webhook/tripay</code>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ========================================================
+               VIEW: REPORTS (Full-Width Balanced Grid)
+               ======================================================== -->
+          <section id="view-reports" class="content-section space-y-4 w-full">
+            <div class="bg-dars-card border border-dars-border rounded-2xl p-4 flex items-center justify-between flex-wrap gap-3 w-full">
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total Omset Sukses:</span>
+                <strong id="report-total-rev" class="text-lg font-outfit font-extrabold text-sky-400">Rp 0</strong>
+              </div>
+              <button class="btn-primary-action" id="btn-export-csv">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Download Laporan CSV (Excel)</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
+              <div class="bg-dars-card border border-dars-border rounded-[28px] p-6 shadow-card-subtle">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="font-outfit font-bold text-base text-white">Omset Mobile Legends: Bang Bang</h3>
+                  <span class="text-xs font-mono font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20">MLBB</span>
+                </div>
+                <h2 class="font-outfit font-extrabold text-3xl text-sky-400" id="report-ml-rev">Rp 0</h2>
+                <p class="text-xs text-slate-400 mt-2"><span id="report-ml-count" class="font-mono text-white font-bold">0</span> transaksi sukses</p>
+              </div>
+
+              <div class="bg-dars-card border border-dars-border rounded-[28px] p-6 shadow-card-subtle">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="font-outfit font-bold text-base text-white">Omset Valorant Points</h3>
+                  <span class="text-xs font-mono font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">VALORANT</span>
+                </div>
+                <h2 class="font-outfit font-extrabold text-3xl text-rose-400" id="report-valo-rev">Rp 0</h2>
+                <p class="text-xs text-slate-400 mt-2"><span id="report-valo-count" class="font-mono text-white font-bold">0</span> transaksi sukses</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ========================================================
+               VIEW: LOGS (Sticky Header & Scrollable List)
+               ======================================================== -->
+          <section id="view-logs" class="content-section space-y-4 w-full">
+            <div class="bg-dars-card border border-dars-border rounded-2xl p-4 flex items-center justify-between w-full">
+              <div>
+                <h3 class="font-outfit font-bold text-base text-white">Audit Trail Aksi Administrator</h3>
+                <p class="text-xs text-slate-400">50 aksi perubahan data terakhir yang tercatat dalam sistem.</p>
+              </div>
+              <span class="badge-status badge-processing">Secure Log</span>
+            </div>
+
+            <!-- Sticky Table Container -->
+            <div class="bg-dars-card border border-dars-border rounded-[24px] overflow-hidden shadow-card-subtle w-full">
+              <div class="table-scroll-container">
+                <table class="data-table" id="logs-table">
+                  <thead>
+                    <tr>
+                      <th>Waktu</th>
+                      <th>Admin</th>
+                      <th>Aksi</th>
+                      <th>Target</th>
+                      <th>Detail Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="logs-tbody">
+                    <tr><td colspan="5" class="text-center text-slate-500 py-6">Memuat log aktivitas...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ========================================================
+               VIEW: SETTINGS (Full-Width Balanced Symmetrical 2-Column Grid)
+               ======================================================== -->
+          <section id="view-settings" class="content-section space-y-4 w-full">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full">
+              <!-- Left Form (7 cols) -->
+              <div class="lg:col-span-7 bg-dars-card border border-dars-border rounded-[28px] p-6 shadow-card-subtle flex flex-col justify-between">
+                <div>
+                  <div class="pb-4 border-b border-dars-border mb-5">
+                    <h3 class="font-outfit font-bold text-lg text-white">Pengaturan Umum Toko</h3>
+                    <p class="text-xs text-slate-400">Perubahan di sini otomatis tampil pada footer dan kontak storefront.</p>
+                  </div>
+
+                  <form id="general-settings-form" class="space-y-4">
+                    <div class="form-group">
+                      <label for="set-store-name">Nama Toko</label>
+                      <input type="text" id="set-store-name" value="Dar'sstore" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="set-cs-wa">Nomor WhatsApp Customer Service</label>
+                      <input type="text" id="set-cs-wa" value="081234567890" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="set-cs-email">Alamat Email Customer Service</label>
+                      <input type="email" id="set-cs-email" value="support@darstore.com" required>
+                    </div>
+                    <button type="submit" class="btn-primary-action">
+                      <span>Simpan Pengaturan</span>
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Right Preview Panel (5 cols) -->
+              <div class="lg:col-span-5 bg-dars-card border border-dars-border rounded-[28px] p-6 shadow-card-subtle flex flex-col justify-between space-y-4">
+                <div>
+                  <div class="pb-4 border-b border-dars-border mb-4">
+                    <h4 class="font-outfit font-bold text-base text-white">Informasi Publik Toko</h4>
+                    <p class="text-xs text-slate-400">Pratinjau bagaimana informasi toko tampil ke pembeli.</p>
+                  </div>
+
+                  <div class="space-y-3 font-sans text-xs">
+                    <div class="p-3 bg-[#11161f] rounded-xl border border-dars-border">
+                      <span class="text-slate-400 block mb-1">Footer Toko & Header:</span>
+                      <strong class="text-white text-sm">Dar'sstore • Top Up Game Cepat & Terpercaya</strong>
+                    </div>
+
+                    <div class="p-3 bg-[#11161f] rounded-xl border border-dars-border">
+                      <span class="text-slate-400 block mb-1">WhatsApp CS Otomatis:</span>
+                      <strong class="text-emerald-400 font-mono">Terkoneksi langsung ke tombol bantuan pembeli</strong>
+                    </div>
+
+                    <div class="p-3 bg-[#11161f] rounded-xl border border-dars-border">
+                      <span class="text-slate-400 block mb-1">Email Resmi:</span>
+                      <strong class="text-sky-400 font-mono">Tampil pada tanda terima invoice QRIS</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-200 text-xs">
+                  💡 Tips: Gunakan nomor WhatsApp yang aktif 24 jam dengan format internasional (+62/08...) agar link chat otomatis berfungsi lancar.
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+        <!-- END: Scrollable Content Viewport -->
+
+      </main>
+      <!-- END: Main Content Area -->
+
+    </div>
+    <!-- END: MAIN CONSOLE CONTAINER SHELL -->
+
+  </div>
+
+  <!-- ==========================================================
+       MODAL 1: PRODUCT (CREATE & EDIT)
+       ========================================================== -->
+  <div id="modal-product" class="admin-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-product-title">Tambah Produk Baru</h3>
+        <button class="modal-close" data-close="modal-product">&times;</button>
+      </div>
+      <form id="form-product">
+        <input type="hidden" id="prod-form-id">
+        <div class="form-group">
+          <label for="prod-form-game">Game</label>
+          <select id="prod-form-game" required>
+            <option value="mlbb">Mobile Legends</option>
+            <option value="valorant">Valorant</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="prod-form-name">Nama Item / Paket</label>
+          <input type="text" id="prod-form-name" placeholder="Contoh: 86 (78+8) Diamonds" required>
+        </div>
+        <div class="form-group">
+          <label for="prod-form-nominal">Nominal Angka</label>
+          <input type="number" id="prod-form-nominal" placeholder="86" required>
+        </div>
+        <div class="form-group">
+          <label for="prod-form-price">Harga Jual (Rp)</label>
+          <input type="number" id="prod-form-price" placeholder="25000" required>
+        </div>
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="prod-form-active" checked>
+            <span>Aktifkan Produk di Storefront</span>
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-subtle" data-close="modal-product">Batal</button>
+          <button type="submit" class="btn-primary-action">Simpan Produk</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       MODAL 2: ORDER DETAIL & PAYMENT LOGS
+       ========================================================== -->
+  <div id="modal-order-detail" class="admin-modal" style="display: none;">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h3>Detail Transaksi <span id="detail-order-invoice" class="text-sky-400 font-mono"></span></h3>
+        <button class="modal-close" data-close="modal-order-detail">&times;</button>
+      </div>
+      <div class="order-detail-body space-y-4">
+        <div class="detail-columns">
+          <div class="detail-col bg-[#161c27] p-4 rounded-2xl border border-dars-border">
+            <h4>Informasi Pemesanan</h4>
+            <div class="detail-pair"><span>Game:</span> <strong id="det-game">-</strong></div>
+            <div class="detail-pair"><span>Item:</span> <strong id="det-item">-</strong></div>
+            <div class="detail-pair"><span>Total Bayar:</span> <strong id="det-total" class="text-sky-400 font-mono">-</strong></div>
+            <div class="detail-pair"><span>Status:</span> <span id="det-status">-</span></div>
+            <div class="detail-pair"><span>Metode:</span> <strong id="det-payment">-</strong></div>
+            <div class="detail-pair"><span>Waktu:</span> <span id="det-time" class="font-mono text-xs">-</span></div>
+          </div>
+          <div class="detail-col bg-[#161c27] p-4 rounded-2xl border border-dars-border">
+            <h4>Akun & Kontak Pelanggan</h4>
+            <div class="detail-pair"><span>User ID Game:</span> <strong id="det-userid" class="font-mono">-</strong></div>
+            <div class="detail-pair"><span>Server ID:</span> <strong id="det-server" class="font-mono">-</strong></div>
+            <div class="detail-pair"><span>Riot ID:</span> <strong id="det-riot" class="font-mono">-</strong></div>
+            <div class="detail-pair"><span>No. WA / Email:</span> <strong id="det-contact">-</strong></div>
+            <div class="detail-pair"><span>Payment Ref:</span> <span id="det-payref" class="font-mono text-xs">-</span></div>
+          </div>
+        </div>
+
+        <div class="detail-logs-section bg-[#161c27] p-4 rounded-2xl border border-dars-border">
+          <h4>Payment Gateway Audit Logs</h4>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Waktu</th>
+                  <th>Gateway Ref</th>
+                  <th>Status</th>
+                  <th>Respon Gateway</th>
+                </tr>
+              </thead>
+              <tbody id="det-logs-tbody">
+                <tr><td colspan="4" class="text-center text-slate-500 py-3">Belum ada log callback pembayaran</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" id="detail-modal-actions">
+        <!-- Injected by JS based on status -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       MODAL 3: ADJUST USER POINTS
+       ========================================================== -->
+  <div id="modal-adjust-points" class="admin-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Sesuaikan Poin Loyalitas</h3>
+        <button class="modal-close" data-close="modal-adjust-points">&times;</button>
+      </div>
+      <form id="form-adjust-points">
+        <input type="hidden" id="adjust-user-id">
+        <div class="detail-pair mb-3">
+          <span>Target Pengguna:</span> <strong id="adjust-user-name">-</strong>
+        </div>
+        <div class="form-group">
+          <label for="adjust-points-amount">Jumlah Poin (Gunakan tanda minus untuk mengurangi)</label>
+          <input type="number" id="adjust-points-amount" placeholder="Contoh: 10 atau -5" required>
+        </div>
+        <div class="form-group">
+          <label for="adjust-points-reason">Alasan / Catatan Penyesuaian</label>
+          <input type="text" id="adjust-points-reason" placeholder="Kompensasi kendala top up / Event promo" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-subtle" data-close="modal-adjust-points">Batal</button>
+          <button type="submit" class="btn-primary-action">Simpan Poin</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       MODAL 4: CYBER DIALOG (CONFIRM & PROMPT REPLACEMENT)
+       ========================================================== -->
+  <div id="modal-cyber-dialog" class="admin-modal" style="display: none;">
+    <div class="modal-content cyber-dialog-card" id="cyber-dialog-card">
+      <div class="cyber-dialog-top-accent"></div>
+      
+      <div class="flex items-center justify-between">
+        <div class="cyber-dialog-header-tag" id="cyber-dialog-tag">
+          <span class="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+          <span id="cyber-dialog-tag-text">SYSTEM // CONFIRMATION</span>
+        </div>
+        <button type="button" class="modal-close" id="btn-cyber-dialog-close" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <div class="cyber-dialog-icon-wrapper" id="cyber-dialog-icon-box">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+      </div>
+
+      <h3 class="cyber-dialog-title" id="cyber-dialog-title">Konfirmasi Tindakan</h3>
+      <p class="cyber-dialog-message" id="cyber-dialog-message">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+
+      <!-- Input box for Prompt mode -->
+      <div class="cyber-dialog-prompt-box" id="cyber-dialog-prompt-container" style="display: none;">
+        <label for="cyber-dialog-input" id="cyber-dialog-input-label">MASUKKAN KETERANGAN</label>
+        <input type="text" id="cyber-dialog-input" class="cyber-dialog-prompt-input" autocomplete="off">
+      </div>
+
+      <div class="cyber-dialog-actions">
+        <button type="button" class="btn-dialog-cancel" id="btn-cyber-dialog-cancel">Batal</button>
+        <button type="button" class="btn-dialog-confirm" id="btn-cyber-dialog-confirm">
+          <span id="cyber-dialog-confirm-text">Konfirmasi</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cyber Toast Notification Stack Container -->
+  <div id="admin-toast-container"></div>
+  <div id="admin-toast" style="display: none;"></div>
+
+  <!-- Admin JavaScript Module -->
+  <script type="module" src="/src/admin.js"></script>
+</body>
+</html>

@@ -1,15 +1,15 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const { initDatabase } = require('./config/db');
 
 const authRoutes = require('./routes/auth.routes');
 const orderRoutes = require('./routes/order.routes');
 const productRoutes = require('./routes/product.routes');
 const webhookRoutes = require('./routes/webhook.routes');
-
 const adminRoutes = require('./routes/admin.routes');
+const { supabase } = require('./config/supabase');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -67,6 +67,11 @@ async function startServer() {
   }
 }
 
-startServer();
+if (require.main === module) {
+  startServer();
+} else {
+  initDatabase().catch(err => console.error('[DB] Init error in serverless:', err));
+}
 
 module.exports = app;
+

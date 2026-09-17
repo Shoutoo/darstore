@@ -1,118 +1,108 @@
-# OURASTORE — Top Up Games Cepat, Murah & Terpercaya
+# 🎮 Dar'sstore — Platform Top Up Games Cepat, Murah & Terpercaya
 
-Website platform top up game modern dan responsif yang diimplementasikan **persis 1:1** berdasarkan 5 mockup desain SVG dari Figma:
-1. **Beranda / Homepage** (`homepage.svg`)
-2. **Top Up Mobile Legends** (`ml top up.svg`)
-3. **Top Up Valorant** (`valo top up.svg`)
-4. **Cek Transaksi / Invoice Tracker** (`cek transaksi.svg`)
-5. **Leaderboard Top 10 Pembelian** (`leaderboard.svg`)
+Website platform top up game modern dan responsif untuk Mobile Legends: Bang Bang dan Valorant, dilengkapi integrasi backend Express API, basis data transaksi, serta Admin Dashboard.
 
 ---
 
-## 🎮 Fitur Utama
+## 🚀 Struktur Proyek
 
-- **Desain & Aset 100% Asli**:
-  - Palet warna dark gaming: `#262727`, `#212121`, aksen emas `#A58C6F`, dan badge hijau `#285346`.
-  - Menggunakan aset logo resmi OURASTORE, banner Starlight Hanzo, MLBB, Valorant, 12 poster game, ikon produk, serta logo pembayaran lengkap hasil ekstraksi resolusi tinggi.
-- **Navigasi Mulus (Single Page App / Router)**:
-  - Berpindah antar halaman (*Topup, Cek Transaksi, Leaderboard, Kalkulator*) tanpa reload halaman.
-- **Alur Pemesanan & Kasir Interaktif**:
-  - Form input akun game (User ID & Server untuk ML, Riot ID dengan Tagline untuk Valorant).
-  - Pilihan nominal produk lengkap (Special Item, Weekly Pass, First Top Up Double Diamonds, Diamond Pack, VP Region Indonesia/Malaysia/Thailand/Singapore/Filipina).
-  - Penghitung jumlah pembelian [-] [qty] [+] dengan pembaruan harga otomatis.
-  - Accordion metode pembayaran lengkap: *Oura Coin, QRIS (All E-Wallet), Virtual Account Bank (BCA, Mandiri, BRI, BNI, dll.), Convenience Store (Alfamart, Indomaret, Lawson)*.
-  - Sticky summary panel dengan rating 4.99 ★★★★★ dan rincian total tagihan realtime.
-  - Tombol **Pesan Sekarang** menerbitkan invoice resmi lengkap dengan **Kode QR QRIS** dan status pesanan.
-- **Pelacak Invoice (Cek Transaksi)**:
-  - Cari status invoice pesanan kapan saja dengan tombol salin dari clipboard.
-  - Tabel transaksi real-time dengan status pesanan.
-- **Leaderboard 3 Periode**:
-  - Peringkat 10 besar pembelian (*Hari Ini, Minggu Ini, Bulan Ini*) dengan medali emas/perak/perunggu dan nama tersensor.
-- **Kalkulator Win Rate MLBB**:
-  - Menghitung jumlah kemenangan beruntun (win streak) tanpa kalah untuk mencapai target win rate.
-- **Fitur Tambahan**:
-  - Modal autentikasi Masuk & Daftar.
-  - Modal bantuan Customer Service (Live Chat 24 jam).
-  - Toggle Dark Mode / Light Mode di footer dengan penyimpanan preferensi di localStorage.
+```
+darstore/
+├── frontend/                     # Aplikasi Frontend (Vite + Vanilla JS + CSS System)
+│   ├── public/assets/            # Aset gambar terorganisir (banners, games, icons, logo, payments, social)
+│   ├── src/
+│   │   ├── api/                  # API client wrapper & endpoint connectors (auth, orders, products)
+│   │   ├── components/           # Komponen UI modular (modals, paymentAccordion)
+│   │   ├── data/                 # Data domain statis & katalog (games, nominals, payments, faqs)
+│   │   ├── utils/                # Utility helpers (format currency, dates, token, state)
+│   │   ├── views/                # Handler tampilan halaman (homepage, mlView, valoView, invoiceView)
+│   │   ├── admin.css             # Desain sistem Admin Dashboard
+│   │   ├── admin.js              # Logika & controller Admin Dashboard
+│   │   ├── main.js               # Entry point utama storefront & router
+│   │   └── style.css             # Desain sistem utama Storefront
+│   ├── admin.html                # Halaman portal Admin Dashboard
+│   ├── index.html                # Halaman utama storefront
+│   ├── package.json              # Dependensi frontend Vite
+│   └── vite.config.js            # Konfigurasi server Vite & proxy /api
+├── backend/                      # Backend API (Express + Prisma + SQLite/PostgreSQL)
+│   ├── prisma/                   # Schema database Prisma & seeder
+│   ├── src/
+│   │   ├── config/               # Koneksi database & runtime config
+│   │   ├── controllers/          # Controller auth, order, product, webhook, admin
+│   │   ├── middlewares/          # Autentikasi JWT & admin gate
+│   │   ├── routes/               # Routing REST API
+│   │   └── server.js             # Express server entry point
+│   ├── database.sqlite           # Database lokal SQLite (otomatis dibuat)
+│   ├── .env.example              # Template konfigurasi environment
+│   └── package.json              # Dependensi backend Express
+├── DESIGN_SYSTEM.md              # Dokumentasi lengkap Design System & CSS
+├── package.json                  # Runner script workspace root
+└── README.md                     # Dokumentasi panduan proyek
+```
 
 ---
 
-## 🛠️ Teknologi yang Digunakan
-
-- **HTML5**: Semantik modern dan struktur modular view.
-- **Vanilla CSS3**: Design system berbasis custom properties, layout flexbox & grid responsif, glassmorphism, dan micro-animations.
-- **Vanilla JavaScript (ES6 Modules)**: State management reaktif, router view, kalkulasi harga dinamis, dan integrasi modal.
-- **Vite**: Bundler dan development server berkecepatan tinggi.
-
----
-
-## 🚀 Panduan Memulai (Instalasi & Menjalankan)
+## 🛠️ Panduan Memulai (Instalasi & Menjalankan)
 
 ### Prasyarat
 - [Node.js](https://nodejs.org/) (versi 18+)
 - [Git](https://git-scm.com/)
 
-### Langkah Menjalankan
+### 1. Menjalankan dari Root Proyek (Paling Praktis)
 ```bash
-# 1. Clone repository
-git clone https://github.com/Shoutoo/darstore.git
-cd darstore
+# Menjalankan backend server (Port 3000)
+npm run server
 
-# 2. Install dependensi
-npm install
-
-# 3. Jalankan server lokal
+# Menjalankan frontend dev server (Port 5173)
 npm run dev
 ```
 
-Buka browser Anda di `http://localhost:5173/`
+### 2. Atau Menjalankan Secara Manual per Folder
 
-### Build untuk Produksi
+#### Backend:
 ```bash
-npm run build
+cd backend
+npm install
+npm run dev    # atau node src/server.js
 ```
-Hasil build siap hosting akan berada di folder `dist/`.
+*Backend berjalan di:* `http://localhost:3000` *(Health check: `/api/health`)*
 
----
-
-## 📦 Struktur Folder
-
-```
-darstore/
-├── public/
-│   └── assets/
-│       ├── banners/       # Banner promosi (Starlight, ML, Valorant)
-│       ├── games/         # 12 poster game katalog
-│       ├── icons/         # Ikon diamond, pass, dan badges
-│       ├── logo/          # Logo OURASTORE header & footer
-│       ├── news/          # Thumbnail artikel berita
-│       ├── payments/      # Logo QRIS, Bank VA, & Minimarket
-│       └── social/        # Ikon sosial media resmi
-├── src/
-│   ├── data.js            # Dataset produk, nominal, payments, FAQ, & news
-│   ├── main.js            # Router, kalkulasi pesanan, modal, & interaktivitas
-│   └── style.css          # Design system CSS & styling responsif
-├── index.html             # Dokumen utama aplikasi
-├── package.json           # Konfigurasi project & dependensi Vite
-├── vite.config.js         # Konfigurasi dev server Vite
-└── README.md              # Dokumentasi proyek
-```
-
----
-
-## 🔄 Panduan Backup & Revert
-
-Repository ini sudah memiliki tag snapshot awal **`v1.0.0`**. Jika Anda ingin membatalkan perubahan atau kembali ke versi awal:
-
+#### Frontend:
 ```bash
-# Membatalkan perubahan pada 1 file:
-git restore <nama_file>
+cd frontend
+npm install
+npm run dev
+```
+*Frontend berjalan di:* `http://localhost:5173`
 
-# Mengembalikan seluruh proyek ke versi awal:
-git reset --hard v1.0.0
+---
+
+## ⚙️ Environment Variables (`backend/.env`)
+
+Salin `backend/.env.example` menjadi `backend/.env`:
+
+```env
+PORT=3000
+NODE_ENV=development
+JWT_SECRET=darstore_super_secret_jwt_key_2026
+
+# Loyalty points ratio: Rp 10.000 = 1 Point
+RUPIAH_PER_POINT=10000
+
+# Opsional: PostgreSQL (Supabase / Railway). Jika kosong, otomatis fallback ke SQLite lokal
+# DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[REF].supabase.co:5432/postgres?schema=public"
+
+# Tripay Payment Gateway (QRIS)
+TRIPAY_API_KEY=your_tripay_api_key
+TRIPAY_PRIVATE_KEY=your_tripay_private_key
+TRIPAY_MERCHANT_CODE=your_tripay_merchant_code
+
+# Digiflazz Top Up Provider API
+DIGIFLAZZ_USERNAME=your_digiflazz_username
+DIGIFLAZZ_KEY=your_digiflazz_api_key
 ```
 
 ---
 
-## 📄 Lisensi & Hak Cipta
-© 2026 OURASTORE. All rights reserved.
+## 📄 Hak Cipta & Lisensi
+© 2026 Dar'sstore. All rights reserved.

@@ -2,7 +2,23 @@ node_modules/
 dist/
 .DS_Store
 *.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Backend
 backend/node_modules/
 backend/database.sqlite
 backend/.env
+.env
+.env*.local
+
+# Vercel & Supabase
+.vercel/
+supabase/.temp/
+
+# Temporary scratch files
+scratch/
 

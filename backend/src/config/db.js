@@ -2,18 +2,60 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, '../../database.sqlite');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Failed to connect to SQLite database:', err);
-  } else {
-    console.log(`Connected to SQLite database at ${dbPath}`);
-  }
-});
+const DATABASE_URL = process.env.DATABASE_URL;
+let pgPool = null;
 
-// Helper for promise-based queries
+if (DATABASE_URL && (DATABASE_URL.startsWith('postgres://') || DATABASE_URL.startsWith('postgresql://'))) {
+  try {
+    const { Pool } = require('pg');
+    pgPool = new Pool({
+      connectionString: DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+    console.log('[DATABASE] Connected to PostgreSQL (Supabase Cloud Pooler)');
+  } catch (err) {
+    console.warn('[DATABASE] Failed to initialize PostgreSQL pool, falling back to SQLite:', err.message);
+    pgPool = null;
+  }
+}
+
+// Fallback SQLite instance
+const dbPath = process.env.DB_PATH || path.join(__dirname, '../../database.sqlite');
+let db = null;
+if (!pgPool) {
+  db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('Failed to connect to SQLite database:', err);
+    } else {
+      console.log(`Connected to SQLite database at ${dbPath}`);
+    }
+  });
+}
+
+function toPgSql(sql) {
+  let paramIndex = 1;
+  let converted = sql.replace(/\?/g, () => '$' + (paramIndex++));
+  if (/INSERT\s+OR\s+IGNORE\s+INTO/i.test(sql)) {
+    converted = converted.replace(/INSERT\s+OR\s+IGNORE\s+INTO/gi, 'INSERT INTO');
+    if (!/ON CONFLICT/i.test(converted)) {
+      converted += ' ON CONFLICT DO NOTHING';
+    }
+  }
+  if (/^\s*INSERT\s+INTO/i.test(converted) && !/RETURNING/i.test(converted)) {
+    converted += ' RETURNING id';
+  }
+  return converted;
+}
+
+// Helper for promise-based queries (dual-mode: Postgres / SQLite)
 const dbAsync = {
-  run(sql, params = []) {
+  async run(sql, params = []) {
+    if (pgPool) {
+      const pgSql = toPgSql(sql);
+      const res = await pgPool.query(pgSql, params);
+      const returnedId = res.rows && res.rows.length > 0 ? res.rows[0].id : null;
+      return { id: returnedId || res.rowCount, changes: res.rowCount };
+    }
     return new Promise((resolve, reject) => {
       db.run(sql, params, function (err) {
         if (err) reject(err);
@@ -21,7 +63,12 @@ const dbAsync = {
       });
     });
   },
-  get(sql, params = []) {
+  async get(sql, params = []) {
+    if (pgPool) {
+      const pgSql = toPgSql(sql);
+      const res = await pgPool.query(pgSql, params);
+      return res.rows && res.rows.length > 0 ? res.rows[0] : null;
+    }
     return new Promise((resolve, reject) => {
       db.get(sql, params, (err, row) => {
         if (err) reject(err);
@@ -29,7 +76,12 @@ const dbAsync = {
       });
     });
   },
-  all(sql, params = []) {
+  async all(sql, params = []) {
+    if (pgPool) {
+      const pgSql = toPgSql(sql);
+      const res = await pgPool.query(pgSql, params);
+      return res.rows || [];
+    }
     return new Promise((resolve, reject) => {
       db.all(sql, params, (err, rows) => {
         if (err) reject(err);
@@ -37,7 +89,11 @@ const dbAsync = {
       });
     });
   },
-  exec(sql) {
+  async exec(sql) {
+    if (pgPool) {
+      await pgPool.query(sql);
+      return;
+    }
     return new Promise((resolve, reject) => {
       db.exec(sql, (err) => {
         if (err) reject(err);
@@ -48,6 +104,13 @@ const dbAsync = {
 };
 
 async function initDatabase() {
+  if (pgPool) {
+    console.log('[DATABASE] PostgreSQL (Supabase Cloud) mode active.');
+    const count = await dbAsync.get('SELECT COUNT(*) as count FROM products');
+    console.log(`[DATABASE] Verified Supabase PostgreSQL. Total products in catalog: ${count ? count.count : 0}`);
+    return;
+  }
+
   await dbAsync.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -75,12 +75,13 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { identifier, password } = req.body;
-    if (!identifier || !password) {
+    const rawIdentifier = req.body.identifier || req.body.username || req.body.email;
+    const { password } = req.body;
+    if (!rawIdentifier || !password) {
       return res.status(400).json({ success: false, message: 'Silakan isi email/WhatsApp dan kata sandi.' });
     }
 
-    const clean = identifier.trim();
+    const clean = String(rawIdentifier).trim();
     // Check by email or whatsapp
     const user = await dbAsync.get(
       'SELECT * FROM users WHERE email = ? OR whatsapp = ?',

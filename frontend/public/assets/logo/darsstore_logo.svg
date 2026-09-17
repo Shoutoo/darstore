@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 320" width="100%" height="100%">
+  <defs>
+    <linearGradient id="blueGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5ec8f2" />
+      <stop offset="50%" stop-color="#0080cc" />
+      <stop offset="100%" stop-color="#005285" />
+    </linearGradient>
+    <linearGradient id="cyanAccent" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#006199" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+    <filter id="subtleShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#006199" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Group Emblem Interlocking D / Loop inspired by Ourastore elegant geometry -->
+  <g transform="translate(300, 110)" filter="url(#subtleShadow)">
+    <!-- Outer/Left Curve Arch resembling a dynamic D / portal blade -->
+    <path d="M-42,-70 C-10,-70 25,-40 25,-10 C25,12 12,28 -5,35 C-12,38 -20,40 -30,40 C-48,40 -60,25 -60,5 C-60,-22 -55,-48 -42,-70 Z" 
+          fill="url(#blueGlow)" />
+    
+    <!-- Inner Counter-Curve Swirl representing S / continuous energy flow -->
+    <path d="M42,70 C10,70 -25,40 -25,10 C-25,-12 -12,-28 5,-35 C12,-38 20,-40 30,-40 C48,-40 60,-25 60,-5 C60,22 55,48 42,70 Z" 
+          fill="url(#cyanAccent)" />
+    
+    <!-- Center Core Emblem Sparkle / Diamond -->
+    <polygon points="0,-16 12,0 0,16 -12,0" fill="#ffffff" opacity="0.95" />
+  </g>
+
+  <!-- Wordmark "Dar'sstore" -->
+  <g transform="translate(300, 245)" text-anchor="middle">
+    <text font-family="'Plus Jakarta Sans', 'Outfit', 'Montserrat', sans-serif" font-weight="700" font-size="46" letter-spacing="-0.02em">
+      <tspan fill="#fafaf9">Dar's</tspan><tspan fill="#38bdf8" font-weight="800">store</tspan>
+    </text>
+    <text y="32" font-family="'Plus Jakarta Sans', sans-serif" font-weight="500" font-size="13" fill="#9e9e9e" letter-spacing="0.28em">
+      TOP UP &amp; GAMING STORE
+    </text>
+  </g>
+</svg>
