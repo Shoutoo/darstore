@@ -520,9 +520,43 @@ function switchView(viewName) {
   loadCurrentViewData();
 }
 
+// Mobile Sidebar Offcanvas Drawer Toggle
+function openMobileSidebar() {
+  const sidebar = document.getElementById('admin-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  sidebar?.classList.add('mobile-open');
+  backdrop?.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMobileSidebar() {
+  const sidebar = document.getElementById('admin-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  sidebar?.classList.remove('mobile-open');
+  backdrop?.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('btn-toggle-sidebar')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  openMobileSidebar();
+});
+
+document.getElementById('btn-close-sidebar')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  closeMobileSidebar();
+});
+
+document.getElementById('sidebar-backdrop')?.addEventListener('click', () => {
+  closeMobileSidebar();
+});
+
 document.querySelectorAll('.sidebar-menu .nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
     switchView(btn.dataset.view);
+    if (window.innerWidth <= 768) {
+      closeMobileSidebar();
+    }
   });
 });
 

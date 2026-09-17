@@ -2333,9 +2333,10 @@ img {
 
 @media (max-width: 480px) {
   #storefront-toast-container {
-    top: 12px;
-    right: 12px;
-    left: 12px;
+    top: auto;
+    bottom: 20px;
+    right: 14px;
+    left: 14px;
     width: auto;
     max-width: 100%;
   }
