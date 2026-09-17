@@ -72,20 +72,23 @@ class OrderQueue {
         }
       }
     } catch (err) {
-      console.error(`[QUEUE] Error processing order ${order.invoice_number}:`, err.message);
+      const errorMsg = err.message || 'Gagal memproses ke provider game.';
+      console.error(`[QUEUE] Error processing order ${order.invoice_number}:`, errorMsg);
 
-      if (task.attempts < task.maxAttempts) {
-        console.log(`[QUEUE] Re-queueing order ${order.invoice_number} for retry...`);
-        // Backoff delay before retry
+      // Detect fatal non-retryable errors from provider (e.g. region mismatch, invalid account, rejected)
+      const isFatal = /region|tujuan salah|user id salah|invalid customer|tidak ditemukan|saldo tidak cukup|nomor tidak terdaftar|blocked|unauthorized/i.test(errorMsg);
+
+      if (task.attempts < task.maxAttempts && !isFatal) {
+        console.log(`[QUEUE] Re-queueing order ${order.invoice_number} for retry (Attempt ${task.attempts}/${task.maxAttempts})...`);
         setTimeout(() => {
           this.queue.push(task);
           this.processNext();
         }, 2000 * task.attempts);
       } else {
-        console.error(`[QUEUE] Order ${order.invoice_number} failed after ${task.maxAttempts} attempts. Marking as 'Gagal'.`);
+        console.error(`[QUEUE] Order ${order.invoice_number} permanently failed. Marking as 'Gagal'. Reason: ${errorMsg}`);
         await dbAsync.run(
-          `UPDATE orders SET status = 'Gagal', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-          [order.id]
+          `UPDATE orders SET status = 'Gagal', failure_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+          [errorMsg, order.id]
         );
       }
     } finally {

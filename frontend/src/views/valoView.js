@@ -60,6 +60,31 @@ export async function renderValoView() {
 
   renderPaymentAccordion('valo-payments-container', 'valo', appState, () => updateValoSummary());
   renderFAQs('valo-faq-list');
+  setupValoInputValidation();
+}
+
+export function setupValoInputValidation() {
+  const riotIdInput = document.getElementById('valo-riotid');
+  if (!riotIdInput) return;
+  if (riotIdInput.dataset.listenerAttached === 'true') return;
+  riotIdInput.dataset.listenerAttached = 'true';
+
+  const validateVisual = () => {
+    const value = riotIdInput.value.trim();
+    if (!value) {
+      riotIdInput.style.borderColor = '';
+      return;
+    }
+    const isValid = /^.{3,16}#\d{3,5}$/.test(value);
+    riotIdInput.style.borderColor = isValid ? '#10b981' : '#ef4444';
+  };
+
+  riotIdInput.addEventListener('blur', validateVisual);
+  riotIdInput.addEventListener('input', () => {
+    if (riotIdInput.style.borderColor) {
+      validateVisual();
+    }
+  });
 }
 
 export function updateValoSummary() {
@@ -126,13 +151,39 @@ export async function handleValoCheckout() {
     return;
   }
 
-  const riotId = document.getElementById('valo-riotid')?.value.trim();
+  const riotIdInput = document.getElementById('valo-riotid');
+  const riotId = riotIdInput?.value.trim() || '';
+
   if (!riotId || !riotId.includes('#')) {
-    showCyberToast('Silakan masukkan Riot ID yang valid beserta Tagline! (Contoh: Player#1234)', 'warning', 'DATA AKUN GAME');
-    document.getElementById('valo-riotid')?.focus();
+    showCyberToast('Silakan masukkan Riot ID yang valid dengan Tagline! (Contoh: Player#1234)', 'warning', 'DATA AKUN GAME');
+    riotIdInput?.focus();
     return;
   }
-  state.riotId = riotId;
+
+  const parts = riotId.split('#');
+  if (parts.length !== 2) {
+    showCyberToast('Format Riot ID salah! Pastikan hanya ada satu tanda # . Contoh: Player#1234', 'warning', 'FORMAT RIOT ID');
+    riotIdInput?.focus();
+    return;
+  }
+
+  const [namaPart, tagPart] = parts;
+  const namaRegex = /^.{3,16}$/;
+  const tagRegex = /^\d{3,5}$/;
+
+  if (!namaRegex.test(namaPart.trim())) {
+    showCyberToast('Nama pada Riot ID harus 3-16 karakter! Contoh: Player#1234', 'warning', 'NAMA RIOT ID');
+    riotIdInput?.focus();
+    return;
+  }
+
+  if (!tagRegex.test(tagPart.trim())) {
+    showCyberToast('Tagline Riot ID harus berupa angka saja (3-5 digit) untuk Region Indonesia! Contoh: Player#1234', 'warning', 'TAGLINE RIOT ID');
+    riotIdInput?.focus();
+    return;
+  }
+
+  state.riotId = `${namaPart.trim()}#${tagPart.trim()}`;
 
   if (!state.selectedPayment) {
     showCyberToast('Silakan pilih metode pembayaran QRIS Instant!', 'warning', 'METODE PEMBAYARAN');

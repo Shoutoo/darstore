@@ -59,7 +59,8 @@ class TopupProviderService {
           raw: resData
         };
       } else {
-        throw new Error(resData.data?.message || 'Gagal memproses topup provider');
+        const errorMsg = resData.data?.message || resData.message || (resData.data?.rc ? `Error provider RC: ${resData.data.rc}` : 'Gagal memproses transaksi di provider game');
+        throw new Error(errorMsg);
       }
     } catch (err) {
       throw err;

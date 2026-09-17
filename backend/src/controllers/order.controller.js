@@ -31,18 +31,57 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    if (game === 'mlbb' && (!game_user_id || !server_id)) {
-      return res.status(400).json({
-        success: false,
-        message: 'User ID dan Server ID Mobile Legends wajib diisi.'
-      });
+    if (game === 'mlbb') {
+      const uid = String(game_user_id || '').trim();
+      const srv = String(server_id || '').trim();
+      if (!uid || !srv) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID dan Server ID Mobile Legends wajib diisi.'
+        });
+      }
+      if (!/^\d{6,10}$/.test(uid)) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID Mobile Legends tidak valid (harus 6-10 digit angka). Contoh: 123456789'
+        });
+      }
+      if (!/^\d{3,5}$/.test(srv)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Zone ID/Server Mobile Legends tidak valid (harus 3-5 digit angka). Contoh: 2114'
+        });
+      }
     }
 
-    if (game === 'valorant' && (!riot_id || !riot_id.includes('#'))) {
-      return res.status(400).json({
-        success: false,
-        message: 'Riot ID Valorant wajib menyertakan tagline (Contoh: Player#1234).'
-      });
+    if (game === 'valorant') {
+      const rid = String(riot_id || '').trim();
+      if (!rid || !rid.includes('#')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Riot ID Valorant wajib menyertakan tagline dengan tanda # (Contoh: Player#1234).'
+        });
+      }
+      const parts = rid.split('#');
+      if (parts.length !== 2) {
+        return res.status(400).json({
+          success: false,
+          message: 'Format Riot ID tidak valid. Pastikan hanya ada 1 tanda # (Contoh: Player#1234).'
+        });
+      }
+      const [namaPart, tagPart] = parts;
+      if (!/^.{3,16}$/.test(namaPart.trim())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nama pada Riot ID harus 3-16 karakter. Contoh: Player#1234'
+        });
+      }
+      if (!/^\d{3,5}$/.test(tagPart.trim())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tagline Riot ID harus berupa angka saja (3-5 digit) untuk Region Indonesia. Contoh: Player#1234'
+        });
+      }
     }
 
     // Look up product in database

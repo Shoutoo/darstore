@@ -60,6 +60,21 @@ export async function renderMLView() {
 
   renderPaymentAccordion('ml-payments-container', 'ml', appState, () => updateMLSummary());
   renderFAQs('ml-faq-list');
+  setupMLInputValidation();
+}
+
+export function setupMLInputValidation() {
+  function restrictToNumeric(inputEl, maxLength) {
+    if (!inputEl) return;
+    if (inputEl.dataset.numericRestricted === 'true') return;
+    inputEl.dataset.numericRestricted = 'true';
+    inputEl.addEventListener('input', () => {
+      inputEl.value = inputEl.value.replace(/\D/g, '').slice(0, maxLength);
+    });
+  }
+
+  restrictToNumeric(document.getElementById('ml-userid'), 10);
+  restrictToNumeric(document.getElementById('ml-server'), 5);
 }
 
 export function updateMLSummary() {
@@ -127,13 +142,36 @@ export async function handleMLCheckout() {
     return;
   }
 
-  const uid = document.getElementById('ml-userid')?.value.trim();
-  const srv = document.getElementById('ml-server')?.value.trim();
+  const uidInput = document.getElementById('ml-userid');
+  const srvInput = document.getElementById('ml-server');
+  const uid = uidInput?.value.trim() || '';
+  const srv = srvInput?.value.trim() || '';
+
+  const uidRegex = /^\d{6,10}$/;
+  const srvRegex = /^\d{3,5}$/;
+
   if (!uid || !srv) {
-    showCyberToast('Silakan masukkan User ID dan Server Zone Mobile Legends Anda!', 'warning', 'DATA AKUN GAME');
-    document.getElementById('ml-userid')?.focus();
+    showCyberToast('Silakan masukkan User ID dan Server Mobile Legends Anda!', 'warning', 'DATA AKUN GAME');
+    if (!uid) {
+      uidInput?.focus();
+    } else {
+      srvInput?.focus();
+    }
     return;
   }
+
+  if (!uidRegex.test(uid)) {
+    showCyberToast('User ID tidak valid! User ID Mobile Legends hanya berupa angka (6-10 digit). Contoh: 123456789', 'warning', 'USER ID TIDAK VALID');
+    uidInput?.focus();
+    return;
+  }
+
+  if (!srvRegex.test(srv)) {
+    showCyberToast('Zone ID/Server tidak valid! Zone ID hanya berupa angka (3-5 digit), lihat angka di dalam kurung pada profil ML Anda. Contoh: 2114', 'warning', 'ZONE ID TIDAK VALID');
+    srvInput?.focus();
+    return;
+  }
+
   state.userId = uid;
   state.server = srv;
 

@@ -32,6 +32,8 @@ export async function fetchRealtimeTable() {
       });
       const isSuccess = tx.status === 'Berhasil';
       const isProcess = tx.status === 'Diproses';
+      const isFailed = tx.status === 'Gagal';
+      const badgeClass = isSuccess ? 'success' : (isProcess ? 'processing' : (isFailed ? 'failed' : 'pending'));
 
       return `
         <tr>
@@ -40,7 +42,7 @@ export async function fetchRealtimeTable() {
           <td>${tx.masked_contact}</td>
           <td>${formatRupiah(tx.total_harga)}</td>
           <td>
-            <span class="invoice-status-badge ${isSuccess ? 'success' : (isProcess ? 'processing' : 'pending')}">
+            <span class="invoice-status-badge ${badgeClass}">
               ${tx.status}
             </span>
           </td>
@@ -85,9 +87,10 @@ export async function searchInvoice(query, onPaymentSuccess) {
       return;
     }
 
-    const order = data.order;
     const isSuccess = order.status === 'Berhasil';
     const isProcess = order.status === 'Diproses';
+    const isFailed = order.status === 'Gagal';
+    const badgeClass = isSuccess ? 'success' : (isProcess ? 'processing' : (isFailed ? 'failed' : 'pending'));
     const targetAccount = order.game === 'mlbb'
       ? `${order.game_user_id} (${order.server_id})`
       : order.riot_id;
@@ -103,7 +106,7 @@ export async function searchInvoice(query, onPaymentSuccess) {
             <div style="font-size: 12px; color: var(--text-muted);">Nomor Invoice</div>
             <div style="font-size: 20px; font-weight: 800; color: var(--accent-gold); letter-spacing: 0.5px;">${order.invoice_number}</div>
           </div>
-          <span class="invoice-status-badge ${isSuccess ? 'success' : (isProcess ? 'processing' : 'pending')}">
+          <span class="invoice-status-badge ${badgeClass}">
             ${order.status}
           </span>
         </div>
@@ -135,7 +138,25 @@ export async function searchInvoice(query, onPaymentSuccess) {
           </div>
         </div>
 
-        ${!isSuccess ? `
+        ${isFailed ? `
+          <div style="margin-top: 20px; padding: 16px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-md); text-align: center;">
+            <div style="font-size: 14px; font-weight: 700; color: #f87171; margin-bottom: 6px;">
+              ⚠️ Transaksi Gagal Diproses Provider
+            </div>
+            <div style="font-size: 13px; color: var(--text-primary); margin-bottom: 6px;">
+              <strong>Keterangan:</strong> ${order.failure_reason || 'Transaksi ditolak oleh provider game. Pastikan format ID Akun atau Region server akun sudah sesuai (Khusus Valorant wajib region Indonesia).'}
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              Jangan khawatir, dana Anda tetap aman. Silakan hubungi CS kami via WhatsApp di bawah untuk pengecekan atau permohonan bantuan/refund.
+            </div>
+          </div>
+        ` : (isProcess ? `
+          <div style="margin-top: 20px; padding: 14px; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: var(--radius-md); text-align: center;">
+            <div style="font-size: 13px; color: #60a5fa;">
+              ⏳ Pesanan sedang diproses otomatis ke akun game Anda. Mohon tunggu beberapa saat.
+            </div>
+          </div>
+        ` : (!isSuccess ? `
           <div style="margin-top: 20px; padding: 14px; background: rgba(0, 97, 153, 0.12); border: 1px solid var(--accent-gold); border-radius: var(--radius-md); text-align: center;">
             <div style="font-size: 13px; color: var(--accent-gold-light); margin-bottom: 8px;">
               Pesanan menunggu pembayaran QRIS.
@@ -144,7 +165,7 @@ export async function searchInvoice(query, onPaymentSuccess) {
               ⚡ Konfirmasi Bayar Sekarang (Simulasi)
             </button>
           </div>
-        ` : ''}
+        ` : ''))}
 
         <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; gap: 12px;">
           <a href="https://wa.me/6281234567890?text=Halo%20Dar'sstore,%20saya%20ingin%20cek%20invoice%20${order.invoice_number}" target="_blank" rel="noreferrer" class="btn-order-now" style="flex: 1; text-align: center; text-decoration: none; justify-content: center;">

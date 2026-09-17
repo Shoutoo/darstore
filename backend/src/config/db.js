@@ -154,6 +154,7 @@ async function initDatabase() {
       qris_string TEXT NULL,
       qris_url TEXT NULL,
       total_harga INTEGER NOT NULL,
+      failure_reason TEXT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id)
@@ -207,6 +208,11 @@ async function initDatabase() {
   }
   try {
     await dbAsync.run("ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0");
+  } catch (e) {
+    // Column already exists, ignore
+  }
+  try {
+    await dbAsync.run("ALTER TABLE orders ADD COLUMN failure_reason TEXT NULL");
   } catch (e) {
     // Column already exists, ignore
   }

@@ -5,8 +5,8 @@
 import { appState } from './utils/state.js';
 import { getToken, setToken, clearToken } from './utils/token.js';
 import { renderHomepage, setupCarousel } from './views/homepage.js';
-import { renderMLView, handleMLCheckout, updateMLSummary } from './views/mlView.js';
-import { renderValoView, handleValoCheckout, updateValoSummary } from './views/valoView.js';
+import { renderMLView, handleMLCheckout, updateMLSummary, setupMLInputValidation } from './views/mlView.js';
+import { renderValoView, handleValoCheckout, updateValoSummary, setupValoInputValidation } from './views/valoView.js';
 import { fetchRealtimeTable, searchInvoice, setupInvoiceSearch } from './views/invoiceView.js';
 import { setupModals, openModal, closeModal } from './components/modals.js';
 import { getUserProfile, loginUser, registerUser } from './api/auth.js';
@@ -492,6 +492,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderValoView();
   setupCarousel();
   setupCounters();
+  setupMLInputValidation();
+  setupValoInputValidation();
   setupModals();
   setupAuthHandlers();
   setupCheckoutModalButtons();
