@@ -1210,3 +1210,308 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     width: 0%;
   }
 }
+
+/* ==========================================================
+   PILL BUTTONS & FORM CONTROLS
+   ========================================================== */
+.pill-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #11161f;
+  padding: 4px;
+  border-radius: 9999px;
+  border: 1px solid #242e42;
+}
+
+.pill-btn {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.pill-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.pill-btn.active {
+  background: #006199;
+  color: #ffffff;
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+
+.search-field {
+  background: #161c27;
+  border: 1px solid #242e42;
+  border-radius: 14px;
+  padding: 8px 14px;
+  color: #ffffff;
+  font-size: 13px;
+  transition: border-color 0.2s ease;
+}
+.search-field:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.select-field {
+  background: #161c27;
+  border: 1px solid #242e42;
+  border-radius: 14px;
+  padding: 8px 12px;
+  color: #ffffff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.select-field:focus {
+  outline: none;
+  border-color: #38bdf8;
+}
+
+.btn-subtle {
+  background: #1b2332;
+  border: 1px solid #242e42;
+  color: #94a3b8;
+  padding: 7px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-subtle:hover {
+  color: #ffffff;
+  border-color: #38bdf8;
+  background: #242e42;
+}
+
+/* ==========================================================
+   ADMIN MOBILE RESPONSIVE ADAPTATION
+   Transforms into native-app feel with bottom nav & full-width cards
+   ========================================================== */
+@media (max-width: 768px) {
+  body {
+    padding: 0 !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+  }
+
+  #admin-app {
+    height: 100vh !important;
+    max-width: 100vw !important;
+  }
+
+  #admin-main-screen {
+    flex-direction: column !important;
+    border-radius: 0 !important;
+    border: none !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    padding: 10px 10px 0 10px !important;
+    gap: 8px !important;
+    position: relative !important;
+  }
+
+  /* Bottom Navigation Bar for Mobile */
+  aside[data-purpose="mini-sidebar"] {
+    order: 10 !important;
+    width: 100% !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    flex-direction: row !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    border-right: none !important;
+    border-top: 1px solid rgba(56, 189, 248, 0.25) !important;
+    background: #090c12 !important;
+    padding: 4px 6px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    margin: 0 -10px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    z-index: 50 !important;
+  }
+  aside[data-purpose="mini-sidebar"]::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  aside[data-purpose="mini-sidebar"] > div:first-child {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    width: auto !important;
+    flex: 1 !important;
+    justify-content: space-around !important;
+  }
+
+  aside[data-purpose="mini-sidebar"] > div:first-child > a {
+    display: none !important;
+  }
+
+  .sidebar-menu {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    width: 100% !important;
+    justify-content: space-around !important;
+    overflow-x: auto !important;
+  }
+
+  .nav-item {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 12px !important;
+    flex-shrink: 0 !important;
+  }
+  .nav-item svg {
+    width: 17px !important;
+    height: 17px !important;
+  }
+
+  .nav-item .nav-indicator {
+    display: none !important;
+  }
+
+  aside[data-purpose="mini-sidebar"] > div:last-child {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-top: 0 !important;
+    flex-shrink: 0 !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding-left: 6px !important;
+  }
+
+  aside[data-purpose="mini-sidebar"] > div:last-child a,
+  aside[data-purpose="mini-sidebar"] > div:last-child button {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 12px !important;
+  }
+
+  /* Main Viewport */
+  main {
+    flex: 1 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 8px !important;
+  }
+
+  /* Ambient Glows Hidden on Mobile */
+  .absolute.bg-sky-500\/10,
+  .absolute.bg-blue-600\/10 {
+    display: none !important;
+  }
+
+  /* Header Topbar */
+  header[data-purpose="top-navigation-bar"] {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  header[data-purpose="top-navigation-bar"] > div:first-child {
+    flex: 1 1 auto !important;
+  }
+
+  header[data-purpose="top-navigation-bar"] > div:last-child {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+  }
+
+  header[data-purpose="top-navigation-bar"] h1 {
+    font-size: 18px !important;
+  }
+
+  #page-subtitle {
+    display: none !important;
+  }
+
+  #header-provider-balance {
+    font-size: 11px !important;
+  }
+
+  /* Controls & Inputs */
+  .pill-group {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    width: 100% !important;
+    border-radius: 16px !important;
+  }
+
+  .pill-btn {
+    padding: 6px 12px !important;
+    font-size: 11.5px !important;
+    flex: 1 1 auto !important;
+    text-align: center !important;
+  }
+
+  .search-field, .select-field {
+    width: 100% !important;
+    max-width: 100% !important;
+    font-size: 12.5px !important;
+  }
+
+  /* Tables */
+  .table-scroll-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    min-height: 260px !important;
+  }
+
+  .data-table {
+    min-width: 600px !important;
+    width: 100% !important;
+  }
+
+  #orders-table.data-table {
+    min-width: 780px !important;
+  }
+
+  /* Bar Charts */
+  .simple-bar-chart {
+    gap: 3px !important;
+    height: 120px !important;
+  }
+  .bar-fill {
+    max-width: 14px !important;
+  }
+  .bar-date {
+    font-size: 8.5px !important;
+  }
+
+  /* Mobile Toast Container */
+  #admin-toast-container {
+    top: 10px !important;
+    right: 10px !important;
+    left: 10px !important;
+    width: auto !important;
+    max-width: 100% !important;
+  }
+}

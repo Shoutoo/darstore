@@ -880,10 +880,18 @@ img {
 /* Topup Two-Column Layout */
 .topup-layout {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: minmax(0, 1fr) 340px;
   gap: 28px;
   align-items: start;
   margin-bottom: 48px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.topup-form-col {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Form Steps */
@@ -894,6 +902,10 @@ img {
   padding: 24px;
   margin-bottom: 24px;
   position: relative;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .step-header {
@@ -1708,12 +1720,16 @@ img {
   background-color: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: var(--shadow-card);
+  width: 100%;
+  max-width: 100%;
 }
 
 .realtime-table {
   width: 100%;
+  min-width: 580px;
   border-collapse: collapse;
   text-align: left;
 }
@@ -2094,10 +2110,17 @@ img {
     grid-template-columns: repeat(4, 1fr);
   }
   .topup-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .topup-form-col {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
   }
   .sticky-summary {
     position: static;
+    width: 100%;
+    max-width: 100%;
   }
 }
 
@@ -2120,38 +2143,175 @@ img {
   }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 768px) {
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
   .header-top {
     flex-wrap: wrap;
+    gap: 12px;
+  }
+  .brand-logo img {
+    height: 34px;
+  }
+  .brand-text {
+    font-size: 19px;
+  }
+  .currency-badge {
+    display: none;
   }
   .header-search {
     order: 3;
     max-width: 100%;
+    width: 100%;
   }
   .nav-bottom {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 0 10px 0;
+    scrollbar-width: none;
+  }
+  .nav-bottom::-webkit-scrollbar {
+    display: none;
+  }
+  .nav-links {
+    gap: 16px;
+    white-space: nowrap;
+  }
+  .nav-auth {
+    gap: 8px;
+    white-space: nowrap;
+    margin-left: 16px;
+  }
+  .btn-auth {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+  .topup-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+  .step-card {
+    padding: 18px 16px;
+    margin-bottom: 16px;
+  }
+  .payment-header-preview {
+    display: none;
+  }
+  .payment-group-header {
+    padding: 12px 14px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .payment-methods-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 12px;
+  }
+  .payment-method-card {
+    padding: 10px 12px;
   }
   .games-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-  .popular-grid {
-    grid-template-columns: 1fr;
+    gap: 14px;
   }
   .nominals-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
   }
   .account-inputs-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
   .account-input-single {
     grid-column: span 1;
   }
   .footer-top-grid {
     grid-template-columns: 1fr;
+    gap: 28px;
   }
   .game-profile-inner {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .carousel-slide {
+    max-height: 220px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .site-header {
+    padding-bottom: 2px;
+  }
+  .header-top {
+    padding: 8px 0;
+  }
+  .brand-text {
+    font-size: 18px;
+  }
+  .brand-logo img {
+    height: 30px;
+  }
+  .step-card {
+    padding: 14px 12px;
+    border-radius: var(--radius-md);
+  }
+  .step-header {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .step-number {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+  .step-title {
+    font-size: 14px;
+  }
+  .form-input {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .nominals-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  .nominal-card {
+    padding: 10px 8px;
+  }
+  .nominal-name {
+    font-size: 12px;
+  }
+  .nominal-price {
+    font-size: 11px;
+  }
+  .payment-method-card {
+    padding: 8px 10px;
+  }
+  .payment-method-logo {
+    max-width: 65px;
+    height: 18px;
+  }
+  .payment-method-name {
+    font-size: 11.5px;
+  }
+  .payment-method-price {
+    font-size: 10.5px;
+  }
+  .order-summary-box {
+    padding: 16px 14px;
+  }
+  .floating-whatsapp {
+    bottom: 14px;
+    right: 14px;
+    padding: 8px 14px;
+    font-size: 12px;
   }
 }
 
@@ -2169,6 +2329,16 @@ img {
   max-width: 400px;
   width: calc(100% - 48px);
   pointer-events: none;
+}
+
+@media (max-width: 480px) {
+  #storefront-toast-container {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: 100%;
+  }
 }
 
 .cyber-toast {
