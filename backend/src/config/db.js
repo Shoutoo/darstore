@@ -57,9 +57,19 @@ const dbAsync = {
   async run(sql, params = []) {
     if (pgPool) {
       const pgSql = toPgSql(sql);
-      const res = await pgPool.query(pgSql, params);
-      const returnedId = res.rows && res.rows.length > 0 ? res.rows[0].id : null;
-      return { id: returnedId || res.rowCount, changes: res.rowCount };
+      try {
+        const res = await pgPool.query(pgSql, params);
+        const returnedId = res.rows && res.rows.length > 0 ? res.rows[0].id : null;
+        return { id: returnedId || res.rowCount, changes: res.rowCount };
+      } catch (err) {
+        if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated/i.test(err.message)) {
+          await new Promise(r => setTimeout(r, 600));
+          const res = await pgPool.query(pgSql, params);
+          const returnedId = res.rows && res.rows.length > 0 ? res.rows[0].id : null;
+          return { id: returnedId || res.rowCount, changes: res.rowCount };
+        }
+        throw err;
+      }
     }
     return new Promise((resolve, reject) => {
       db.run(sql, params, function (err) {
@@ -71,8 +81,17 @@ const dbAsync = {
   async get(sql, params = []) {
     if (pgPool) {
       const pgSql = toPgSql(sql);
-      const res = await pgPool.query(pgSql, params);
-      return res.rows && res.rows.length > 0 ? res.rows[0] : null;
+      try {
+        const res = await pgPool.query(pgSql, params);
+        return res.rows && res.rows.length > 0 ? res.rows[0] : null;
+      } catch (err) {
+        if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated/i.test(err.message)) {
+          await new Promise(r => setTimeout(r, 600));
+          const res = await pgPool.query(pgSql, params);
+          return res.rows && res.rows.length > 0 ? res.rows[0] : null;
+        }
+        throw err;
+      }
     }
     return new Promise((resolve, reject) => {
       db.get(sql, params, (err, row) => {
@@ -84,8 +103,17 @@ const dbAsync = {
   async all(sql, params = []) {
     if (pgPool) {
       const pgSql = toPgSql(sql);
-      const res = await pgPool.query(pgSql, params);
-      return res.rows || [];
+      try {
+        const res = await pgPool.query(pgSql, params);
+        return res.rows || [];
+      } catch (err) {
+        if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated/i.test(err.message)) {
+          await new Promise(r => setTimeout(r, 600));
+          const res = await pgPool.query(pgSql, params);
+          return res.rows || [];
+        }
+        throw err;
+      }
     }
     return new Promise((resolve, reject) => {
       db.all(sql, params, (err, rows) => {
@@ -96,8 +124,17 @@ const dbAsync = {
   },
   async exec(sql) {
     if (pgPool) {
-      await pgPool.query(sql);
-      return;
+      try {
+        await pgPool.query(sql);
+        return;
+      } catch (err) {
+        if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated/i.test(err.message)) {
+          await new Promise(r => setTimeout(r, 600));
+          await pgPool.query(sql);
+          return;
+        }
+        throw err;
+      }
     }
     return new Promise((resolve, reject) => {
       db.exec(sql, (err) => {
@@ -111,10 +148,17 @@ const dbAsync = {
 async function initDatabase() {
   if (pgPool) {
     console.log('[DATABASE] PostgreSQL (Supabase Cloud) mode active.');
+    try {
+      await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS expired_at TEXT;");
+      await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS failure_reason TEXT;");
+    } catch (migErr) {
+      console.warn('[DATABASE] PostgreSQL migration note:', migErr.message);
+    }
     const count = await dbAsync.get('SELECT COUNT(*) as count FROM products');
     console.log(`[DATABASE] Verified Supabase PostgreSQL. Total products in catalog: ${count ? count.count : 0}`);
     return;
   }
+
 
   await dbAsync.exec(`
     CREATE TABLE IF NOT EXISTS users (
