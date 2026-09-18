@@ -87,6 +87,7 @@ export async function searchInvoice(query, onPaymentSuccess) {
       return;
     }
 
+    const order = data.order;
     const isSuccess = order.status === 'Berhasil';
     const isProcess = order.status === 'Diproses';
     const isFailed = order.status === 'Gagal';

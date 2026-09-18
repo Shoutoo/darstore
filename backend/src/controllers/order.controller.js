@@ -132,9 +132,7 @@ exports.createOrder = async (req, res) => {
       nama_item: `${product.nama_item} (x${quantity})`
     };
 
-    const qrisData = await paymentGateway.createQrisTransaction(tempOrder);
-
-    // Save to database via dbService
+    // 1. Simpan order ke database dengan status awal Menunggu Pembayaran
     const createdOrder = await dbService.createOrder({
       invoice_number,
       user_id,
@@ -145,18 +143,67 @@ exports.createOrder = async (req, res) => {
       server_id: server_id || null,
       riot_id: riot_id || null,
       wa_email_guest,
+      status: 'Menunggu Pembayaran',
       payment_method,
-      payment_ref: qrisData.payment_ref,
-      qris_string: qrisData.qris_string,
-      qris_url: qrisData.qris_url,
+      payment_ref: null,
+      qris_string: null,
+      qris_url: null,
       total_harga
     });
 
-    return res.status(201).json({
-      success: true,
-      message: 'Pesanan berhasil dibuat.',
-      order: createdOrder
-    });
+    // 2. Charge ke Midtrans Core API dengan payment_type: 'qris'
+    try {
+      const qrisData = await paymentGateway.createQrisTransaction(tempOrder);
+
+      // 3. Update data order dengan payment_ref dan URL QRIS Midtrans
+      await dbAsync.run(
+        `UPDATE orders SET payment_ref = ?, qris_string = ?, qris_url = ?, expired_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [qrisData.payment_ref, qrisData.qris_string, qrisData.qris_url, qrisData.expired_at, createdOrder.id]
+      );
+
+      // 4. Catat payment log transaksi Midtrans
+      try {
+        await dbAsync.run(
+          `INSERT INTO payment_logs (order_id, gateway_ref, status, raw_response) VALUES (?, ?, ?, ?)`,
+          [
+            createdOrder.id,
+            qrisData.payment_ref,
+            'pending',
+            JSON.stringify(qrisData.raw_response || { initiated: true })
+          ]
+        );
+      } catch (logErr) {
+        console.warn('Payment log write error:', logErr.message);
+      }
+
+      const updatedOrder = await dbAsync.get('SELECT * FROM orders WHERE id = ?', [createdOrder.id]);
+
+      return res.status(201).json({
+        success: true,
+        message: 'Pesanan berhasil dibuat.',
+        invoiceNumber: invoice_number,
+        qrCodeUrl: qrisData.qris_url,
+        expiredAt: qrisData.expired_at,
+        totalHarga: total_harga,
+        order: {
+          ...updatedOrder,
+          qrCodeUrl: qrisData.qris_url,
+          expiredAt: qrisData.expired_at
+        }
+      });
+    } catch (chargeErr) {
+      console.error('Midtrans QRIS charge error:', chargeErr);
+      // Jika charge Midtrans gagal, tandai status order jadi Gagal supaya tidak menggantung
+      await dbAsync.run(
+        `UPDATE orders SET status = 'Gagal', failure_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [`Gagal membuat tagihan Midtrans: ${chargeErr.message}`, createdOrder.id]
+      );
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal membuat transaksi pembayaran',
+        detail: chargeErr.message
+      });
+    }
   } catch (err) {
     console.error('Create order error:', err);
     return res.status(500).json({

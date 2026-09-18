@@ -1,52 +1,106 @@
+const crypto = require('crypto');
 const { dbAsync } = require('../config/db');
 const paymentGateway = require('../services/paymentGateway');
 const orderQueue = require('../jobs/processOrderQueue');
 
+/**
+ * Handle Midtrans Webhook Notification
+ * Endpoint: POST /api/webhook/payment
+ */
 exports.handlePaymentWebhook = async (req, res) => {
   try {
-    const rawBody = JSON.stringify(req.body);
-    const signature = req.headers['x-callback-signature'] || req.headers['x-signature'];
+    const {
+      order_id,
+      status_code,
+      gross_amount,
+      signature_key,
+      transaction_status,
+      fraud_status,
+      transaction_id
+    } = req.body;
 
-    if (!paymentGateway.verifyWebhookSignature(rawBody, signature)) {
-      return res.status(403).json({ success: false, message: 'Invalid webhook signature.' });
-    }
-
-    const { merchant_ref, status, reference } = req.body;
-    const invoiceNumber = merchant_ref || req.body.order_id;
+    const invoiceNumber = order_id || req.body.merchant_ref;
 
     if (!invoiceNumber) {
-      return res.status(400).json({ success: false, message: 'Missing merchant_ref/order_id' });
+      return res.status(400).json({ error: 'Missing order_id or invoice number' });
     }
 
-    const order = await dbAsync.get('SELECT * FROM orders WHERE invoice_number = ?', [invoiceNumber]);
-    if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
+    // 1. Verifikasi signature SHA-512 (WAJIB)
+    const isValidSignature = paymentGateway.verifyWebhookSignature(req.body, req.headers['x-signature']);
+    if (!isValidSignature) {
+      console.warn(`[WEBHOOK] Invalid signature for order ${invoiceNumber}`);
+      return res.status(403).json({ error: 'Invalid signature' });
     }
 
-    // Log raw payment response
-    await dbAsync.run(
-      `INSERT INTO payment_logs (order_id, gateway_ref, status, raw_response) VALUES (?, ?, ?, ?)`,
-      [order.id, reference || 'GATEWAY_CALLBACK', status, rawBody]
+    // Cari order di database
+    const order = await dbAsync.get(
+      'SELECT * FROM orders WHERE UPPER(invoice_number) = ?',
+      [invoiceNumber.trim().toUpperCase()]
     );
 
-    // Idempotency: don't re-process if already success
-    if (order.status === 'Berhasil' || order.status === 'Diproses') {
-      return res.json({ success: true, message: 'Order already processed or in progress' });
+    if (!order) {
+      return res.status(404).json({ error: 'Order tidak ditemukan' });
     }
 
-    if (status === 'PAID' || status === 'SETTLED' || status === 'SUCCESS') {
+    // 2. Idempotency — kalau order sudah diproses sebelumnya (bukan pending/menunggu pembayaran),
+    // jangan proses ulang, balas OK supaya Midtrans berhenti retry
+    const isPending = order.status === 'Menunggu Pembayaran' || order.status === 'pending';
+    if (!isPending) {
+      return res.status(200).json({ message: 'Sudah diproses sebelumnya' });
+    }
+
+    // 3. Catat log mentah untuk audit ke payment_logs
+    try {
+      await dbAsync.run(
+        `INSERT INTO payment_logs (order_id, gateway_ref, status, raw_response) VALUES (?, ?, ?, ?)`,
+        [
+          order.id,
+          transaction_id || req.body.reference || 'MIDTRANS_NOTIFICATION',
+          transaction_status || req.body.status || 'UNKNOWN',
+          JSON.stringify(req.body)
+        ]
+      );
+    } catch (logErr) {
+      console.warn('Payment log write error in webhook:', logErr.message);
+    }
+
+    // 4. Mapping status Midtrans -> status order kita
+    if (transaction_status === 'settlement' || transaction_status === 'capture') {
+      console.log(`[WEBHOOK] Payment confirmed (${transaction_status}) for invoice ${order.invoice_number}`);
+      
+      // Update payment_ref dari Midtrans transaction_id
+      if (transaction_id) {
+        await dbAsync.run(
+          `UPDATE orders SET payment_ref = ? WHERE id = ?`,
+          [transaction_id, order.id]
+        );
+      }
+
+      // Picu proses pengiriman item top up ke akun game via background queue
+      // Worker queue akan otomatis mengupdate status jadi 'Diproses' -> 'Berhasil'
+      // dan menambahkan poin loyalitas ke akun pengguna jika ada user_id.
       orderQueue.enqueue(order);
-    } else if (status === 'EXPIRED' || status === 'FAILED') {
-      await dbAsync.run(`UPDATE orders SET status = 'Gagal', updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [order.id]);
+    } else if (['expire', 'deny', 'cancel'].includes(transaction_status)) {
+      console.log(`[WEBHOOK] Payment failed/expired (${transaction_status}) for invoice ${order.invoice_number}`);
+      await dbAsync.run(
+        `UPDATE orders SET status = 'Gagal', failure_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [`Midtrans: Pembayaran ${transaction_status}`, order.id]
+      );
+    } else {
+      console.log(`[WEBHOOK] Status ${transaction_status} received for invoice ${order.invoice_number}. Order remains pending.`);
     }
 
-    return res.json({ success: true });
+    return res.status(200).json({ message: 'OK' });
   } catch (err) {
     console.error('Webhook processing error:', err);
-    return res.status(500).json({ success: false, message: 'Internal server error in webhook handler' });
+    return res.status(500).json({ error: 'Internal server error in webhook handler', detail: err.message });
   }
 };
 
+/**
+ * Simulator lokal untuk uji coba alur pembayaran di development
+ * Endpoint: POST /api/webhook/simulate-payment
+ */
 exports.simulatePayment = async (req, res) => {
   try {
     const { invoice_number } = req.body;
@@ -66,7 +120,12 @@ exports.simulatePayment = async (req, res) => {
     // Log payment
     await dbAsync.run(
       `INSERT INTO payment_logs (order_id, gateway_ref, status, raw_response) VALUES (?, ?, ?, ?)`,
-      [order.id, `SIM-${Date.now()}`, 'PAID', JSON.stringify({ simulated: true, at: new Date().toISOString() })]
+      [
+        order.id,
+        `SIM-MID-${Date.now()}`,
+        'settlement',
+        JSON.stringify({ simulated: true, provider: 'midtrans_simulator', at: new Date().toISOString() })
+      ]
     );
 
     if (order.status === 'Berhasil') {

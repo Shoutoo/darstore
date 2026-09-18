@@ -216,6 +216,12 @@ async function initDatabase() {
   } catch (e) {
     // Column already exists, ignore
   }
+  try {
+    await dbAsync.run("ALTER TABLE orders ADD COLUMN expired_at TEXT NULL");
+  } catch (e) {
+    // Column already exists, ignore
+  }
+
 
   console.log('Database tables verified/created successfully.');
 

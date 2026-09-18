@@ -7,6 +7,7 @@ import { renderPaymentAccordion } from '../components/paymentAccordion.js';
 import { renderFAQs } from './homepage.js';
 import { openModal } from '../components/modals.js';
 import { showCyberToast } from '../utils/cyberPopup.js';
+import { startQrisCountdown } from '../utils/countdown.js';
 
 function createNominalCardHTML(item) {
   return `
@@ -219,8 +220,11 @@ export async function handleValoCheckout() {
       return;
     }
 
-    const order = data.order;
-    appState.currentInvoice = order;
+    const order = data.order || {};
+    const qrCodeUrl = data.qrCodeUrl || order.qris_url || order.qrCodeUrl;
+    const expiredAt = data.expiredAt || order.expired_at || order.expiredAt;
+    const invoiceNumber = data.invoiceNumber || order.invoice_number;
+    appState.currentInvoice = { ...order, invoice_number: invoiceNumber, qris_url: qrCodeUrl, expired_at: expiredAt };
 
     const modalBody = document.getElementById('checkout-modal-body');
     if (modalBody) {
@@ -231,7 +235,7 @@ export async function handleValoCheckout() {
           </div>
           <div style="font-size: 13px; color: var(--text-muted);">NOMOR INVOICE</div>
           <div style="font-size: 22px; font-weight: 800; color: var(--accent-gold); letter-spacing: 1px;">
-            ${order.invoice_number}
+            ${invoiceNumber}
           </div>
         </div>
 
@@ -242,36 +246,44 @@ export async function handleValoCheckout() {
           </div>
           <div class="summary-row" style="margin-bottom: 8px;">
             <span>Item:</span>
-            <strong>${order.nama_item}</strong>
+            <strong>${order.nama_item || state.selectedNominal.name}</strong>
           </div>
           <div class="summary-row" style="margin-bottom: 8px;">
             <span>Akun Tujuan:</span>
-            <strong>${order.riot_id}</strong>
+            <strong>${order.riot_id || state.riotId}</strong>
           </div>
           <div class="summary-row" style="margin-bottom: 8px;">
             <span>Metode Bayar:</span>
-            <strong>${order.payment_method}</strong>
+            <strong>${order.payment_method || state.selectedPayment.name} (Midtrans QRIS)</strong>
           </div>
           <div class="summary-row total" style="padding-top: 10px;">
             <span>Total Tagihan:</span>
-            <strong style="color: var(--accent-gold-light); font-size: 18px;">${formatRupiah(order.total_harga)}</strong>
+            <strong style="color: var(--accent-gold-light); font-size: 18px;">${formatRupiah(data.totalHarga || order.total_harga)}</strong>
           </div>
         </div>
 
         <div class="qr-code-wrap" style="background: #ffffff; padding: 18px; border-radius: var(--radius-lg); text-align: center; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.25);">
-          <div style="font-size: 13px; color: #16212c; font-weight: 800; margin-bottom: 10px; text-transform: uppercase;">
+          <div style="font-size: 13px; color: #16212c; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
             SCAN QRIS UNTUK MEMBAYAR
           </div>
-          <img src="${order.qris_url || `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(order.invoice_number)}`}" alt="QRIS Pembayaran" class="qr-code-img" style="margin: 0 auto; width: 190px; height: 190px; border-radius: 8px;" />
+          ${qrCodeUrl ? `
+            <img src="${qrCodeUrl}" alt="QRIS Midtrans" class="qr-code-img" style="margin: 0 auto; width: 195px; height: 195px; border-radius: 8px; object-fit: contain; display: block;" />
+          ` : `
+            <div style="width: 195px; height: 195px; margin: 0 auto; display: flex; align-items: center; justify-content: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; color: #64748b; font-size: 13px;">
+              Memuat QRIS Midtrans...
+            </div>
+          `}
           <div style="font-size: 11.5px; color: #475569; margin-top: 10px; font-weight: 600;">
             Mendukung GoPay, DANA, OVO, ShopeePay, LinkAja & Seluruh Mobile Banking
           </div>
         </div>
 
-        <p style="font-size: 12px; color: var(--text-muted); text-align: center; line-height: 1.5;">
-          Silakan lakukan pembayaran dalam waktu <strong>15:00 menit</strong>. Pesanan diproses otomatis dalam 1-3 detik setelah scan QRIS berhasil.
+        <p style="font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.5;">
+          Selesaikan pembayaran dalam waktu <strong id="valo-qris-timer" style="color: var(--accent-gold); font-weight: 800; font-size: 14px;">15:00</strong>. Pesanan diproses otomatis dalam 1-3 detik setelah scan QRIS berhasil.
         </p>
       `;
+
+      startQrisCountdown('valo-qris-timer', expiredAt);
     }
 
     openModal('checkout-modal');
