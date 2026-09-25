@@ -8,6 +8,7 @@ import { renderHomepage, setupCarousel } from './views/homepage.js';
 import { renderMLView, handleMLCheckout, updateMLSummary, setupMLInputValidation } from './views/mlView.js';
 import { renderValoView, handleValoCheckout, updateValoSummary, setupValoInputValidation } from './views/valoView.js';
 import { fetchRealtimeTable, searchInvoice, setupInvoiceSearch } from './views/invoiceView.js';
+import { renderLeaderboardView, renderHomepageLeaderboardTeaser } from './views/leaderboardView.js';
 import { setupModals, openModal, closeModal } from './components/modals.js';
 import { getUserProfile, loginUser, registerUser } from './api/auth.js';
 import { simulatePayment } from './api/orders.js';
@@ -26,6 +27,7 @@ export function navigateTo(path) {
     else if (targetPath === '#ml') targetPath = '/ml';
     else if (targetPath === '#valo') targetPath = '/valo';
     else if (targetPath === '#cek-transaksi') targetPath = '/cek-transaksi';
+    else if (targetPath === '#leaderboard') targetPath = '/leaderboard';
   }
 
   // Ensure clean pathname without trailing slash (except root)
@@ -58,6 +60,9 @@ export function handleRouteChange() {
     } else if (hash === '#cek-transaksi') {
       window.history.replaceState({}, '', '/cek-transaksi');
       path = '/cek-transaksi';
+    } else if (hash === '#leaderboard') {
+      window.history.replaceState({}, '', '/leaderboard');
+      path = '/leaderboard';
     } else if (hash === '#home' || hash === '#') {
       window.history.replaceState({}, '', '/');
       path = '/';
@@ -75,6 +80,8 @@ export function handleRouteChange() {
     targetViewId = 'valo-topup-view';
   } else if (path === '/cek-transaksi') {
     targetViewId = 'cek-transaksi-view';
+  } else if (path === '/leaderboard') {
+    targetViewId = 'leaderboard-view';
   } else {
     targetViewId = 'home-view';
   }
@@ -83,7 +90,7 @@ export function handleRouteChange() {
 }
 
 export function switchView(targetViewId, currentPath = window.location.pathname) {
-  const views = ['home-view', 'ml-topup-view', 'valo-topup-view', 'cek-transaksi-view'];
+  const views = ['home-view', 'ml-topup-view', 'valo-topup-view', 'cek-transaksi-view', 'leaderboard-view'];
   
   views.forEach(id => {
     const el = document.getElementById(id);
@@ -107,6 +114,10 @@ export function switchView(targetViewId, currentPath = window.location.pathname)
 
   if (targetViewId === 'cek-transaksi-view') {
     fetchRealtimeTable();
+  } else if (targetViewId === 'leaderboard-view') {
+    renderLeaderboardView();
+  } else if (targetViewId === 'home-view') {
+    renderHomepageLeaderboardTeaser();
   } else if (targetViewId === 'ml-topup-view') {
     if (!appState.mlProducts || appState.mlProducts.length === 0) {
       renderMLView();
@@ -488,6 +499,7 @@ document.addEventListener('click', (e) => {
 
 document.addEventListener('DOMContentLoaded', () => {
   renderHomepage();
+  renderHomepageLeaderboardTeaser();
   renderMLView();
   renderValoView();
   setupCarousel();

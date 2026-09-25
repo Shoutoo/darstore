@@ -8,5 +8,6 @@ router.post('/', rateLimit({ max: 30 }), optionalToken, orderController.createOr
 router.get('/', orderController.getOrder);
 router.get('/history', orderController.getOrderHistory);
 router.get('/products', orderController.getProducts);
+router.get('/leaderboard', require('../controllers/leaderboard.controller').getLeaderboard);
 
 module.exports = router;

@@ -26,8 +26,8 @@ npm install midtrans-client
 Tambahkan di `.env` lokal DAN di dashboard Vercel (Environment Variables):
 
 ```
-MIDTRANS_SERVER_KEY=SB-Mid-server-xxxxxxxxxxxxx
-MIDTRANS_CLIENT_KEY=SB-Mid-client-xxxxxxxxxxxxx
+MIDTRANS_SERVER_KEY=SB-Mid-server-ji-E3p5XvwgclN3KR8HnAuQO
+MIDTRANS_CLIENT_KEY=SB-Mid-client-BB-HmVEYrvOj1HLc
 MIDTRANS_IS_PRODUCTION=false
 ```
 

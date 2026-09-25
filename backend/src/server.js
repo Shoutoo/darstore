@@ -9,6 +9,7 @@ const orderRoutes = require('./routes/order.routes');
 const productRoutes = require('./routes/product.routes');
 const webhookRoutes = require('./routes/webhook.routes');
 const adminRoutes = require('./routes/admin.routes');
+const leaderboardRoutes = require('./routes/leaderboard.routes');
 const { supabase } = require('./config/supabase');
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 
 // Public contact settings for storefront footer and contact modal
 app.get('/api/settings/contact', async (req, res) => {

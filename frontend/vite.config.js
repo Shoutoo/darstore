@@ -9,7 +9,7 @@ function spaFallbackPlugin() {
       const distDir = resolve(__dirname, 'dist');
       const indexPath = resolve(distDir, 'index.html');
       if (fs.existsSync(indexPath)) {
-        const routes = ['ml', 'valo', 'cek-transaksi'];
+        const routes = ['ml', 'valo', 'cek-transaksi', 'leaderboard'];
         routes.forEach(route => {
           const routeDir = resolve(distDir, route);
           if (!fs.existsSync(routeDir)) {
