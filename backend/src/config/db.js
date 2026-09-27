@@ -187,6 +187,45 @@ async function initDatabase() {
       await pgPool.query('SELECT 1');
       await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS expired_at TEXT;");
       await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS failure_reason TEXT;");
+      await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_used INTEGER DEFAULT 0;");
+      await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount INTEGER DEFAULT 0;");
+      
+      await dbAsync.run(`
+        CREATE TABLE IF NOT EXISTS reward_items (
+          id SERIAL PRIMARY KEY,
+          title VARCHAR(255) NOT NULL,
+          game VARCHAR(50) NOT NULL,
+          points_required INTEGER NOT NULL,
+          item_detail VARCHAR(255) NOT NULL,
+          badge VARCHAR(50),
+          description TEXT,
+          icon VARCHAR(255),
+          stock INTEGER DEFAULT 999,
+          is_active INTEGER DEFAULT 1,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      await dbAsync.run(`
+        CREATE TABLE IF NOT EXISTS reward_redemptions (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          reward_id INTEGER REFERENCES reward_items(id),
+          title VARCHAR(255) NOT NULL,
+          points_spent INTEGER NOT NULL,
+          game_user_id VARCHAR(100),
+          server_id VARCHAR(50),
+          claim_code VARCHAR(100) UNIQUE NOT NULL,
+          status VARCHAR(50) DEFAULT 'success',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      const rCount = await dbAsync.get('SELECT COUNT(*) as count FROM reward_items');
+      if (rCount && Number(rCount.count) === 0) {
+        await seedRewards();
+      }
+
       const count = await dbAsync.get('SELECT COUNT(*) as count FROM products');
       console.log(`[DATABASE] Verified Supabase PostgreSQL. Total products in catalog: ${count ? count.count : 0}`);
       return;
@@ -198,7 +237,6 @@ async function initDatabase() {
   }
 
   ensureSqliteDb();
-
 
   await dbAsync.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -238,7 +276,10 @@ async function initDatabase() {
       qris_string TEXT NULL,
       qris_url TEXT NULL,
       total_harga INTEGER NOT NULL,
+      points_used INTEGER DEFAULT 0,
+      discount_amount INTEGER DEFAULT 0,
       failure_reason TEXT NULL,
+      expired_at TEXT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id)
@@ -265,6 +306,35 @@ async function initDatabase() {
       FOREIGN KEY (order_id) REFERENCES orders (id)
     );
 
+    CREATE TABLE IF NOT EXISTS reward_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      game TEXT NOT NULL,
+      points_required INTEGER NOT NULL,
+      item_detail TEXT NOT NULL,
+      badge TEXT NULL,
+      description TEXT NULL,
+      icon TEXT NULL,
+      stock INTEGER DEFAULT 999,
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS reward_redemptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      reward_id INTEGER,
+      title TEXT NOT NULL,
+      points_spent INTEGER NOT NULL,
+      game_user_id TEXT,
+      server_id TEXT,
+      claim_code TEXT UNIQUE NOT NULL,
+      status TEXT DEFAULT 'success',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id),
+      FOREIGN KEY (reward_id) REFERENCES reward_items (id)
+    );
+
     CREATE TABLE IF NOT EXISTS admin_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       admin_id INTEGER NOT NULL,
@@ -283,6 +353,41 @@ async function initDatabase() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // Migrate existing tables if columns missing
+  try {
+    await dbAsync.run("ALTER TABLE orders ADD COLUMN points_used INTEGER DEFAULT 0");
+  } catch (e) {}
+  try {
+    await dbAsync.run("ALTER TABLE orders ADD COLUMN discount_amount INTEGER DEFAULT 0");
+  } catch (e) {}
+
+  // Ensure point_history order_id is nullable in SQLite
+  try {
+    const pInfo = await dbAsync.all('PRAGMA table_info(point_history)');
+    const orderIdCol = pInfo.find(c => c.name === 'order_id');
+    if (orderIdCol && orderIdCol.notnull === 1) {
+      await dbAsync.exec(`
+        CREATE TABLE point_history_temp (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          order_id INTEGER NULL,
+          points_earned INTEGER NOT NULL,
+          description TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users (id),
+          FOREIGN KEY (order_id) REFERENCES orders (id)
+        );
+        INSERT INTO point_history_temp (id, user_id, order_id, points_earned, description, created_at)
+          SELECT id, user_id, order_id, points_earned, description, created_at FROM point_history;
+        DROP TABLE point_history;
+        ALTER TABLE point_history_temp RENAME TO point_history;
+      `);
+      console.log('[DATABASE] Migrated point_history to allow NULL order_id in SQLite.');
+    }
+  } catch (e) {
+    // Ignore migration error
+  }
 
   // Migrate existing users table if role / is_blocked columns missing
   try {
@@ -307,13 +412,18 @@ async function initDatabase() {
   }
 
 
-  console.log('Database tables verified/created successfully.');
-
   // Seed products if empty
   const count = await dbAsync.get('SELECT COUNT(*) as count FROM products');
   if (count && count.count === 0) {
     console.log('Seeding initial products into database...');
     await seedProducts();
+  }
+
+  // Seed rewards if empty
+  const rewardCount = await dbAsync.get('SELECT COUNT(*) as count FROM reward_items');
+  if (rewardCount && Number(rewardCount.count) === 0) {
+    console.log('Seeding initial micro game rewards into database...');
+    await seedRewards();
   }
 
   // Ensure MLBB products point to diamond_single.png icon
@@ -561,8 +671,68 @@ async function seedProducts() {
   console.log(`Seeded ${mlDiamonds.length} MLBB products and ${valoPoints.length} Valorant products.`);
 }
 
+async function seedRewards() {
+  const initialRewards = [
+    {
+      title: '3 Diamond MLBB (Paket Starter)',
+      game: 'mlbb',
+      points_required: 15,
+      item_detail: '3 Diamonds Mobile Legends',
+      badge: 'STARTER',
+      description: 'Diamond langsung dikirim ke ID game & server Anda!',
+      icon: '/assets/icons/diamond_single.png'
+    },
+    {
+      title: '5 Diamond MLBB (Paket Hemat)',
+      game: 'mlbb',
+      points_required: 25,
+      item_detail: '5 Diamonds Mobile Legends',
+      badge: 'POPULER',
+      description: 'Cocok untuk tambah event skin atau pass harian!',
+      icon: '/assets/icons/diamond_single.png'
+    },
+    {
+      title: '12 Diamond MLBB (Bonus Loyalitas)',
+      game: 'mlbb',
+      points_required: 50,
+      item_detail: '12 Diamonds Mobile Legends',
+      badge: 'BEST VALUE',
+      description: 'Diamond loyalty instan khusus member setia.',
+      icon: '/assets/icons/diamond_single.png'
+    },
+    {
+      title: '125 Valorant Points (Riot VP)',
+      game: 'valorant',
+      points_required: 40,
+      item_detail: '125 Valorant Points',
+      badge: 'RIOT REWARD',
+      description: 'Klaim VP langsung ke Riot ID (Username#Tagline).',
+      icon: '/assets/icons/vp_icon.png'
+    },
+    {
+      title: '300 Valorant Points (Agent Pack)',
+      game: 'valorant',
+      points_required: 90,
+      item_detail: '300 Valorant Points',
+      badge: 'VALORANT VIP',
+      description: 'Bonus 300 VP untuk unlock Radianite atau Weapon Skin.',
+      icon: '/assets/icons/vp_icon.png'
+    }
+  ];
+
+  for (const r of initialRewards) {
+    await dbAsync.run(
+      `INSERT INTO reward_items (title, game, points_required, item_detail, badge, description, icon, stock, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 999, 1)`,
+      [r.title, r.game, r.points_required, r.item_detail, r.badge, r.description, r.icon]
+    );
+  }
+  console.log(`[REWARDS] Initialized ${initialRewards.length} micro game rewards in catalog.`);
+}
+
 module.exports = {
   db,
   dbAsync,
   initDatabase
 };
+

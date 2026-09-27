@@ -10,6 +10,7 @@ const productRoutes = require('./routes/product.routes');
 const webhookRoutes = require('./routes/webhook.routes');
 const adminRoutes = require('./routes/admin.routes');
 const leaderboardRoutes = require('./routes/leaderboard.routes');
+const rewardRoutes = require('./routes/reward.routes');
 const { supabase } = require('./config/supabase');
 
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/rewards', rewardRoutes);
 
 // Public contact settings for storefront footer and contact modal
 app.get('/api/settings/contact', async (req, res) => {

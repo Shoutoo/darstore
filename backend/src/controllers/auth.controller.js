@@ -148,11 +148,18 @@ exports.getProfile = async (req, res) => {
 
 exports.getPointHistory = async (req, res) => {
   try {
+    const user = await dbAsync.get('SELECT id, nama, points FROM users WHERE id = ?', [req.user.id]);
     const history = await dbAsync.all(
       'SELECT * FROM point_history WHERE user_id = ? ORDER BY created_at DESC',
       [req.user.id]
     );
-    return res.json({ success: true, history });
+    const points = user ? (user.points || 0) : 0;
+    return res.json({
+      success: true,
+      points,
+      rupiahValue: points * 100,
+      history: history || []
+    });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Gagal memuat riwayat poin.' });
   }

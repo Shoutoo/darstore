@@ -21,7 +21,9 @@ exports.createOrder = async (req, res) => {
       riot_id,
       wa_email_guest,
       payment_method,
-      qty = 1
+      qty = 1,
+      points_to_use,
+      use_points
     } = req.body;
 
     if (!product_id || !game || !wa_email_guest || !payment_method) {
@@ -119,10 +121,52 @@ exports.createOrder = async (req, res) => {
     // Calculate total price based on product unit price + fee
     const quantity = Math.max(1, parseInt(qty, 10) || 1);
     const fee = payment_method.toLowerCase().includes('qris') ? 800 : 1000;
-    const total_harga = (product.harga * quantity) + fee;
+    const baseProductPrice = product.harga * quantity;
+
+    let pointsUsed = 0;
+    let discountAmount = 0;
+
+    // Anti-Loss Loyalty Point Protection:
+    // 1 Poin = Rp 100 potongan harga
+    // Maksimal potongan: 20% dari harga produk murni (agar bisnis tidak pernah nombok modal pokok)
+    const POINT_VALUE_RUPIAH = 100;
+    const MAX_DISCOUNT_PERCENT = 0.20;
+    const maxAllowedDiscountRupiah = Math.floor(baseProductPrice * MAX_DISCOUNT_PERCENT);
+    const maxAllowedPoints = Math.floor(maxAllowedDiscountRupiah / POINT_VALUE_RUPIAH);
+
+    if (req.user && req.user.id && (use_points || points_to_use > 0)) {
+      const userRow = await dbAsync.get('SELECT points FROM users WHERE id = ?', [req.user.id]);
+      const userPoints = userRow ? (userRow.points || 0) : 0;
+
+      let wantedPoints = parseInt(points_to_use, 10);
+      if (isNaN(wantedPoints) || wantedPoints <= 0) {
+        if (use_points) wantedPoints = userPoints;
+        else wantedPoints = 0;
+      }
+
+      // Deduct at most the user's balance and at most the max allowed points (20% cap)
+      pointsUsed = Math.max(0, Math.min(wantedPoints, userPoints, maxAllowedPoints));
+      discountAmount = pointsUsed * POINT_VALUE_RUPIAH;
+    }
+
+    const total_harga = Math.max(fee, (baseProductPrice + fee) - discountAmount);
 
     const invoice_number = generateInvoiceNumber();
     const user_id = req.user ? req.user.id : null;
+
+    // Deduct points immediately if applied
+    if (pointsUsed > 0 && user_id) {
+      await dbAsync.run('UPDATE users SET points = points - ? WHERE id = ?', [pointsUsed, user_id]);
+      await dbAsync.run(
+        `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
+        [
+          user_id,
+          null,
+          -pointsUsed,
+          `Potongan diskon Rp ${discountAmount.toLocaleString('id-ID')} untuk invoice ${invoice_number}`
+        ]
+      );
+    }
 
     // Create temporary order object for payment gateway
     const tempOrder = {
@@ -133,23 +177,41 @@ exports.createOrder = async (req, res) => {
     };
 
     // 1. Simpan order ke database dengan status awal Menunggu Pembayaran
-    const createdOrder = await dbService.createOrder({
-      invoice_number,
-      user_id,
-      product_id: product.id,
-      game,
-      nama_item: tempOrder.nama_item,
-      game_user_id: game_user_id || null,
-      server_id: server_id || null,
-      riot_id: riot_id || null,
-      wa_email_guest,
-      status: 'Menunggu Pembayaran',
-      payment_method,
-      payment_ref: null,
-      qris_string: null,
-      qris_url: null,
-      total_harga
-    });
+    let createdOrder = null;
+    try {
+      createdOrder = await dbService.createOrder({
+        invoice_number,
+        user_id,
+        product_id: product.id,
+        game,
+        nama_item: tempOrder.nama_item,
+        game_user_id: game_user_id || null,
+        server_id: server_id || null,
+        riot_id: riot_id || null,
+        wa_email_guest,
+        status: 'Menunggu Pembayaran',
+        payment_method,
+        payment_ref: null,
+        qris_string: null,
+        qris_url: null,
+        total_harga,
+        points_used: pointsUsed,
+        discount_amount: discountAmount
+      });
+
+      if (pointsUsed > 0 && user_id) {
+        await dbAsync.run(
+          'UPDATE point_history SET order_id = ? WHERE user_id = ? AND description LIKE ? AND order_id IS NULL',
+          [createdOrder.id, user_id, `%${invoice_number}%`]
+        );
+      }
+    } catch (orderErr) {
+      // Rollback points if order creation in DB failed
+      if (pointsUsed > 0 && user_id) {
+        await dbAsync.run('UPDATE users SET points = points + ? WHERE id = ?', [pointsUsed, user_id]);
+      }
+      throw orderErr;
+    }
 
     // 2. Charge ke Midtrans Core API dengan payment_type: 'qris'
     try {
@@ -185,15 +247,32 @@ exports.createOrder = async (req, res) => {
         qrCodeUrl: qrisData.qris_url,
         expiredAt: qrisData.expired_at,
         totalHarga: total_harga,
+        pointsUsed,
+        discountAmount,
         order: {
           ...updatedOrder,
           qrCodeUrl: qrisData.qris_url,
-          expiredAt: qrisData.expired_at
+          expiredAt: qrisData.expired_at,
+          points_used: pointsUsed,
+          discount_amount: discountAmount
         }
       });
     } catch (chargeErr) {
       console.error('Midtrans QRIS charge error:', chargeErr);
-      // Jika charge Midtrans gagal, tandai status order jadi Gagal supaya tidak menggantung
+      // Jika charge Midtrans gagal, rollback poin & tandai status order jadi Gagal
+      if (pointsUsed > 0 && user_id) {
+        await dbAsync.run('UPDATE users SET points = points + ? WHERE id = ?', [pointsUsed, user_id]);
+        await dbAsync.run(
+          `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
+          [
+            user_id,
+            createdOrder.id,
+            pointsUsed,
+            `[REFUND] Pengembalian ${pointsUsed} poin karena gagal generate tagihan Midtrans`
+          ]
+        );
+      }
+
       await dbAsync.run(
         `UPDATE orders SET status = 'Gagal', failure_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
         [`Gagal membuat tagihan Midtrans: ${chargeErr.message}`, createdOrder.id]

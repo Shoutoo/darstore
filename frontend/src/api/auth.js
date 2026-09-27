@@ -28,3 +28,9 @@ export async function getUserProfile() {
   const res = await apiFetch('/api/auth/me');
   return res.json();
 }
+
+export async function getPointsHistory() {
+  const res = await apiFetch('/api/auth/points');
+  return res.json();
+}
+

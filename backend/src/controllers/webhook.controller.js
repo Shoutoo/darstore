@@ -86,6 +86,21 @@ exports.handlePaymentWebhook = async (req, res) => {
         `UPDATE orders SET status = 'Gagal', failure_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
         [`Midtrans: Pembayaran ${transaction_status}`, order.id]
       );
+
+      // Refund used points if order used points
+      if (order.user_id && order.points_used > 0) {
+        await dbAsync.run('UPDATE users SET points = points + ? WHERE id = ?', [order.points_used, order.user_id]);
+        await dbAsync.run(
+          `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
+          [
+            order.user_id,
+            order.id,
+            order.points_used,
+            `[REFUND] Pengembalian ${order.points_used} poin karena pesanan ${order.invoice_number} ${transaction_status}`
+          ]
+        );
+        console.log(`[LOYALTY] Refunded ${order.points_used} points to user ID ${order.user_id} for failed/expired order ${order.invoice_number}`);
+      }
     } else {
       console.log(`[WEBHOOK] Status ${transaction_status} received for invoice ${order.invoice_number}. Order remains pending.`);
     }

@@ -28,8 +28,9 @@ const dbService = {
       `INSERT INTO orders (
         invoice_number, user_id, product_id, game, nama_item,
         game_user_id, server_id, riot_id, wa_email_guest,
-        status, payment_method, payment_ref, qris_string, qris_url, total_harga, expired_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        status, payment_method, payment_ref, qris_string, qris_url, total_harga, expired_at,
+        points_used, discount_amount
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.invoice_number,
         data.user_id,
@@ -46,7 +47,9 @@ const dbService = {
         data.qris_string,
         data.qris_url,
         data.total_harga,
-        data.expired_at || null
+        data.expired_at || null,
+        data.points_used || 0,
+        data.discount_amount || 0
       ]
     );
     return await dbAsync.get('SELECT * FROM orders WHERE id = ?', [result.id]);

@@ -102,8 +102,64 @@ export function updateValoSummary() {
 
   const basePrice = state.selectedNominal.price;
   const fee = state.selectedPayment ? state.selectedPayment.fee : 800;
-  const total = basePrice + fee;
+
+  // Anti-loss loyalty calculations:
+  // 1 Poin = Rp 100
+  // Max discount 20% of basePrice
+  const user = appState.currentUser;
+  const userPoints = user ? (user.points || 0) : 0;
+  const maxDiscountRupiah = Math.floor(basePrice * 0.20);
+  const maxPointsEligible = Math.floor(maxDiscountRupiah / 100);
+  const pointsAvailableToUse = Math.min(userPoints, maxPointsEligible);
+
+  let discountAmount = 0;
+  let pointsUsed = 0;
+
+  if (state.usePoints && pointsAvailableToUse > 0) {
+    pointsUsed = pointsAvailableToUse;
+    discountAmount = pointsUsed * 100;
+  }
+
+  const total = Math.max(fee, (basePrice + fee) - discountAmount);
   const pointsEst = Math.floor(total / 10000);
+
+  // Store computed values in state for checkout
+  state.computedPointsUsed = pointsUsed;
+  state.computedDiscountAmount = discountAmount;
+  state.computedTotal = total;
+
+  let loyaltySection = '';
+  if (user) {
+    if (userPoints > 0) {
+      loyaltySection = `
+        <div class="summary-loyalty-box ${state.usePoints ? 'active' : ''}" id="valo-loyalty-box">
+          <div class="summary-loyalty-header">
+            <label class="summary-loyalty-checkbox-label">
+              <input type="checkbox" id="valo-toggle-points" ${state.usePoints ? 'checked' : ''} />
+              <span class="summary-loyalty-title">⭐ Tukar Poin Loyalitas</span>
+            </label>
+            <span class="summary-loyalty-badge">${userPoints} Poin Tersedia</span>
+          </div>
+          <div class="summary-loyalty-hint">
+            Potong harga s/d 20% (Hemat ${formatRupiah(pointsAvailableToUse * 100)} dengan ${pointsAvailableToUse} Poin)
+          </div>
+        </div>
+      `;
+    } else {
+      loyaltySection = `
+        <div class="summary-row" style="margin-top: 6px; font-size: 12px; color: var(--accent-gold-light);">
+          <span>⭐ Estimasi Poin Didapat:</span>
+          <strong>+${pointsEst} Poin</strong>
+        </div>
+      `;
+    }
+  } else {
+    loyaltySection = `
+      <div class="summary-guest-loyalty">
+        💡 <a href="#" id="valo-login-promo" style="color: var(--accent-gold-light); font-weight: 700; text-decoration: underline;">Masuk Akun</a> untuk mendapatkan poin loyalty (+${pointsEst} poin) dan gunakan poin untuk potong harga!
+      </div>
+    `;
+  }
 
   summaryBox.innerHTML = `
     <div class="summary-details-list">
@@ -125,22 +181,36 @@ export function updateValoSummary() {
           <span>${fee === 0 ? 'Gratis' : formatRupiah(fee)}</span>
         </div>
       ` : ''}
+      ${loyaltySection}
+      ${state.usePoints && discountAmount > 0 ? `
+        <div class="summary-row" style="color: #fde047;">
+          <span>Potongan Poin (${pointsUsed} Poin)</span>
+          <strong class="text-gold-discount">-${formatRupiah(discountAmount)}</strong>
+        </div>
+      ` : ''}
       <div class="summary-row total">
         <span>Total Bayar</span>
         <span>${formatRupiah(total)}</span>
       </div>
-      ${appState.currentUser ? `
+      ${user && userPoints > 0 ? `
         <div class="summary-row" style="margin-top: 6px; font-size: 12px; color: var(--accent-gold-light);">
           <span>⭐ Estimasi Poin Didapat:</span>
           <strong>+${pointsEst} Poin</strong>
         </div>
-      ` : `
-        <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 8px;">
-          💡 Masuk ke akun Anda untuk mendapatkan poin loyalty (+${pointsEst} poin).
-        </div>
-      `}
+      ` : ''}
     </div>
   `;
+
+  // Bind toggle points event
+  document.getElementById('valo-toggle-points')?.addEventListener('change', (e) => {
+    state.usePoints = e.target.checked;
+    updateValoSummary();
+  });
+
+  document.getElementById('valo-login-promo')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('btn-login')?.click();
+  });
 
   orderBtn.disabled = false;
 }
@@ -212,7 +282,9 @@ export async function handleValoCheckout() {
       riot_id: state.riotId,
       wa_email_guest: state.wa,
       payment_method: state.selectedPayment.name,
-      qty: 1
+      qty: 1,
+      use_points: Boolean(state.usePoints),
+      points_to_use: state.usePoints ? (state.computedPointsUsed || 0) : 0
     });
 
     if (!data.success || !data.order) {
@@ -225,6 +297,17 @@ export async function handleValoCheckout() {
     const expiredAt = data.expiredAt || order.expired_at || order.expiredAt;
     const invoiceNumber = data.invoiceNumber || order.invoice_number;
     appState.currentInvoice = { ...order, invoice_number: invoiceNumber, qris_url: qrCodeUrl, expired_at: expiredAt };
+
+    // If points used, update user local points balance and header
+    if (data.pointsUsed > 0 && appState.currentUser) {
+      appState.currentUser.points = Math.max(0, (appState.currentUser.points || 0) - data.pointsUsed);
+      const pointsBadge = document.querySelector('.user-points-badge');
+      if (pointsBadge && !pointsBadge.innerText.includes('Admin')) {
+        pointsBadge.innerText = `⭐ ${appState.currentUser.points} Poin`;
+      }
+      state.usePoints = false;
+      updateValoSummary();
+    }
 
     const modalBody = document.getElementById('checkout-modal-body');
     if (modalBody) {
@@ -242,7 +325,7 @@ export async function handleValoCheckout() {
         <div style="background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px;">
           <div class="summary-row" style="margin-bottom: 8px;">
             <span>Game:</span>
-            <strong>Valorant</strong>
+            <strong>Valorant (Riot Games)</strong>
           </div>
           <div class="summary-row" style="margin-bottom: 8px;">
             <span>Item:</span>
@@ -256,6 +339,12 @@ export async function handleValoCheckout() {
             <span>Metode Bayar:</span>
             <strong>${order.payment_method || state.selectedPayment.name} (Midtrans QRIS)</strong>
           </div>
+          ${order.discount_amount > 0 ? `
+            <div class="summary-row" style="margin-bottom: 8px; color: #fde047;">
+              <span>Diskon Poin (${order.points_used} Poin):</span>
+              <strong style="color: #fde047;">-${formatRupiah(order.discount_amount)}</strong>
+            </div>
+          ` : ''}
           <div class="summary-row total" style="padding-top: 10px;">
             <span>Total Tagihan:</span>
             <strong style="color: var(--accent-gold-light); font-size: 18px;">${formatRupiah(data.totalHarga || order.total_harga)}</strong>
@@ -267,11 +356,9 @@ export async function handleValoCheckout() {
             SCAN QRIS UNTUK MEMBAYAR
           </div>
           ${qrCodeUrl ? `
-            <img src="${qrCodeUrl}" alt="QRIS Midtrans" class="qr-code-img" style="margin: 0 auto; width: 195px; height: 195px; border-radius: 8px; object-fit: contain; display: block;" />
+            <img src="${qrCodeUrl}" onerror="this.onerror=null; this.src='/assets/payments/qris_sample.svg';" alt="QRIS Midtrans" class="qr-code-img" style="margin: 0 auto; width: 195px; height: 195px; border-radius: 8px; object-fit: contain; display: block;" />
           ` : `
-            <div style="width: 195px; height: 195px; margin: 0 auto; display: flex; align-items: center; justify-content: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; color: #64748b; font-size: 13px;">
-              Memuat QRIS Midtrans...
-            </div>
+            <img src="/assets/payments/qris_sample.svg" alt="QRIS Midtrans" class="qr-code-img" style="margin: 0 auto; width: 195px; height: 195px; border-radius: 8px; object-fit: contain; display: block;" />
           `}
           <div style="font-size: 11.5px; color: #475569; margin-top: 10px; font-weight: 600;">
             Mendukung GoPay, DANA, OVO, ShopeePay, LinkAja & Seluruh Mobile Banking

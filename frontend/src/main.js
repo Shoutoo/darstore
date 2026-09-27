@@ -13,6 +13,7 @@ import { setupModals, openModal, closeModal } from './components/modals.js';
 import { getUserProfile, loginUser, registerUser } from './api/auth.js';
 import { simulatePayment } from './api/orders.js';
 import { showCyberToast, showCyberConfirm } from './utils/cyberPopup.js';
+import { initRewardsModal, openRewardsModal } from './components/rewardsModal.js';
 
 // ==========================================================
 // ROUTER / VIEW SWITCHING (CLEAN URL HISTORY API)
@@ -63,6 +64,10 @@ export function handleRouteChange() {
     } else if (hash === '#leaderboard') {
       window.history.replaceState({}, '', '/leaderboard');
       path = '/leaderboard';
+    } else if (hash === '#rewards') {
+      window.history.replaceState({}, '', '/');
+      path = '/';
+      setTimeout(() => openRewardsModal(), 100);
     } else if (hash === '#home' || hash === '#') {
       window.history.replaceState({}, '', '/');
       path = '/';
@@ -82,6 +87,9 @@ export function handleRouteChange() {
     targetViewId = 'cek-transaksi-view';
   } else if (path === '/leaderboard') {
     targetViewId = 'leaderboard-view';
+  } else if (path === '/rewards') {
+    targetViewId = 'home-view';
+    setTimeout(() => openRewardsModal(), 100);
   } else {
     targetViewId = 'home-view';
   }
@@ -184,10 +192,14 @@ function renderUserProfile(container, user) {
     <div class="nav-user-badge">
       ${adminBadge}
       <span style="font-size: 13px; font-weight: 700; color: var(--text-primary);">${user.nama}</span>
-      <span class="user-points-badge" title="Poin Loyalitas Dar'sstore">⭐ ${user.points || 0} Poin</span>
+      <button class="user-points-badge btn-points-modal" id="btn-open-rewards" title="Klik untuk Buka Pusat Poin & Tukar Hadiah">⭐ ${user.points || 0} Poin</button>
       <button class="btn-logout" id="btn-logout" title="Keluar dari akun">Keluar</button>
     </div>
   `;
+
+  document.getElementById('btn-open-rewards')?.addEventListener('click', () => {
+    openRewardsModal();
+  });
 
   document.getElementById('btn-logout')?.addEventListener('click', async () => {
     const ok = await showCyberConfirm({
@@ -512,6 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupGlobalSearch();
   setupInvoiceSearch(() => checkCurrentUser());
   setupThemeToggle();
+  initRewardsModal();
   checkCurrentUser();
 
   window.addEventListener('popstate', handleRouteChange);

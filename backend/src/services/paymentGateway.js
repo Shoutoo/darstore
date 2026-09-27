@@ -42,7 +42,7 @@ class PaymentGatewayService {
     if (isMock) {
       console.log(`[MIDTRANS] Dev Mode (Mock): Server key not configured. Generating simulated QRIS transaction for ${order.invoice_number}`);
       const mockRef = `MID-MOCK-${Date.now()}`;
-      const mockQrisUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent('MOCK_QRIS_' + order.invoice_number)}`;
+      const mockQrisUrl = '/assets/payments/qris_sample.svg';
       const expiry = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
       return {
@@ -70,36 +70,64 @@ class PaymentGatewayService {
       };
     }
 
-    // Live Midtrans Core API Call
-    const chargeResponse = await this.coreApi.charge({
-      payment_type: 'qris',
-      transaction_details: {
-        order_id: order.invoice_number,
-        gross_amount: Math.round(Number(order.total_harga)),
-      },
-      qris: {
-        acquirer: 'gopay', // acquirer default
-      },
-      custom_expiry: {
-        expiry_duration: 15,
-        unit: 'minute',
-      },
-    });
+    // Live Midtrans Core API Call with timeout and sandbox fallback
+    try {
+      const chargePromise = this.coreApi.charge({
+        payment_type: 'qris',
+        transaction_details: {
+          order_id: order.invoice_number,
+          gross_amount: Math.round(Number(order.total_harga)),
+        },
+        qris: {
+          acquirer: 'gopay', // acquirer default
+        },
+        custom_expiry: {
+          expiry_duration: 15,
+          unit: 'minute',
+        },
+      });
 
-    // Extract QR code URL from Midtrans actions array
-    const qrAction = Array.isArray(chargeResponse.actions)
-      ? chargeResponse.actions.find((a) => a.name === 'generate-qr-code')
-      : null;
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Midtrans API connection timeout (3500ms)')), 3500)
+      );
 
-    const qrCodeUrl = qrAction ? qrAction.url : (chargeResponse.qr_string ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(chargeResponse.qr_string)}` : null);
+      const chargeResponse = await Promise.race([chargePromise, timeoutPromise]);
 
-    return {
-      payment_ref: chargeResponse.transaction_id,
-      qris_string: chargeResponse.qr_string || null,
-      qris_url: qrCodeUrl,
-      expired_at: chargeResponse.expiry_time || new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      raw_response: chargeResponse,
-    };
+      // Extract QR code URL from Midtrans actions array
+      const qrAction = Array.isArray(chargeResponse.actions)
+        ? chargeResponse.actions.find((a) => a.name === 'generate-qr-code')
+        : null;
+
+      const qrCodeUrl = qrAction ? qrAction.url : (chargeResponse.qr_string ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(chargeResponse.qr_string)}` : null);
+
+      return {
+        payment_ref: chargeResponse.transaction_id,
+        qris_string: chargeResponse.qr_string || null,
+        qris_url: qrCodeUrl,
+        expired_at: chargeResponse.expiry_time || new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+        raw_response: chargeResponse,
+      };
+    } catch (chargeErr) {
+      if (!this.isProduction) {
+        console.warn(`[MIDTRANS] Sandbox charge notice: ${chargeErr.message}. Generating local sandbox QRIS for testing.`);
+        const mockRef = `MID-SANDBOX-${Date.now()}`;
+        const mockQrisUrl = '/assets/payments/qris_sample.svg';
+        return {
+          payment_ref: mockRef,
+          qris_string: `00020101021226570014ID.DARSSTORE.WWW01189360091800000000000208${order.invoice_number}520454115303360540${order.total_harga.toString().length}${order.total_harga}5802ID5910DARSSTORE6007JAKARTA62070703A016304`,
+          qris_url: mockQrisUrl,
+          expired_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+          raw_response: {
+            status_code: '201',
+            status_message: 'Midtrans sandbox transaction generated',
+            transaction_id: mockRef,
+            order_id: order.invoice_number,
+            payment_type: 'qris'
+          }
+        };
+      }
+      throw chargeErr;
+    }
   }
 
   /**
