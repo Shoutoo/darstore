@@ -9,6 +9,7 @@ const orderQueue = require('../jobs/processOrderQueue');
  */
 exports.handlePaymentWebhook = async (req, res) => {
   try {
+    const body = req.body || {};
     const {
       order_id,
       status_code,
@@ -17,18 +18,28 @@ exports.handlePaymentWebhook = async (req, res) => {
       transaction_status,
       fraud_status,
       transaction_id
-    } = req.body;
+    } = body;
 
-    const invoiceNumber = order_id || req.body.merchant_ref;
+    const invoiceNumber = order_id || body.merchant_ref;
 
+    // Midtrans test probe tanpa invoice number
     if (!invoiceNumber) {
-      return res.status(400).json({ error: 'Missing order_id or invoice number' });
+      console.log('[WEBHOOK] Test ping tanpa invoice number diterima dari Midtrans. Menjawab 200 OK.');
+      return res.status(200).json({ status: 'ok', message: 'Test ping acknowledged' });
     }
 
-    // 1. Verifikasi signature SHA-512 (WAJIB)
-    const isValidSignature = paymentGateway.verifyWebhookSignature(req.body, req.headers['x-signature']);
+    const isTestNotification =
+      !invoiceNumber.toUpperCase().startsWith('DS') ||
+      /test|dummy|sample|mock|ping|demo|midtrans/i.test(invoiceNumber);
+
+    // 1. Verifikasi signature SHA-512
+    const isValidSignature = paymentGateway.verifyWebhookSignature(body, req.headers['x-signature']);
     if (!isValidSignature) {
-      console.warn(`[WEBHOOK] Invalid signature for order ${invoiceNumber}`);
+      if (isTestNotification) {
+        console.log(`[WEBHOOK] Test notification probe diterima dari Midtrans Dashboard (${invoiceNumber}). Menjawab 200 OK.`);
+        return res.status(200).json({ status: 'ok', message: 'Test notification probe acknowledged' });
+      }
+      console.warn(`[WEBHOOK] Invalid signature untuk pesanan ${invoiceNumber}`);
       return res.status(403).json({ error: 'Invalid signature' });
     }
 
@@ -39,7 +50,8 @@ exports.handlePaymentWebhook = async (req, res) => {
     );
 
     if (!order) {
-      return res.status(404).json({ error: 'Order tidak ditemukan' });
+      console.log(`[WEBHOOK] Order ${invoiceNumber} tidak ditemukan di database (test atau notifikasi eksternal). Mengembalikan 200 OK.`);
+      return res.status(200).json({ status: 'ok', message: 'Notification received (test or unmapped order acknowledged)' });
     }
 
     // 2. Idempotency — kalau order sudah diproses sebelumnya (bukan pending/menunggu pembayaran),
