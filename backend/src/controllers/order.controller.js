@@ -291,7 +291,8 @@ exports.createOrder = async (req, res) => {
     console.error('Create order error:', err);
     return res.status(500).json({
       success: false,
-      message: 'Terjadi kesalahan saat memproses pesanan Anda.'
+      message: 'Terjadi kesalahan saat memproses pesanan Anda.',
+      detail: err.message
     });
   }
 };
