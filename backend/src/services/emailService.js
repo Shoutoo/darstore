@@ -68,84 +68,226 @@ class EmailService {
     const invoiceUrl = `https://darstore-pearl.vercel.app/cek-transaksi`;
     const formattedTotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(order.total_harga);
 
-    const emailSubject = `Struk Pembayaran Berhasil - ${order.invoice_number} | Dar'sstore`;
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' WIB';
+
+    const discountAmount = order.discount_amount || 0;
+    const formattedDiscount = discountAmount > 0 ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(discountAmount) : 'Rp 0';
+    const basePrice = (order.total_harga || 0) + discountAmount;
+    const formattedBase = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(basePrice);
+
+    const emailSubject = `[STRUK RESMI] Pembayaran Sukses - ${order.invoice_number} | Dar'sstore`;
 
     const emailHtml = `
       <!DOCTYPE html>
-      <html>
+      <html lang="id">
       <head>
         <meta charset="utf-8">
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b131e; color: #e2e8f0; margin: 0; padding: 24px 12px; }
-          .container { max-width: 580px; margin: 0 auto; background: #111e2e; border: 1px solid #1e3a5f; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-          .header { background: linear-gradient(135deg, #001f3f, #003366); padding: 28px 24px; text-align: center; border-bottom: 2px solid #0099ff; }
-          .header h1 { margin: 0; color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: 1px; }
-          .header h1 span { color: #00aaff; }
-          .header p { margin: 6px 0 0; color: #94a3b8; font-size: 13px; }
-          .badge { display: inline-block; background: #10b981; color: #ffffff; font-weight: 700; font-size: 12px; padding: 6px 16px; border-radius: 20px; margin-top: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-          .content { padding: 24px; }
-          .section-title { font-size: 14px; text-transform: uppercase; color: #94a3b8; font-weight: 700; margin-bottom: 12px; border-bottom: 1px solid #1e3a5f; padding-bottom: 6px; }
-          .row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
-          .row span:first-child { color: #94a3b8; }
-          .row span:last-child { font-weight: 600; color: #ffffff; text-align: right; }
-          .highlight { color: #00aaff !important; font-weight: 700 !important; }
-          .sn-box { background: rgba(0, 153, 255, 0.1); border: 1px dashed #0088cc; border-radius: 8px; padding: 14px; text-align: center; margin: 20px 0; }
-          .sn-title { font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700; margin-bottom: 4px; }
-          .sn-code { font-size: 17px; font-weight: 800; color: #38bdf8; font-family: monospace; letter-spacing: 1px; }
-          .btn-wrap { text-align: center; margin: 24px 0 12px; }
-          .btn { display: inline-block; background: linear-gradient(135deg, #0088cc, #0055ff); color: #ffffff !important; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 700; font-size: 14px; }
-          .footer { background: #0c1522; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #1e293b; }
-          .footer a { color: #00aaff; text-decoration: none; }
-        </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Struk Pembayaran Resmi - ${order.invoice_number}</title>
       </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Dar's<span>store</span></h1>
-            <p>Bukti Pembayaran & Pengiriman Top Up Game</p>
-            <div class="badge">✓ Transaksi Sukses</div>
+      <body style="margin: 0; padding: 24px 10px; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+        <center>
+          <!-- Perforated Cut Line Top -->
+          <div style="max-width: 460px; text-align: center; font-size: 11px; color: #94a3b8; font-family: monospace; letter-spacing: 2px; margin-bottom: 6px;">
+            ✂ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ✂
           </div>
-          <div class="content">
-            <div class="section-title">Rincian Transaksi</div>
-            <div class="row">
-              <span>Nomor Invoice:</span>
-              <span class="highlight">${order.invoice_number}</span>
-            </div>
-            <div class="row">
-              <span>Game:</span>
-              <span>${gameTitle}</span>
-            </div>
-            <div class="row">
-              <span>Item Produk:</span>
-              <span>${order.nama_item}</span>
-            </div>
-            <div class="row">
-              <span>Akun Tujuan:</span>
-              <span>${targetAccount}</span>
-            </div>
-            <div class="row">
-              <span>Metode Pembayaran:</span>
-              <span>${order.payment_method}</span>
-            </div>
-            <div class="row">
-              <span>Total Pembayaran:</span>
-              <span class="highlight" style="font-size: 16px;">${formattedTotal}</span>
-            </div>
 
-            <div class="sn-box">
-              <div class="sn-title">Kode Serial Number (SN) / Bukti Pengiriman</div>
-              <div class="sn-code">${sn}</div>
-            </div>
+          <!-- Receipt Container -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 460px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); overflow: hidden; text-align: left;">
+            <tr>
+              <td style="padding: 24px 22px;">
 
-            <div class="btn-wrap">
-              <a href="${invoiceUrl}?invoice=${order.invoice_number}" class="btn" target="_blank">Lihat Status Invoice di Website</a>
-            </div>
+                <!-- Receipt Header -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="text-align: center; margin-bottom: 16px;">
+                  <tr>
+                    <td align="center">
+                      <div style="font-size: 22px; font-weight: 900; color: #0f172a; letter-spacing: 2px; font-family: 'Courier New', Courier, monospace; text-transform: uppercase;">
+                        DAR'SSTORE
+                      </div>
+                      <div style="font-size: 11px; font-weight: 700; color: #0284c7; letter-spacing: 1px; margin-top: 2px; text-transform: uppercase;">
+                        STRUK PEMBAYARAN & TOP-UP RESMI
+                      </div>
+                      <div style="font-size: 10.5px; color: #64748b; margin-top: 4px; font-family: 'Courier New', Courier, monospace;">
+                        Platform Top Up Game Tercepat & Terpercaya<br/>
+                        Website: darstore-pearl.vercel.app | MID: M738281649
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding-top: 12px;">
+                      <div style="display: inline-block; border: 2px dashed #16a34a; background-color: #f0fdf4; color: #16a34a; font-family: monospace; font-size: 12px; font-weight: 800; padding: 4px 16px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1px;">
+                        ✓ LUNAS / PAYMENT CONFIRMED
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Dashed Divider -->
+                <div style="border-top: 2px dashed #cbd5e1; margin: 14px 0;"></div>
+
+                <!-- Transaction Info (POS Monospace) -->
+                <table width="100%" cellpadding="3" cellspacing="0" border="0" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #334155;">
+                  <tr>
+                    <td style="color: #64748b; width: 40%;">NO. INVOICE</td>
+                    <td style="text-align: right; font-weight: 800; color: #0f172a;">${order.invoice_number}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;">TANGGAL</td>
+                    <td style="text-align: right; color: #334155;">${dateStr}, ${timeStr}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;">KASIR / GATEWAY</td>
+                    <td style="text-align: right; color: #334155;">Midtrans (QRIS Auto-Sync)</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;">STATUS TRANSAKSI</td>
+                    <td style="text-align: right; font-weight: 700; color: #16a34a;">BERHASIL / SUKSES</td>
+                  </tr>
+                </table>
+
+                <!-- Dashed Divider -->
+                <div style="border-top: 1px dashed #cbd5e1; margin: 12px 0;"></div>
+
+                <!-- Customer & Game Account -->
+                <table width="100%" cellpadding="3" cellspacing="0" border="0" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #334155;">
+                  <tr>
+                    <td style="color: #64748b; width: 40%;">GAME</td>
+                    <td style="text-align: right; font-weight: 700; color: #0f172a;">${gameTitle}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;">AKUN TUJUAN</td>
+                    <td style="text-align: right; font-weight: 800; color: #0284c7;">${targetAccount}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;">EMAIL PEMBELI</td>
+                    <td style="text-align: right; color: #334155;">${order.wa_email_guest || '-'}</td>
+                  </tr>
+                </table>
+
+                <!-- Dashed Divider -->
+                <div style="border-top: 2px dashed #94a3b8; margin: 14px 0 10px;"></div>
+
+                <!-- Itemized Header -->
+                <table width="100%" cellpadding="4" cellspacing="0" border="0" style="font-family: 'Courier New', Courier, monospace; font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">
+                  <tr style="border-bottom: 1px solid #cbd5e1;">
+                    <td style="text-align: left; width: 55%;">ITEM PRODUK</td>
+                    <td style="text-align: center; width: 15%;">QTY</td>
+                    <td style="text-align: right; width: 30%;">TOTAL</td>
+                  </tr>
+                </table>
+
+                <!-- Item Row -->
+                <table width="100%" cellpadding="4" cellspacing="0" border="0" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #0f172a; margin-top: 4px;">
+                  <tr>
+                    <td style="text-align: left; font-weight: 700; width: 55%;">${order.nama_item}</td>
+                    <td style="text-align: center; color: #64748b; width: 15%;">1x</td>
+                    <td style="text-align: right; font-weight: 800; width: 30%;">${formattedBase}</td>
+                  </tr>
+                </table>
+
+                <!-- Subtotal & Discount Breakdown -->
+                <table width="100%" cellpadding="3" cellspacing="0" border="0" style="font-family: 'Courier New', Courier, monospace; font-size: 11.5px; color: #475569; margin-top: 8px;">
+                  <tr>
+                    <td style="text-align: right; width: 70%;">Subtotal:</td>
+                    <td style="text-align: right; width: 30%; font-weight: 600;">${formattedBase}</td>
+                  </tr>
+                  ${discountAmount > 0 ? `
+                  <tr>
+                    <td style="text-align: right; color: #ca8a04;">Diskon Poin (${order.points_used || 0} Poin):</td>
+                    <td style="text-align: right; color: #ca8a04; font-weight: 700;">-${formattedDiscount}</td>
+                  </tr>
+                  ` : ''}
+                  <tr>
+                    <td style="text-align: right;">Biaya Admin / Fee:</td>
+                    <td style="text-align: right; font-weight: 600; color: #16a34a;">Rp 0 (GRATIS)</td>
+                  </tr>
+                </table>
+
+                <!-- Double Dashed Line for Total -->
+                <div style="border-top: 2px dashed #0f172a; border-bottom: 2px dashed #0f172a; padding: 10px 0; margin: 12px 0;">
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family: 'Courier New', Courier, monospace;">
+                    <tr>
+                      <td style="font-size: 14px; font-weight: 800; color: #0f172a; text-transform: uppercase;">
+                        TOTAL BAYAR
+                      </td>
+                      <td style="text-align: right; font-size: 18px; font-weight: 900; color: #0284c7;">
+                        ${formattedTotal}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="font-size: 10px; color: #64748b; padding-top: 4px;">
+                        METODE: ${order.payment_method}
+                      </td>
+                      <td style="text-align: right; font-size: 10px; color: #16a34a; font-weight: 700; padding-top: 4px;">
+                        ✓ LUNAS / MIDTRANS QRIS
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+
+                <!-- Delivery Proof / Serial Number (SN) -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; border: 1px dashed #0284c7; border-radius: 6px; margin: 16px 0 18px; text-align: center;">
+                  <tr>
+                    <td style="padding: 12px 14px;">
+                      <div style="font-size: 10px; font-weight: 800; color: #64748b; letter-spacing: 1px; font-family: monospace; text-transform: uppercase;">
+                        KODE SERIAL NUMBER (SN) / BUKTI PENGIRIMAN
+                      </div>
+                      <div style="font-size: 15px; font-weight: 900; color: #0369a1; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; margin: 6px 0 4px;">
+                        ${sn}
+                      </div>
+                      <div style="font-size: 10.5px; color: #15803d; font-weight: 600;">
+                        ✓ Status: Item telah sukses ditambahkan ke akun game Anda.
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Barcode Simulation -->
+                <div style="text-align: center; margin: 16px 0 10px;">
+                  <div style="display: inline-block; letter-spacing: 3px; color: #0f172a; font-family: monospace; font-size: 26px; line-height: 1; user-select: none;">
+                    ||||| | |||| || ||||| || |||||| | ||| ||||
+                  </div>
+                  <div style="font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #64748b; letter-spacing: 2px; margin-top: 4px;">
+                    *${order.invoice_number}*
+                  </div>
+                </div>
+
+                <!-- CTA Button to Check Invoice on Website -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 18px 0 10px;">
+                  <tr>
+                    <td align="center">
+                      <a href="${invoiceUrl}?invoice=${order.invoice_number}" target="_blank" style="background: linear-gradient(135deg, #0284c7, #0369a1); background-color: #0284c7; color: #ffffff; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 800; line-height: 46px; text-align: center; text-decoration: none; border-radius: 6px; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35); text-transform: uppercase; letter-spacing: 0.5px;">
+                        🔍 LIHAT & UNDUH INVOICE DI WEBSITE
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <div style="font-size: 11px; color: #64748b; text-align: center; line-height: 1.4; margin-bottom: 14px;">
+                  Klik tombol di atas untuk membuka riwayat transaksi Anda secara realtime di website resmi Dar'sstore.
+                </div>
+
+                <!-- Bottom Perforated Line -->
+                <div style="border-top: 1px dashed #cbd5e1; margin: 16px 0 12px;"></div>
+
+                <!-- Footer Notes -->
+                <div style="font-size: 10.5px; color: #64748b; text-align: center; font-family: 'Courier New', Courier, monospace; line-height: 1.5;">
+                  * Simpan struk digital ini sebagai bukti transaksi resmi *<br/>
+                  Layanan Pelanggan (CS 24 Jam): WhatsApp <a href="https://wa.me/6281234567890" style="color: #0284c7; text-decoration: none;">0812-3456-7890</a><br/>
+                  Email Support: <a href="mailto:bayusaputro.bs2@gmail.com" style="color: #0284c7; text-decoration: none;">bayusaputro.bs2@gmail.com</a><br/>
+                  <strong>TERIMA KASIH TELAH BERBELANJA DI DAR'SSTORE!</strong>
+                </div>
+
+              </td>
+            </tr>
+          </table>
+
+          <!-- Perforated Cut Line Bottom -->
+          <div style="max-width: 460px; text-align: center; font-size: 11px; color: #94a3b8; font-family: monospace; letter-spacing: 2px; margin-top: 6px;">
+            ✂ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ✂
           </div>
-          <div class="footer">
-            <p>Terima kasih telah mempercayakan top up game Anda di Dar'sstore!</p>
-            <p>Butuh bantuan? Hubungi CS kami via WhatsApp di <a href="https://wa.me/6281234567890">081234567890</a> atau email ke <a href="mailto:support@darstore.com">support@darstore.com</a>.</p>
-          </div>
-        </div>
+        </center>
       </body>
       </html>
     `;

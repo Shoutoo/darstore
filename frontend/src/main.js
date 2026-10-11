@@ -122,6 +122,17 @@ export function switchView(targetViewId, currentPath = window.location.pathname)
 
   if (targetViewId === 'cek-transaksi-view') {
     fetchRealtimeTable();
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const invParam = urlParams.get('invoice') || urlParams.get('no');
+      if (invParam) {
+        const searchInput = document.getElementById('invoice-search-input');
+        if (searchInput) searchInput.value = invParam.trim();
+        setTimeout(() => {
+          searchInvoice(invParam.trim());
+        }, 150);
+      }
+    } catch (_) {}
   } else if (targetViewId === 'leaderboard-view') {
     renderLeaderboardView();
   } else if (targetViewId === 'home-view') {
