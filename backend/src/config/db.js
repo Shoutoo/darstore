@@ -1,23 +1,33 @@
 const path = require('path');
 const fs = require('fs');
 
-const DATABASE_URL = process.env.DATABASE_URL;
 let pgPool = null;
 
-if (DATABASE_URL && (DATABASE_URL.startsWith('postgres://') || DATABASE_URL.startsWith('postgresql://'))) {
-  try {
-    const { Pool } = require('pg');
-    pgPool = new Pool({
-      connectionString: DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-      connectionTimeoutMillis: 3500
-    });
-    console.log('[DATABASE] Connected to PostgreSQL (Supabase Cloud Pooler)');
-  } catch (err) {
-    console.warn('[DATABASE] Failed to initialize PostgreSQL pool, falling back to SQLite:', err.message);
-    pgPool = null;
+function getPgPool() {
+  const dbUrl = process.env.DATABASE_URL;
+  if (dbUrl && (dbUrl.startsWith('postgres://') || dbUrl.startsWith('postgresql://'))) {
+    if (!pgPool) {
+      try {
+        const { Pool } = require('pg');
+        pgPool = new Pool({
+          connectionString: dbUrl,
+          ssl: { rejectUnauthorized: false },
+          connectionTimeoutMillis: 10000,
+          idleTimeoutMillis: 30000,
+          max: 10,
+        });
+        console.log('[DATABASE] Connected to PostgreSQL (Supabase Cloud Pooler)');
+      } catch (err) {
+        console.warn('[DATABASE] Failed to initialize PostgreSQL pool:', err.message);
+      }
+    }
+    return pgPool;
   }
+  return null;
 }
+
+// Initial connection check
+getPgPool();
 
 // Fallback SQLite instance (lazy-loaded for local dev only)
 const dbPath = process.env.DB_PATH || path.join(__dirname, '../../database.sqlite');
@@ -56,7 +66,7 @@ function toPgSql(sql) {
 // Helper for promise-based queries (dual-mode: Postgres / SQLite)
 const dbAsync = {
   async run(sql, params = []) {
-    const pool = pgPool;
+    const pool = getPgPool();
     if (pool) {
       const pgSql = toPgSql(sql);
       try {
@@ -66,7 +76,7 @@ const dbAsync = {
       } catch (err) {
         if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated/i.test(err.message)) {
           await new Promise(r => setTimeout(r, 600));
-          const currentPool = pgPool;
+          const currentPool = getPgPool();
           if (currentPool) {
             const res = await currentPool.query(pgSql, params);
             const returnedId = res.rows && res.rows.length > 0 ? res.rows[0].id : null;
@@ -80,12 +90,12 @@ const dbAsync = {
     return new Promise((resolve, reject) => {
       sqliteInstance.run(sql, params, function (err) {
         if (err) reject(err);
-        else resolve({ id: this.lastID, changes: this.changes });
+        else resolve({ id: this ? this.lastID : null, changes: this ? this.changes : 0 });
       });
     });
   },
   async get(sql, params = []) {
-    const pool = pgPool;
+    const pool = getPgPool();
     if (pool) {
       const pgSql = toPgSql(sql);
       try {
@@ -94,7 +104,7 @@ const dbAsync = {
       } catch (err) {
         if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated/i.test(err.message)) {
           await new Promise(r => setTimeout(r, 600));
-          const currentPool = pgPool;
+          const currentPool = getPgPool();
           if (currentPool) {
             const res = await currentPool.query(pgSql, params);
             return res.rows && res.rows.length > 0 ? res.rows[0] : null;
@@ -112,7 +122,7 @@ const dbAsync = {
     });
   },
   async all(sql, params = []) {
-    const pool = pgPool;
+    const pool = getPgPool();
     if (pool) {
       const pgSql = toPgSql(sql);
       try {
@@ -121,7 +131,7 @@ const dbAsync = {
       } catch (err) {
         if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated/i.test(err.message)) {
           await new Promise(r => setTimeout(r, 600));
-          const currentPool = pgPool;
+          const currentPool = getPgPool();
           if (currentPool) {
             const res = await currentPool.query(pgSql, params);
             return res.rows || [];
@@ -139,7 +149,7 @@ const dbAsync = {
     });
   },
   async exec(sql) {
-    const pool = pgPool;
+    const pool = getPgPool();
     if (pool) {
       try {
         await pool.query(sql);
@@ -147,7 +157,7 @@ const dbAsync = {
       } catch (err) {
         if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated/i.test(err.message)) {
           await new Promise(r => setTimeout(r, 600));
-          const currentPool = pgPool;
+          const currentPool = getPgPool();
           if (currentPool) {
             await currentPool.query(sql);
             return;
@@ -174,17 +184,24 @@ function ensureSqliteDb() {
         if (!err) console.log(`Connected to SQLite fallback database at ${dbPath}`);
       });
     } catch (e) {
-      console.warn('[DATABASE] SQLite init error:', e.message);
+      console.warn('[DATABASE] SQLite not available in this environment:', e.message);
+      return {
+        run: (_, __, cb) => cb && cb(new Error('SQLite tidak tersedia di lingkungan serverless dan koneksi PostgreSQL terputus.')),
+        get: (_, __, cb) => cb && cb(new Error('SQLite tidak tersedia di lingkungan serverless dan koneksi PostgreSQL terputus.')),
+        all: (_, __, cb) => cb && cb(new Error('SQLite tidak tersedia di lingkungan serverless dan koneksi PostgreSQL terputus.')),
+        exec: (_, cb) => cb && cb(new Error('SQLite tidak tersedia di lingkungan serverless dan koneksi PostgreSQL terputus.')),
+      };
     }
   }
   return db;
 }
 
 async function initDatabase() {
-  if (pgPool) {
+  const pool = getPgPool();
+  if (pool) {
     console.log('[DATABASE] PostgreSQL (Supabase Cloud) mode active.');
     try {
-      await pgPool.query('SELECT 1');
+      await pool.query('SELECT 1');
       await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS expired_at TEXT;");
       await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS failure_reason TEXT;");
       await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_used INTEGER DEFAULT 0;");
@@ -230,9 +247,8 @@ async function initDatabase() {
       console.log(`[DATABASE] Verified Supabase PostgreSQL. Total products in catalog: ${count ? count.count : 0}`);
       return;
     } catch (migErr) {
-      console.warn('[DATABASE] PostgreSQL cloud pooler unavailable, falling back to local SQLite:', migErr.message);
-      pgPool = null;
-      ensureSqliteDb();
+      console.warn('[DATABASE] PostgreSQL init warning, keeping connection active:', migErr.message);
+      return;
     }
   }
 
