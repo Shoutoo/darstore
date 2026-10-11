@@ -56,10 +56,27 @@ const dbService = {
   },
 
   async getOrderByInvoice(invoiceNumber) {
-    return await dbAsync.get(
+    const cleanInvoice = invoiceNumber.trim().toUpperCase();
+    let order = await dbAsync.get(
       'SELECT * FROM orders WHERE UPPER(invoice_number) = ?',
-      [invoiceNumber.trim().toUpperCase()]
+      [cleanInvoice]
     );
+    if (!order) {
+      try {
+        const { ensureSqliteDb } = require('./db');
+        const sqlite = ensureSqliteDb();
+        if (sqlite) {
+          order = await new Promise((resolve) => {
+            sqlite.get('SELECT * FROM orders WHERE UPPER(invoice_number) = ?', [cleanInvoice], (err, row) => {
+              resolve(row || null);
+            });
+          });
+        }
+      } catch (e) {
+        // Ignore fallback error
+      }
+    }
+    return order;
   },
 
   async getOrderHistory(limit = 20) {

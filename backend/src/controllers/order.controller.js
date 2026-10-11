@@ -245,6 +245,8 @@ exports.createOrder = async (req, res) => {
         message: 'Pesanan berhasil dibuat.',
         invoiceNumber: invoice_number,
         qrCodeUrl: qrisData.qris_url,
+        redirectUrl: qrisData.redirect_url || null,
+        snapToken: qrisData.snap_token || null,
         expiredAt: qrisData.expired_at,
         totalHarga: total_harga,
         pointsUsed,
@@ -252,6 +254,8 @@ exports.createOrder = async (req, res) => {
         order: {
           ...updatedOrder,
           qrCodeUrl: qrisData.qris_url,
+          redirectUrl: qrisData.redirect_url || null,
+          snapToken: qrisData.snap_token || null,
           expiredAt: qrisData.expired_at,
           points_used: pointsUsed,
           discount_amount: discountAmount
@@ -299,10 +303,47 @@ exports.getOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Nomor invoice diperlukan.' });
     }
 
-    const order = await dbService.getOrderByInvoice(invoice);
+    let order = await dbService.getOrderByInvoice(invoice);
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Nomor Invoice tidak ditemukan.' });
+    }
+
+    // Auto-Sync with Midtrans if status is still pending / Menunggu Pembayaran
+    const isPending = order.status === 'Menunggu Pembayaran' || order.status === 'pending';
+    if (isPending) {
+      try {
+        const midtransRes = await paymentGateway.checkTransactionStatus(order.invoice_number);
+        if (midtransRes && (midtransRes.transaction_status === 'settlement' || midtransRes.transaction_status === 'capture')) {
+          console.log(`[AUTO-SYNC] Midtrans payment confirmed (${midtransRes.transaction_status}) for invoice ${order.invoice_number}`);
+          
+          await dbAsync.run(
+            `UPDATE orders SET status = 'Berhasil', payment_ref = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+            [midtransRes.transaction_id || order.payment_ref, order.id]
+          );
+
+          try {
+            const orderQueue = require('../jobs/processOrderQueue');
+            orderQueue.enqueue({ ...order, status: 'Berhasil' });
+          } catch (qErr) {
+            console.warn('[AUTO-SYNC] Queue enqueue error:', qErr.message);
+          }
+
+          order.status = 'Berhasil';
+          if (midtransRes.transaction_id) {
+            order.payment_ref = midtransRes.transaction_id;
+          }
+        } else if (midtransRes && ['expire', 'deny', 'cancel'].includes(midtransRes.transaction_status)) {
+          console.log(`[AUTO-SYNC] Midtrans payment failed (${midtransRes.transaction_status}) for invoice ${order.invoice_number}`);
+          await dbAsync.run(
+            `UPDATE orders SET status = 'Gagal', failure_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+            [`Midtrans: Pembayaran ${midtransRes.transaction_status}`, order.id]
+          );
+          order.status = 'Gagal';
+        }
+      } catch (syncErr) {
+        console.warn(`[AUTO-SYNC] Midtrans check notice for ${order.invoice_number}:`, syncErr.message);
+      }
     }
 
     return res.json({

@@ -733,6 +733,7 @@ async function seedRewards() {
 module.exports = {
   db,
   dbAsync,
-  initDatabase
+  initDatabase,
+  ensureSqliteDb
 };
 

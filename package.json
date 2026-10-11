@@ -6,7 +6,8 @@
     "dev": "npm --prefix frontend run dev",
     "server": "npm --prefix backend run start",
     "dev:backend": "npm --prefix backend run dev",
-    "build": "npm --prefix frontend run build"
+    "build": "npm --prefix frontend run build",
+    "test:midtrans": "node scripts/test-sandbox.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

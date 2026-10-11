@@ -2,29 +2,41 @@ const crypto = require('crypto');
 const midtransClient = require('midtrans-client');
 
 /**
- * Midtrans Payment Gateway Service (QRIS Only)
- * Implements Midtrans CoreApi charge for QRIS payment_type.
+ * Midtrans Payment Gateway Service (Sandbox Mode Dedicated)
+ * Implements Midtrans CoreApi (QRIS) & Snap (Multi-payment) in Sandbox mode.
  */
 class PaymentGatewayService {
   constructor() {
+    this.reloadConfig();
+  }
+
+  /**
+   * Reload configuration and enforce sandbox guardrails
+   */
+  reloadConfig() {
     this.isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true';
-    this.serverKey = process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-xxxxxxxxxxxxx';
-    this.clientKey = process.env.MIDTRANS_CLIENT_KEY || 'SB-Mid-client-xxxxxxxxxxxxx';
+    this.serverKey = (process.env.MIDTRANS_SERVER_KEY || '').trim() || 'SB-Mid-server-xxxxxxxxxxxxx';
+    this.clientKey = (process.env.MIDTRANS_CLIENT_KEY || '').trim() || 'SB-Mid-client-xxxxxxxxxxxxx';
+
+    // Validasi pencegahan salah pasang key
+    if (this.isProduction) {
+      if (this.serverKey.startsWith('SB-')) {
+        throw new Error('Konfigurasi Error: MIDTRANS_IS_PRODUCTION=true aktif, tetapi MIDTRANS_SERVER_KEY masih menggunakan key Sandbox (berawalan "SB-"). Harap gunakan Server Key Production dari dashboard.midtrans.com.');
+      }
+      console.log('[MIDTRANS] Mode PRODUCTION Aktif. Menggunakan Midtrans Live Gateway.');
+    } else {
+      console.log('[MIDTRANS] Mode SANDBOX Aktif. Menggunakan Midtrans Testing Environment.');
+    }
+
+    // Initialize Core API for QRIS direct checkout
     this.coreApi = new midtransClient.CoreApi({
       isProduction: this.isProduction,
       serverKey: this.serverKey,
       clientKey: this.clientKey,
     });
-  }
 
-  /**
-   * Reload configuration if environment variables change
-   */
-  reloadConfig() {
-    this.isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true';
-    this.serverKey = process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-xxxxxxxxxxxxx';
-    this.clientKey = process.env.MIDTRANS_CLIENT_KEY || 'SB-Mid-client-xxxxxxxxxxxxx';
-    this.coreApi = new midtransClient.CoreApi({
+    // Initialize Snap API for popup / multi-channel checkout
+    this.snap = new midtransClient.Snap({
       isProduction: this.isProduction,
       serverKey: this.serverKey,
       clientKey: this.clientKey,
@@ -33,14 +45,14 @@ class PaymentGatewayService {
 
   /**
    * Charge Midtrans Core API with payment_type: 'qris'
-   * @param {Object} order - { invoice_number, total_harga, ... }
+   * @param {Object} order - { invoice_number, total_harga, nama_item, product_id, ... }
    */
   async createQrisTransaction(order) {
     this.reloadConfig();
     const isMock = !this.serverKey || this.serverKey.includes('xxxxxxxxxxxxx');
 
     if (isMock) {
-      console.log(`[MIDTRANS] Dev Mode (Mock): Server key not configured. Generating simulated QRIS transaction for ${order.invoice_number}`);
+      console.log(`[MIDTRANS] Dev Mode (Mock): Server key placeholder aktif. Mengenerate QRIS lokal untuk ${order.invoice_number}`);
       const mockRef = `MID-MOCK-${Date.now()}`;
       const mockQrisUrl = '/assets/payments/qris_sample.svg';
       const expiry = new Date(Date.now() + 15 * 60 * 1000).toISOString();
@@ -70,7 +82,7 @@ class PaymentGatewayService {
       };
     }
 
-    // Live Midtrans Core API Call with timeout and sandbox fallback
+    // Live Midtrans Sandbox Core API Call
     try {
       const chargePromise = this.coreApi.charge({
         payment_type: 'qris',
@@ -79,7 +91,7 @@ class PaymentGatewayService {
           gross_amount: Math.round(Number(order.total_harga)),
         },
         qris: {
-          acquirer: 'gopay', // acquirer default
+          acquirer: 'gopay', // default acquirer
         },
         custom_expiry: {
           expiry_duration: 15,
@@ -88,7 +100,7 @@ class PaymentGatewayService {
       });
 
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Midtrans API connection timeout (3500ms)')), 3500)
+        setTimeout(() => reject(new Error('Midtrans API connection timeout (8000ms)')), 8000)
       );
 
       const chargeResponse = await Promise.race([chargePromise, timeoutPromise]);
@@ -98,7 +110,11 @@ class PaymentGatewayService {
         ? chargeResponse.actions.find((a) => a.name === 'generate-qr-code')
         : null;
 
-      const qrCodeUrl = qrAction ? qrAction.url : (chargeResponse.qr_string ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(chargeResponse.qr_string)}` : null);
+      const qrCodeUrl = qrAction
+        ? qrAction.url
+        : (chargeResponse.qr_string
+            ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(chargeResponse.qr_string)}`
+            : null);
 
       return {
         payment_ref: chargeResponse.transaction_id,
@@ -108,25 +124,120 @@ class PaymentGatewayService {
         raw_response: chargeResponse,
       };
     } catch (chargeErr) {
-      if (!this.isProduction) {
-        console.warn(`[MIDTRANS] Sandbox charge notice: ${chargeErr.message}. Generating local sandbox QRIS for testing.`);
-        const mockRef = `MID-SANDBOX-${Date.now()}`;
-        const mockQrisUrl = '/assets/payments/qris_sample.svg';
-        return {
-          payment_ref: mockRef,
-          qris_string: `00020101021226570014ID.DARSSTORE.WWW01189360091800000000000208${order.invoice_number}520454115303360540${order.total_harga.toString().length}${order.total_harga}5802ID5910DARSSTORE6007JAKARTA62070703A016304`,
-          qris_url: mockQrisUrl,
-          expired_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-          raw_response: {
-            status_code: '201',
-            status_message: 'Midtrans sandbox transaction generated',
-            transaction_id: mockRef,
-            order_id: order.invoice_number,
-            payment_type: 'qris'
+      if (this.isProduction) {
+        console.error(`[MIDTRANS PRODUCTION NOTICE]: Core API QRIS: ${chargeErr.message}`);
+        // Jika channel GoPay/QRIS Core API belum aktif di MAP atau timeout, alihkan otomatis ke Midtrans Snap Live Checkout
+        if (
+          chargeErr.message.includes('Payment channel is not activated') ||
+          chargeErr.message.includes('timeout') ||
+          (chargeErr.ApiResponse && chargeErr.ApiResponse.status_message && chargeErr.ApiResponse.status_message.includes('Payment channel is not activated'))
+        ) {
+          console.log('[MIDTRANS PRODUCTION] Core API QRIS channel belum diaktifkan di dashboard Midtrans. Mengalihkan ke Midtrans Snap Live Checkout...');
+          try {
+            const snapRes = await this.createSnapTransaction(order, {
+              name: order.wa_email_guest || 'Pelanggan Darstore',
+              email: order.wa_email_guest && order.wa_email_guest.includes('@') ? order.wa_email_guest : 'customer@darstore.com'
+            });
+
+            // Buat QR code yang mengarahkan langsung ke halaman pembayaran Snap
+            const snapQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(snapRes.redirect_url)}`;
+            const expiryTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+            return {
+              payment_ref: snapRes.token,
+              qris_string: snapRes.redirect_url,
+              qris_url: snapQrUrl,
+              redirect_url: snapRes.redirect_url,
+              snap_token: snapRes.token,
+              expired_at: expiryTime,
+              raw_response: {
+                status_code: '201',
+                status_message: 'Midtrans Snap production transaction generated (Seamless Channel Fallback)',
+                token: snapRes.token,
+                redirect_url: snapRes.redirect_url,
+                order_id: order.invoice_number,
+                payment_type: 'snap_live'
+              }
+            };
+          } catch (snapErr) {
+            console.error('[MIDTRANS SNAP LIVE ERROR]:', snapErr.message);
+            throw new Error(`Gagal membuat transaksi Midtrans Snap: ${snapErr.message}`);
           }
-        };
+        }
+
+        throw new Error(`Gagal membuat tagihan QRIS Midtrans Production: ${chargeErr.message}`);
       }
-      throw chargeErr;
+
+      console.warn(`[MIDTRANS] Peringatan Sandbox: ${chargeErr.message}`);
+      if (chargeErr.message.includes('401') || chargeErr.message.includes('Unauthorized')) {
+        console.warn(
+          '💡 Petunjuk: Key Sandbox belum valid atau sudah kedaluwarsa. Salin Server Key aktif dari https://dashboard.sandbox.midtrans.com -> Settings > Access Keys ke .env.'
+        );
+      }
+
+      // Fallback aman untuk development/sandbox agar alur UI & testing tetap berjalan mulus
+      const mockRef = `MID-SANDBOX-${Date.now()}`;
+      const mockQrisUrl = '/assets/payments/qris_sample.svg';
+      return {
+        payment_ref: mockRef,
+        qris_string: `00020101021226570014ID.DARSSTORE.WWW01189360091800000000000208${order.invoice_number}520454115303360540${order.total_harga.toString().length}${order.total_harga}5802ID5910DARSSTORE6007JAKARTA62070703A016304`,
+        qris_url: mockQrisUrl,
+        expired_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+        raw_response: {
+          status_code: '201',
+          status_message: 'Midtrans sandbox simulated transaction (fallback)',
+          transaction_id: mockRef,
+          order_id: order.invoice_number,
+          payment_type: 'qris'
+        }
+      };
+    }
+  }
+
+  /**
+   * Create Snap Transaction (Multi-payment: Kartu Kredit, VA BSI/Mandiri/Permata, GoPay, QRIS)
+   * @param {Object} order - { invoice_number, total_harga, nama_item }
+   * @param {Object} customer - { name, email, phone }
+   */
+  async createSnapTransaction(order, customer = {}) {
+    this.reloadConfig();
+    const parameter = {
+      transaction_details: {
+        order_id: order.invoice_number,
+        gross_amount: Math.round(Number(order.total_harga)),
+      },
+      item_details: [
+        {
+          id: String(order.product_id || order.invoice_number),
+          price: Math.round(Number(order.total_harga)),
+          quantity: 1,
+          name: (order.nama_item || 'Produk Top Up Game').substring(0, 50),
+        },
+      ],
+      customer_details: {
+        first_name: customer.name || 'Pelanggan',
+        email: customer.email || 'customer@darsstore.com',
+        phone: customer.phone || '081234567890',
+      },
+    };
+
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const snapRes = await this.snap.createTransaction(parameter);
+        return {
+          token: snapRes.token,
+          redirect_url: snapRes.redirect_url,
+          order_id: order.invoice_number,
+        };
+      } catch (err) {
+        if (attempt === 1 && (err.message.includes('EAI_AGAIN') || err.message.includes('ETIMEDOUT') || err.message.includes('ECONNRESET'))) {
+          console.warn(`[MIDTRANS SNAP RETRY] Mencoba ulang koneksi ke Snap API (attempt ${attempt + 1})...`);
+          await new Promise((r) => setTimeout(r, 600));
+          continue;
+        }
+        console.error('[MIDTRANS SNAP ERROR]:', err.message);
+        throw err;
+      }
     }
   }
 
@@ -152,6 +263,24 @@ class PaymentGatewayService {
       .digest('hex');
 
     return signature.toLowerCase() === expectedSignature.toLowerCase();
+  }
+
+  /**
+   * Check live status directly from Midtrans API
+   * @param {string} orderId - invoice number / order ID
+   */
+  async checkTransactionStatus(orderId) {
+    this.reloadConfig();
+    if (!orderId || !this.serverKey || this.serverKey.includes('xxxxxxxxxxxxx')) {
+      return null;
+    }
+    try {
+      const res = await this.coreApi.transaction.status(orderId);
+      return res;
+    } catch (err) {
+      // Return null if transaction not found or network error
+      return null;
+    }
   }
 }
 

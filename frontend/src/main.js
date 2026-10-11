@@ -414,6 +414,7 @@ function setupCheckoutModalButtons() {
   const btnCheckStatus = document.getElementById('btn-goto-check-trans');
   if (btnCheckStatus) {
     btnCheckStatus.addEventListener('click', () => {
+      stopCheckoutPoller();
       closeModal('checkout-modal');
       navigateTo('/cek-transaksi');
       if (appState.currentInvoice) {
@@ -425,7 +426,90 @@ function setupCheckoutModalButtons() {
       }
     });
   }
+
+  // Stop poller when modal is closed
+  document.getElementById('btn-close-checkout')?.addEventListener('click', stopCheckoutPoller);
 }
+
+// ==========================================================
+// REAL-TIME AUTO POLLER FOR MIDTRANS PAYMENT
+// ==========================================================
+let checkoutPollerTimer = null;
+
+export function stopCheckoutPoller() {
+  if (checkoutPollerTimer) {
+    clearInterval(checkoutPollerTimer);
+    checkoutPollerTimer = null;
+  }
+}
+
+export function startCheckoutPoller(invoiceNumber) {
+  stopCheckoutPoller();
+  if (!invoiceNumber) return;
+
+  console.log(`[POLLER] Memulai auto-check status Midtrans untuk invoice: ${invoiceNumber}`);
+  let pollAttempts = 0;
+  const maxAttempts = 150; // max 5 minutes (every 2s)
+
+  checkoutPollerTimer = setInterval(async () => {
+    pollAttempts++;
+    const modal = document.getElementById('checkout-modal');
+    if (!modal || !modal.classList.contains('open') || pollAttempts > maxAttempts) {
+      stopCheckoutPoller();
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/orders?invoice=${encodeURIComponent(invoiceNumber)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      if (data && data.success && data.order) {
+        const status = data.order.status;
+        if (status === 'Berhasil' || status === 'paid' || status === 'Diproses') {
+          stopCheckoutPoller();
+          console.log(`[POLLER] Pembayaran terkonfirmasi: ${status}! Menampilkan animasi sukses.`);
+
+          const modalBody = document.getElementById('checkout-modal-body');
+          if (modalBody) {
+            modalBody.innerHTML = `
+              <div style="text-align: center; padding: 24px 12px;">
+                <div style="font-size: 52px; margin-bottom: 12px; filter: drop-shadow(0 0 16px rgba(34, 197, 94, 0.5));">🎉</div>
+                <h3 style="color: #22c55e; font-size: 20px; font-weight: 800; margin-bottom: 8px;">
+                  PEMBAYARAN QRIS BERHASIL!
+                </h3>
+                <p style="color: var(--text-secondary); font-size: 13.5px; margin-bottom: 16px;">
+                  Invoice <strong style="color: var(--accent-gold);">${invoiceNumber}</strong> telah lunas terverifikasi. Item game otomatis dikirim.
+                </p>
+                <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 20px; color: #22c55e; font-size: 12px; font-weight: 700;">
+                  <span>Mengalihkan ke Bukti Struk...</span>
+                </div>
+              </div>
+            `;
+          }
+
+          showCyberToast('Pembayaran QRIS Berhasil Dikonfirmasi!', 'success', 'TRANSAKSI BERHASIL');
+
+          setTimeout(() => {
+            closeModal('checkout-modal');
+            navigateTo('/cek-transaksi');
+            const input = document.getElementById('invoice-search-input');
+            if (input) input.value = invoiceNumber;
+            searchInvoice(invoiceNumber);
+            fetchRealtimeTable();
+            checkCurrentUser();
+          }, 1800);
+        }
+      }
+    } catch (err) {
+      // Ignore network jitter
+    }
+  }, 2000);
+}
+
+// Expose globally
+window.startCheckoutPoller = startCheckoutPoller;
+window.stopCheckoutPoller = stopCheckoutPoller;
 
 // ==========================================================
 // GLOBAL SEARCH IN HEADER

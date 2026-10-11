@@ -356,6 +356,14 @@ export async function handleMLCheckout() {
           </div>
         </div>
 
+        ${(data.redirectUrl || order.redirect_url) ? `
+          <div style="margin-bottom: 16px;">
+            <a href="${data.redirectUrl || order.redirect_url}" target="_blank" rel="noopener noreferrer" class="btn-order-now" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 12px; font-size: 13.5px; font-weight: 700; border-radius: var(--radius-md); background: linear-gradient(135deg, #0070f3, #0050d0); box-shadow: 0 4px 15px rgba(0, 112, 243, 0.4); color: #ffffff;">
+              🚀 Buka Halaman Pembayaran Midtrans Live
+            </a>
+          </div>
+        ` : ''}
+
         <p style="font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.5;">
           Selesaikan pembayaran dalam waktu <strong id="ml-qris-timer" style="color: var(--accent-gold); font-weight: 800; font-size: 14px;">15:00</strong>. Pesanan diproses otomatis dalam 1-3 detik setelah scan QRIS berhasil.
         </p>
@@ -365,6 +373,9 @@ export async function handleMLCheckout() {
     }
 
     openModal('checkout-modal');
+    if (window.startCheckoutPoller) {
+      window.startCheckoutPoller(invoiceNumber);
+    }
   } catch (err) {
     console.error('Checkout error:', err);
     showCyberToast('Gagal menghubungi server backend. Pastikan server aktif.', 'error', 'KONEKSI SERVER');

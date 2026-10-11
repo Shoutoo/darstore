@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dokumen Verifikasi URL Bisnis & Alur Transaksi — Dar'sstore</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --navy: #0f172a;
+      --slate: #475569;
+      --light-bg: #f8fafc;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --warning: #d97706;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #1e293b;
+      background: #ffffff;
+      line-height: 1.6;
+      font-size: 13.5px;
+      padding: 40px 50px;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+        font-size: 12px;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+      .card, table, .step-block {
+        break-inside: avoid;
+      }
+    }
+
+    .header-banner {
+      border-bottom: 2px solid var(--navy);
+      padding-bottom: 20px;
+      margin-bottom: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .brand-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -0.5px;
+    }
+
+    .brand-title span {
+      color: var(--primary);
+    }
+
+    .doc-subtitle {
+      font-size: 13px;
+      color: var(--slate);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    .meta-tag {
+      text-align: right;
+      font-size: 11.5px;
+      color: var(--slate);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .badge-success {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .badge-primary {
+      background: #dbeafe;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--navy);
+      margin: 24px 0 12px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-left: 4px solid var(--primary);
+      padding-left: 10px;
+    }
+
+    h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #334155;
+      margin: 16px 0 8px 0;
+    }
+
+    p {
+      margin-bottom: 10px;
+      color: #334155;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 20px 0;
+      font-size: 12.5px;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    th {
+      background: #f1f5f9;
+      color: var(--navy);
+      font-weight: 700;
+    }
+
+    .url-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      font-weight: 600;
+    }
+
+    .callout-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-left: 4px solid var(--primary);
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin: 16px 0;
+      font-size: 12.5px;
+    }
+
+    .step-block {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .step-num {
+      background: var(--navy);
+      color: #fff;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      margin-right: 6px;
+    }
+
+    .step-img-wrap {
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      overflow: hidden;
+      margin-top: 10px;
+      background: #f8fafc;
+    }
+
+    .step-img-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .footer-sign {
+      margin-top: 40px;
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .print-bar {
+      position: sticky;
+      top: 0;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 8px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .print-btn {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .print-btn:hover {
+      background: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Action Bar (Hanya tampil di browser, otomatis hilang saat di-Print ke PDF) -->
+  <div class="print-bar no-print">
+    <div>
+      <strong>Dokumen Siap Cetak / Simpan PDF untuk Verifikasi Midtrans</strong>
+      <div style="font-size: 12px; color: #94a3b8;">Klik tombol di kanan untuk menyimpan langsung sebagai dokumen PDF yang siap di-upload ke Midtrans.</div>
+    </div>
+    <button class="print-btn" onclick="window.print()">
+      🖨️ Cetak / Simpan ke PDF
+    </button>
+  </div>
+
+  <header class="header-banner">
+    <div>
+      <div class="brand-title">Dar's<span>store</span></div>
+      <div class="doc-subtitle">Dokumen Resmi Verifikasi Merchant & Keselarasan URL Bisnis</div>
+    </div>
+    <div class="meta-tag">
+      <div><strong>Status:</strong> <span class="badge badge-success">Need Correction Resolved</span></div>
+      <div style="margin-top: 4px;"><strong>Target:</strong> Midtrans Risk & Compliance</div>
+      <div><strong>Tanggal:</strong> 5 Oktober 2026</div>
+    </div>
+  </header>
+
+  <section>
+    <h2>1. Lembar Pernyataan Keselarasan URL Bisnis (URL Alignment)</h2>
+    <p>
+      Dokumen ini merupakan lampiran resmi <strong>Business Supporting Document</strong> yang diajukan oleh <strong>Dar'sstore</strong> untuk melengkapi proses aktivasi metode pembayaran: <strong>BSI Virtual Account, GoPay QRIS, Bank Transfer Multibank, dan GoPay eMoney</strong>.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Parameter Verifikasi</th>
+          <th>Data Terdaftar di Dashboard Midtrans</th>
+          <th>Data Operasional Website</th>
+          <th>Status Keselarasan</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Nama Usaha / Brand</strong></td>
+          <td>Dar'sstore</td>
+          <td>Dar'sstore</td>
+          <td><span class="badge badge-success">IDENTIK / COCOK</span></td>
+        </tr>
+        <tr>
+          <td><strong>URL Website Bisnis</strong></td>
+          <td><span class="url-tag">https://darstore-pearl.vercel.app/</span></td>
+          <td><span class="url-tag">https://darstore-pearl.vercel.app/</span></td>
+          <td><span class="badge badge-success">IDENTIK / COCOK</span></td>
+        </tr>
+        <tr>
+          <td><strong>Kategori Usaha</strong></td>
+          <td>Produk Digital & Voucher Game (Virtual Goods)</td>
+          <td>Produk Digital & Voucher Game (Virtual Goods)</td>
+          <td><span class="badge badge-success">IDENTIK / COCOK</span></td>
+        </tr>
+        <tr>
+          <td><strong>Protokol & Aksesibilitas</strong></td>
+          <td>HTTPS (SSL Active) / 24 Jam Nonstop</td>
+          <td>HTTPS (SSL Active) / 24 Jam Nonstop</td>
+          <td><span class="badge badge-success">VERIFIED & LIVE</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout-box">
+      <strong>Hasil Audit Internal:</strong> Seluruh tautan website pada pengaturan profil merchant (*Business Info*) telah disinkronkan sepenuhnya dengan domain operasional dan alur transaksi sistem kami di bawah ini.
+    </div>
+  </section>
+
+  <section>
+    <h2>2. Profil Bisnis & Perlindungan Konsumen (Consumer Protection)</h2>
+    <p>Website Dar'sstore menyediakan layanan pengisian voucher game online secara instan 24 jam dengan ketentuan yang jelas:</p>
+    <ul>
+      <li><strong>Transparansi Harga:</strong> Nominal diamond game (Mobile Legends & Valorant) tercantum jelas beserta rincian biaya layanan.</li>
+      <li><strong>Layanan Bantuan 24/7:</strong> WhatsApp resmi: <span class="url-tag">+62 812-3456-7890</span> | Email: <span class="url-tag">support@darsstore.com</span>.</li>
+      <li><strong>Pengiriman Instan:</strong> Item virtual dikirimkan otomatis 1-3 detik setelah verifikasi webhook Midtrans.</li>
+    </ul>
+  </section>
+
+  <div class="page-break"></div>
+
+  <section>
+    <h2>3. Dokumentasi Visual Alur Transaksi (Step-by-Step Flow)</h2>
+    <p>Setiap proses transaksi terjadi secara transparan pada URL resmi: <span class="url-tag">https://darstore-pearl.vercel.app/</span></p>
+
+    <!-- Step 1 -->
+    <div class="step-block">
+      <div class="step-header">
+        <div><span class="step-num">LANGKAH 1</span> <strong>Katalog Produk & Beranda</strong></div>
+        <span class="url-tag">https://darstore-pearl.vercel.app/</span>
+      </div>
+      <p>Pengunjung memilih game yang diinginkan pada beranda website.</p>
+      <div class="step-img-wrap">
+        <img src="./midtrans-flow-screenshots/01_katalog_produk.png" alt="Step 1 - Katalog Produk" onerror="this.parentElement.style.display='none'">
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step-block">
+      <div class="step-header">
+        <div><span class="step-num">LANGKAH 2</span> <strong>Input ID Game & Pemilihan Nominal</strong></div>
+        <span class="url-tag">https://darstore-pearl.vercel.app/ml</span>
+      </div>
+      <p>Pengguna memasukkan User ID / Zone ID akun dan memilih paket diamond. Ringkasan belanja menghitung tagihan secara otomatis.</p>
+      <div class="step-img-wrap">
+        <img src="./midtrans-flow-screenshots/02_pilih_item_nominal.png" alt="Step 2 - Pilih Nominal" onerror="this.parentElement.style.display='none'">
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- Step 3 -->
+    <div class="step-block">
+      <div class="step-header">
+        <div><span class="step-num">LANGKAH 3</span> <strong>Pemilihan Metode Pembayaran & Data Kontak</strong></div>
+        <span class="url-tag">https://darstore-pearl.vercel.app/ml</span>
+      </div>
+      <p>Pengguna memilih metode pembayaran resmi Midtrans (QRIS / GoPay / Bank Transfer), menginput WhatsApp/Email, dan menekan <em>"Pesan Sekarang!"</em>.</p>
+      <div class="step-img-wrap">
+        <img src="./midtrans-flow-screenshots/03_form_pembeli_dan_ringkasan.png" alt="Step 3 - Pemilihan Pembayaran" onerror="this.parentElement.style.display='none'">
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step-block">
+      <div class="step-header">
+        <div><span class="step-num">LANGKAH 4</span> <strong>Penerbitan Invoice & Tagihan Pembayaran Midtrans</strong></div>
+        <span class="url-tag">https://darstore-pearl.vercel.app/ml (Modal Checkout)</span>
+      </div>
+      <p>Backend memanggil Midtrans Core API. Muncul pop-up tagihan resmi berisi kode QRIS / nomor Virtual Account, countdown timer 15 menit, dan nomor invoice unik.</p>
+      <div class="step-img-wrap">
+        <img src="./midtrans-flow-screenshots/04_modal_pembayaran_midtrans_qris.png" alt="Step 4 - Modal Tagihan Midtrans" onerror="this.parentElement.style.display='none'">
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- Step 5 -->
+    <div class="step-block">
+      <div class="step-header">
+        <div><span class="step-num">LANGKAH 5</span> <strong>Halaman Cek Transaksi (Menunggu Pembayaran)</strong></div>
+        <span class="url-tag">https://darstore-pearl.vercel.app/cek-transaksi</span>
+      </div>
+      <p>Pelanggan dapat melacak status pesanan secara real-time. Status menampilkan <em>"Menunggu Pembayaran"</em> sebelum dibayar di e-wallet/m-banking.</p>
+      <div class="step-img-wrap">
+        <img src="./midtrans-flow-screenshots/05_status_transaksi_pending.png" alt="Step 5 - Status Pending" onerror="this.parentElement.style.display='none'">
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div class="step-block">
+      <div class="step-header">
+        <div><span class="step-num">LANGKAH 6</span> <strong>Verifikasi Webhook & Status Berhasil</strong></div>
+        <span class="url-tag">https://darstore-pearl.vercel.app/cek-transaksi</span>
+      </div>
+      <p>Notifikasi webhook Midtrans diterima server. Status otomatis berganti menjadi <em>"Berhasil" (Settlement)</em> dan struk pelunasan digital diberikan ke pelanggan.</p>
+      <div class="step-img-wrap">
+        <img src="./midtrans-flow-screenshots/06_status_transaksi_berhasil.png" alt="Step 6 - Status Berhasil" onerror="this.parentElement.style.display='none'">
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer-sign">
+    <div>
+      <div><strong>Nama Usaha:</strong> Dar'sstore</div>
+      <div><strong>Website Resmi:</strong> https://darstore-pearl.vercel.app/</div>
+      <div><strong>Platform:</strong> Game Top-up & Voucher Digital</div>
+    </div>
+    <div style="text-align: right;">
+      <div><strong>Merchant Verification Team</strong></div>
+      <div style="color: #64748b; font-size: 11px;">Midtrans Payment Gateway Indonesia</div>
+      <div style="margin-top: 6px; font-weight: 700; color: #15803d;">✓ DOKUMEN REVISI LENGKAP</div>
+    </div>
+  </footer>
+
+</body>
+</html>
