@@ -7,21 +7,23 @@ class EmailService {
   }
 
   reloadConfig() {
+    this.emailProvider = (process.env.EMAIL_PROVIDER || '').toLowerCase();
     this.resendKey = process.env.RESEND_API_KEY || null;
-    this.fromEmail = process.env.EMAIL_FROM || "Dar'sstore <onboarding@resend.dev>";
     
-    // SMTP Config fallback
-    this.smtpHost = process.env.SMTP_HOST || null;
-    this.smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
+    // SMTP Config (e.g. Gmail)
     this.smtpUser = process.env.EMAIL_USER || null;
-    this.smtpPass = process.env.EMAIL_PASS || null;
+    this.smtpPass = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : null;
+    this.smtpHost = process.env.SMTP_HOST || (this.smtpUser && this.smtpUser.includes('@gmail.com') ? 'smtp.gmail.com' : null);
+    this.smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
 
-    if (this.resendKey) {
-      this.resend = new Resend(this.resendKey);
-      console.log('[EMAIL SERVICE] Resend API provider configured.');
-    } else if (this.smtpHost && this.smtpUser && this.smtpPass) {
+    // Prioritize SMTP if EMAIL_PROVIDER='smtp' OR if EMAIL_USER & EMAIL_PASS exist
+    const useSmtp = (this.emailProvider === 'smtp') || (this.smtpUser && this.smtpPass && this.emailProvider !== 'resend');
+
+    if (useSmtp && this.smtpUser && this.smtpPass) {
+      this.fromEmail = process.env.EMAIL_FROM || `Dar'sstore <${this.smtpUser}>`;
       this.transporter = nodemailer.createTransport({
-        host: this.smtpHost,
+        service: (this.smtpUser && this.smtpUser.includes('@gmail.com')) ? 'gmail' : undefined,
+        host: this.smtpHost || 'smtp.gmail.com',
         port: this.smtpPort,
         secure: this.smtpPort === 465,
         auth: {
@@ -29,9 +31,18 @@ class EmailService {
           pass: this.smtpPass,
         },
       });
-      console.log(`[EMAIL SERVICE] SMTP transporter configured (${this.smtpHost}).`);
+      this.resend = null;
+      console.log(`[EMAIL SERVICE] Gmail / SMTP provider configured (${this.smtpUser}).`);
+    } else if (this.resendKey) {
+      this.fromEmail = process.env.EMAIL_FROM || "Dar'sstore <onboarding@resend.dev>";
+      this.resend = new Resend(this.resendKey);
+      this.transporter = null;
+      console.log('[EMAIL SERVICE] Resend API provider configured.');
     } else {
-      console.log('[EMAIL SERVICE] Menunggu RESEND_API_KEY atau SMTP config. Mode simulasi aktif.');
+      this.fromEmail = process.env.EMAIL_FROM || "Dar'sstore <support@darstore.com>";
+      this.resend = null;
+      this.transporter = null;
+      console.log('[EMAIL SERVICE] Menunggu RESEND_API_KEY atau EMAIL_USER/EMAIL_PASS config. Mode simulasi aktif.');
     }
   }
 
