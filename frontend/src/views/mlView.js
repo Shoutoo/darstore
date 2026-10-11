@@ -76,6 +76,11 @@ export function setupMLInputValidation() {
 
   restrictToNumeric(document.getElementById('ml-userid'), 10);
   restrictToNumeric(document.getElementById('ml-server'), 5);
+
+  const emailEl = document.getElementById('ml-email');
+  if (emailEl && appState.currentUser?.email && !emailEl.value) {
+    emailEl.value = appState.currentUser.email;
+  }
 }
 
 export function updateMLSummary() {
@@ -251,13 +256,15 @@ export async function handleMLCheckout() {
     return;
   }
 
-  const wa = document.getElementById('ml-wa')?.value.trim();
-  if (!wa) {
-    showCyberToast('Silakan masukkan No. WhatsApp Anda untuk menerima bukti transaksi!', 'warning', 'KONTAK NOTIFIKASI');
-    document.getElementById('ml-wa')?.focus();
+  const emailInput = document.getElementById('ml-email');
+  const email = emailInput?.value.trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    showCyberToast('Silakan masukkan alamat email yang valid untuk menerima bukti transaksi & nomor seri pesanan!', 'warning', 'EMAIL NOTIFIKASI');
+    emailInput?.focus();
     return;
   }
-  state.wa = '0' + wa.replace(/^0+/, '');
+  state.email = email;
 
   const orderBtn = document.getElementById('ml-btn-order');
   if (orderBtn) {
@@ -271,7 +278,7 @@ export async function handleMLCheckout() {
       game: 'mlbb',
       game_user_id: state.userId,
       server_id: state.server,
-      wa_email_guest: state.wa,
+      wa_email_guest: state.email,
       payment_method: state.selectedPayment.name,
       qty: state.qty || 1,
       use_points: Boolean(state.usePoints),

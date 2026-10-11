@@ -1,5 +1,6 @@
 const { dbAsync } = require('../config/db');
 const topupProvider = require('../services/topupProvider');
+const emailService = require('../services/emailService');
 
 // Points ratio: Rp 10.000 = 1 Point
 const RUPIAH_PER_POINT = parseInt(process.env.RUPIAH_PER_POINT || '10000', 10);
@@ -10,13 +11,13 @@ class OrderQueue {
     this.isProcessing = false;
   }
 
-  enqueue(order) {
+  async enqueue(order) {
     this.queue.push({
       order,
       attempts: 0,
       maxAttempts: 3
     });
-    this.processNext();
+    return await this.processNext();
   }
 
   async processNext() {
@@ -46,6 +47,13 @@ class OrderQueue {
       );
 
       console.log(`[QUEUE] Order ${order.invoice_number} completed successfully with SN: ${result.sn}`);
+
+      // Kirim struk bukti transaksi digital via Email
+      try {
+        await emailService.sendOrderReceipt(order, result);
+      } catch (mailErr) {
+        console.warn(`[EMAIL] Peringatan pengiriman struk email untuk ${order.invoice_number}:`, mailErr.message);
+      }
 
       // If user is registered, award loyalty points
       if (order.user_id) {

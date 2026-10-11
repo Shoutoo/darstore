@@ -325,7 +325,7 @@ exports.getOrder = async (req, res) => {
 
           try {
             const orderQueue = require('../jobs/processOrderQueue');
-            orderQueue.enqueue({ ...order, status: 'Berhasil' });
+            await orderQueue.enqueue({ ...order, status: 'Berhasil' });
           } catch (qErr) {
             console.warn('[AUTO-SYNC] Queue enqueue error:', qErr.message);
           }

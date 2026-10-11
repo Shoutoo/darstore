@@ -86,6 +86,11 @@ export function setupValoInputValidation() {
       validateVisual();
     }
   });
+
+  const emailEl = document.getElementById('valo-email');
+  if (emailEl && appState.currentUser?.email && !emailEl.value) {
+    emailEl.value = appState.currentUser.email;
+  }
 }
 
 export function updateValoSummary() {
@@ -261,13 +266,15 @@ export async function handleValoCheckout() {
     return;
   }
 
-  const wa = document.getElementById('valo-wa')?.value.trim();
-  if (!wa) {
-    showCyberToast('Silakan masukkan No. WhatsApp Anda untuk menerima bukti transaksi!', 'warning', 'KONTAK NOTIFIKASI');
-    document.getElementById('valo-wa')?.focus();
+  const emailInput = document.getElementById('valo-email');
+  const email = emailInput?.value.trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    showCyberToast('Silakan masukkan alamat email yang valid untuk menerima bukti transaksi & nomor seri pesanan!', 'warning', 'EMAIL NOTIFIKASI');
+    emailInput?.focus();
     return;
   }
-  state.wa = '0' + wa.replace(/^0+/, '');
+  state.email = email;
 
   const orderBtn = document.getElementById('valo-btn-order');
   if (orderBtn) {
@@ -280,7 +287,7 @@ export async function handleValoCheckout() {
       product_id: state.selectedNominal.id,
       game: 'valorant',
       riot_id: state.riotId,
-      wa_email_guest: state.wa,
+      wa_email_guest: state.email,
       payment_method: state.selectedPayment.name,
       qty: 1,
       use_points: Boolean(state.usePoints),

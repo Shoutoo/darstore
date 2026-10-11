@@ -90,8 +90,8 @@ exports.handlePaymentWebhook = async (req, res) => {
 
       // Picu proses pengiriman item top up ke akun game via background queue
       // Worker queue akan otomatis mengupdate status jadi 'Diproses' -> 'Berhasil'
-      // dan menambahkan poin loyalitas ke akun pengguna jika ada user_id.
-      orderQueue.enqueue(order);
+      // dan menambahkan poin loyalitas ke akun pengguna jika ada user_id, serta mengirimkan struk email.
+      await orderQueue.enqueue(order);
     } else if (['expire', 'deny', 'cancel'].includes(transaction_status)) {
       console.log(`[WEBHOOK] Payment failed/expired (${transaction_status}) for invoice ${order.invoice_number}`);
       await dbAsync.run(
