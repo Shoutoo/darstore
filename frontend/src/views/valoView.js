@@ -128,7 +128,7 @@ export function updateValoSummary() {
   }
 
   const basePrice = state.selectedNominal.price;
-  const fee = state.selectedPayment ? state.selectedPayment.fee : 800;
+  const fee = state.selectedPayment ? (state.selectedPayment.fee || 0) : 0;
 
   // Anti-loss loyalty calculations:
   // 1 Poin = Rp 100
@@ -311,6 +311,7 @@ export async function handleValoCheckout() {
       riot_id: state.riotId,
       wa_email_guest: state.email,
       payment_method: state.selectedPayment.name,
+      payment_channel: state.selectedPayment.channel || null,
       qty: 1,
       use_points: Boolean(state.usePoints),
       points_to_use: state.usePoints ? (state.computedPointsUsed || 0) : 0
@@ -366,7 +367,7 @@ export async function handleValoCheckout() {
           </div>
           <div class="summary-row" style="margin-bottom: 8px;">
             <span>Metode Bayar:</span>
-            <strong>${order.payment_method || state.selectedPayment.name} (Midtrans QRIS)</strong>
+            <strong>${order.payment_method || state.selectedPayment.name} (Midtrans)</strong>
           </div>
           ${order.discount_amount > 0 ? `
             <div class="summary-row" style="margin-bottom: 8px; color: #fde047;">
@@ -390,7 +391,7 @@ export async function handleValoCheckout() {
             <img src="/assets/payments/qris_sample.svg" alt="QRIS Midtrans" class="qr-code-img" style="margin: 0 auto; width: 195px; height: 195px; border-radius: 8px; object-fit: contain; display: block;" />
           `}
           <div style="font-size: 11.5px; color: #475569; margin-top: 10px; font-weight: 600;">
-            Mendukung GoPay, DANA, OVO, ShopeePay, LinkAja & Seluruh Mobile Banking
+            Mendukung GoPay, Bank Mandiri, BNI, BRI, Permata & CIMB Niaga
           </div>
         </div>
 

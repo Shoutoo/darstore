@@ -174,7 +174,9 @@ exports.createOrder = async (req, res) => {
       total_harga,
       product_id: product.id,
       nama_item: `${product.nama_item} (x${quantity})`,
-      wa_email_guest
+      wa_email_guest,
+      payment_method,
+      payment_channel: req.body.payment_channel || null
     };
 
     // 1. Simpan order ke database dengan status awal Menunggu Pembayaran

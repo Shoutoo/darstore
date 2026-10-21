@@ -206,17 +206,23 @@ class PaymentGatewayService {
   }
 
   /**
-   * Create Snap Transaction (Multi-payment: Kartu Kredit, VA BSI/Mandiri/Permata, GoPay, QRIS)
-   * @param {Object} order - { invoice_number, total_harga, nama_item }
+   * Create Snap Transaction (Active: GoPay, Mandiri, BNI, BRI, Permata, CIMB)
+   * @param {Object} order - { invoice_number, total_harga, nama_item, payment_channel }
    * @param {Object} customer - { name, email, phone }
    */
   async createSnapTransaction(order, customer = {}) {
     this.reloadConfig();
+    const activeChannels = ['gopay', 'bni_va', 'bri_va', 'echannel', 'permata_va', 'cimb_va'];
+    const enabledPayments = (order.payment_channel && activeChannels.includes(order.payment_channel))
+      ? [order.payment_channel]
+      : activeChannels;
+
     const parameter = {
       transaction_details: {
         order_id: order.invoice_number,
         gross_amount: Math.round(Number(order.total_harga)),
       },
+      enabled_payments: enabledPayments,
       item_details: [
         {
           id: String(order.product_id || order.invoice_number),
@@ -254,11 +260,64 @@ class PaymentGatewayService {
 
   /**
    * Create Midtrans Payment Link / Hosted Checkout
-   * @param {Object} order - { invoice_number, total_harga, nama_item, product_id }
+   * @param {Object} order - { invoice_number, total_harga, nama_item, product_id, payment_channel }
    * @param {Object} customer - { name, email, phone }
    */
   async createPaymentLink(order, customer = {}) {
     this.reloadConfig();
+    const activeChannels = ['gopay', 'bni_va', 'bri_va', 'echannel', 'permata_va', 'cimb_va'];
+    const enabledPayments = (order.payment_channel && activeChannels.includes(order.payment_channel))
+      ? [order.payment_channel]
+      : activeChannels;
+
+    const endpoint = this.isProduction
+      ? 'https://api.midtrans.com/v1/payment-links'
+      : 'https://api.sandbox.midtrans.com/v1/payment-links';
+    const auth = Buffer.from(this.serverKey + ':').toString('base64');
+
+    try {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${auth}`
+        },
+        body: JSON.stringify({
+          transaction_details: {
+            order_id: order.invoice_number,
+            gross_amount: Math.round(Number(order.total_harga))
+          },
+          usage_limit: 1,
+          enabled_payments: enabledPayments,
+          customer_details: {
+            first_name: customer.name || 'Pelanggan Darstore',
+            email: customer.email || 'customer@darstore.com',
+            phone: customer.phone || '081234567890'
+          },
+          item_details: [{
+            id: String(order.product_id || order.invoice_number),
+            price: Math.round(Number(order.total_harga)),
+            quantity: 1,
+            name: (order.nama_item || 'Produk Top Up Game').substring(0, 50)
+          }]
+        })
+      });
+
+      if (resp.ok) {
+        const linkRes = await resp.json();
+        return {
+          order_id: order.invoice_number,
+          payment_url: linkRes.payment_url,
+          redirect_url: linkRes.payment_url,
+          qr_url: linkRes.qr_url,
+          token: linkRes.order_id
+        };
+      }
+    } catch (e) {
+      console.warn('[MIDTRANS PAYMENT LINK API] Fallback to Snap:', e.message);
+    }
+
     try {
       const snapRes = await this.createSnapTransaction(order, customer);
       return {
