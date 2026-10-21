@@ -26,7 +26,7 @@ export async function renderMLView() {
   const container = document.getElementById('ml-nominals-container');
   if (!container) return;
 
-  let items = ML_NOMINALS.topup_diamonds;
+  let items = [...ML_NOMINALS.topup_diamonds];
 
   try {
     const data = await getProducts('mlbb');
@@ -34,14 +34,17 @@ export async function renderMLView() {
       items = data.products.map(p => ({
         id: p.id.toString(),
         name: p.nama_item || p.namaItem,
-        price: p.harga,
+        price: Number(p.harga),
         icon: (p.icon && !p.icon.includes('diamond_small.png')) ? p.icon : '/assets/icons/diamond_single.png'
       }));
-      appState.mlProducts = items;
     }
   } catch (err) {
     console.warn('Fetching MLBB products from database:', err);
   }
+
+  // Urutkan dari harga termurah ke termahal
+  items.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+  appState.mlProducts = items;
 
   container.innerHTML = `
     <div style="margin-bottom: 16px; position: relative;">

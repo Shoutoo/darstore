@@ -26,7 +26,7 @@ export async function renderValoView() {
   const container = document.getElementById('valo-nominals-container');
   if (!container) return;
 
-  let items = VALO_NOMINALS['id'];
+  let items = [...VALO_NOMINALS['id']];
 
   try {
     const data = await getProducts('valorant');
@@ -34,14 +34,17 @@ export async function renderValoView() {
       items = data.products.map(p => ({
         id: p.id.toString(),
         name: p.nama_item || p.namaItem,
-        price: p.harga,
+        price: Number(p.harga),
         icon: p.icon || '/assets/icons/vp_icon.png'
       }));
-      appState.valoProducts = items;
     }
   } catch (err) {
     console.warn('Fetching Valorant products from database:', err);
   }
+
+  // Urutkan dari harga termurah ke termahal
+  items.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+  appState.valoProducts = items;
 
   container.innerHTML = `
     <div style="margin-bottom: 16px; position: relative;">

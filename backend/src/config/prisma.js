@@ -18,7 +18,7 @@ const dbService = {
       sql += ' AND game = ?';
       params.push(game);
     }
-    sql += ' ORDER BY nominal ASC';
+    sql += ' ORDER BY harga ASC, nominal ASC';
     return await dbAsync.all(sql, params);
   },
 
