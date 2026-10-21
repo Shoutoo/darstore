@@ -44,26 +44,7 @@ darstore/
 
 ## 🛠️ Panduan Memulai (Instalasi & Menjalankan)
 
-### 🐳 Menjalankan dengan Docker (Rekomendasi untuk Deployment & Portabilitas)
-
-Proyek ini sudah dilengkapi `Dockerfile` multi-stage dan `docker-compose.yml`. Anda dapat menjalankannya di mana saja (VPS, cloud, local PC):
-
-```bash
-# 1. Jalankan langsung dengan Docker Compose (Port 3000)
-docker compose up -d --build
-
-# 2. Cek status container & log
-docker compose ps
-docker compose logs -f
-
-# 3. Menghentikan container
-docker compose down
-```
-*Aplikasi langsung dapat diakses di: `http://localhost:3000` (Storefront) dan `http://localhost:3000/admin` (Admin Dashboard).*
-
----
-
-### 💻 Menjalankan Secara Manual (Development Lokal)
+### 💻 Menjalankan Proyek (Development Lokal)
 
 #### Prasyarat
 - [Node.js](https://nodejs.org/) (versi 18+)
