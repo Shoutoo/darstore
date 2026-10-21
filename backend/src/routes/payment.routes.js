@@ -63,4 +63,40 @@ router.post('/create', async (req, res) => {
   }
 });
 
+// 3. Create Midtrans Payment Link Endpoint
+// Endpoint: POST /api/payment/payment-link
+router.post('/payment-link', async (req, res) => {
+  try {
+    const { order_id, amount, gross_amount, item_name, customer_name, customer_email, customer_phone } = req.body;
+    const finalAmount = amount || gross_amount || 10000;
+    const invoiceNumber = order_id || `PLINK-${Date.now()}`;
+    const itemName = item_name || 'Top Up Game Darstore';
+
+    const linkData = await paymentGateway.createPaymentLink(
+      {
+        invoice_number: invoiceNumber,
+        total_harga: finalAmount,
+        nama_item: itemName,
+      },
+      {
+        name: customer_name || 'Pelanggan Darstore',
+        email: customer_email || 'customer@darstore.com',
+        phone: customer_phone || '081234567890',
+      }
+    );
+
+    return res.json({
+      success: true,
+      message: 'Payment Link berhasil dibuat',
+      payment_url: linkData.payment_url,
+      redirect_url: linkData.redirect_url,
+      order_id: invoiceNumber,
+      token: linkData.token,
+    });
+  } catch (err) {
+    console.error('Create Payment Link error:', err.message);
+    return res.status(500).json({ success: false, message: 'Gagal membuat Payment Link', error: err.message });
+  }
+});
+
 module.exports = router;

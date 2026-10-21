@@ -4221,4 +4221,111 @@ img {
   box-shadow: 0 0 10px var(--accent-gold-glow);
 }
 
+/* ==========================================================
+   ACADEMIC THESIS BANNER & MIDTRANS SANDBOX SIMULATOR
+   ========================================================== */
+.thesis-header-banner {
+  background: linear-gradient(90deg, #09131f 0%, #0c1c2e 50%, #09131f 100%);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 8px 0;
+  font-size: 12.5px;
+  position: relative;
+  z-index: 99;
+}
+
+.thesis-banner-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.thesis-info-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.thesis-sandbox-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.thesis-sandbox-pill .pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+  animation: pulse-glow 1.8s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.thesis-main-title {
+  color: #e2e8f0;
+  font-weight: 600;
+  font-size: 12.5px;
+  letter-spacing: 0.2px;
+  line-height: 1.4;
+}
+
+.thesis-info-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.thesis-simulator-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+}
+
+.thesis-simulator-btn:hover {
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
+  color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .thesis-banner-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .thesis-main-title {
+    font-size: 11.5px;
+  }
+}
+
 

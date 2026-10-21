@@ -54,13 +54,15 @@ class PaymentGatewayService {
     if (isMock) {
       console.log(`[MIDTRANS] Dev Mode (Mock): Server key placeholder aktif. Mengenerate QRIS lokal untuk ${order.invoice_number}`);
       const mockRef = `MID-MOCK-${Date.now()}`;
-      const mockQrisUrl = '/assets/payments/qris_sample.svg';
+      const qrisString = `00020101021226570014ID.DARSSTORE.WWW01189360091800000000000208${order.invoice_number}520454115303360540${order.total_harga.toString().length}${order.total_harga}5802ID5910DARSSTORE6007JAKARTA62070703A016304`;
+      const mockQrisUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrisString)}`;
       const expiry = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
       return {
         payment_ref: mockRef,
-        qris_string: `00020101021226570014ID.DARSSTORE.WWW01189360091800000000000208${order.invoice_number}520454115303360540${order.total_harga.toString().length}${order.total_harga}5802ID5910DARSSTORE6007JAKARTA62070703A016304`,
+        qris_string: qrisString,
         qris_url: mockQrisUrl,
+        simulator_url: 'https://simulator.sandbox.midtrans.com/qris/index',
         expired_at: expiry,
         raw_response: {
           status_code: '201',
@@ -113,13 +115,14 @@ class PaymentGatewayService {
       const qrCodeUrl = qrAction
         ? qrAction.url
         : (chargeResponse.qr_string
-            ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(chargeResponse.qr_string)}`
+            ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(chargeResponse.qr_string)}`
             : null);
 
       return {
         payment_ref: chargeResponse.transaction_id,
         qris_string: chargeResponse.qr_string || null,
         qris_url: qrCodeUrl,
+        simulator_url: 'https://simulator.sandbox.midtrans.com/qris/index',
         expired_at: chargeResponse.expiry_time || new Date(Date.now() + 15 * 60 * 1000).toISOString(),
         raw_response: chargeResponse,
       };
@@ -140,7 +143,7 @@ class PaymentGatewayService {
             });
 
             // Buat QR code yang mengarahkan langsung ke halaman pembayaran Snap
-            const snapQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(snapRes.redirect_url)}`;
+            const snapQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(snapRes.redirect_url)}`;
             const expiryTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
             return {
@@ -148,6 +151,7 @@ class PaymentGatewayService {
               qris_string: snapRes.redirect_url,
               qris_url: snapQrUrl,
               redirect_url: snapRes.redirect_url,
+              simulator_url: 'https://simulator.sandbox.midtrans.com/qris/index',
               snap_token: snapRes.token,
               expired_at: expiryTime,
               raw_response: {
@@ -177,11 +181,13 @@ class PaymentGatewayService {
 
       // Fallback aman untuk development/sandbox agar alur UI & testing tetap berjalan mulus
       const mockRef = `MID-SANDBOX-${Date.now()}`;
-      const mockQrisUrl = '/assets/payments/qris_sample.svg';
+      const qrisString = `00020101021226570014ID.DARSSTORE.WWW01189360091800000000000208${order.invoice_number}520454115303360540${order.total_harga.toString().length}${order.total_harga}5802ID5910DARSSTORE6007JAKARTA62070703A016304`;
+      const mockQrisUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrisString)}`;
       return {
         payment_ref: mockRef,
-        qris_string: `00020101021226570014ID.DARSSTORE.WWW01189360091800000000000208${order.invoice_number}520454115303360540${order.total_harga.toString().length}${order.total_harga}5802ID5910DARSSTORE6007JAKARTA62070703A016304`,
+        qris_string: qrisString,
         qris_url: mockQrisUrl,
+        simulator_url: 'https://simulator.sandbox.midtrans.com/qris/index',
         expired_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
         raw_response: {
           status_code: '201',
@@ -238,6 +244,27 @@ class PaymentGatewayService {
         console.error('[MIDTRANS SNAP ERROR]:', err.message);
         throw err;
       }
+    }
+  }
+
+  /**
+   * Create Midtrans Payment Link / Hosted Checkout
+   * @param {Object} order - { invoice_number, total_harga, nama_item, product_id }
+   * @param {Object} customer - { name, email, phone }
+   */
+  async createPaymentLink(order, customer = {}) {
+    this.reloadConfig();
+    try {
+      const snapRes = await this.createSnapTransaction(order, customer);
+      return {
+        order_id: order.invoice_number,
+        payment_url: snapRes.redirect_url,
+        redirect_url: snapRes.redirect_url,
+        token: snapRes.token
+      };
+    } catch (err) {
+      console.error('[MIDTRANS PAYMENT LINK ERROR]:', err.message);
+      throw err;
     }
   }
 

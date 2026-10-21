@@ -173,7 +173,8 @@ exports.createOrder = async (req, res) => {
       invoice_number,
       total_harga,
       product_id: product.id,
-      nama_item: `${product.nama_item} (x${quantity})`
+      nama_item: `${product.nama_item} (x${quantity})`,
+      wa_email_guest
     };
 
     // 1. Simpan order ke database dengan status awal Menunggu Pembayaran
@@ -245,6 +246,8 @@ exports.createOrder = async (req, res) => {
         message: 'Pesanan berhasil dibuat.',
         invoiceNumber: invoice_number,
         qrCodeUrl: qrisData.qris_url,
+        qrisString: qrisData.qris_string,
+        simulatorUrl: 'https://simulator.sandbox.midtrans.com/qris/index',
         redirectUrl: qrisData.redirect_url || null,
         snapToken: qrisData.snap_token || null,
         expiredAt: qrisData.expired_at,
@@ -254,6 +257,8 @@ exports.createOrder = async (req, res) => {
         order: {
           ...updatedOrder,
           qrCodeUrl: qrisData.qris_url,
+          qrisString: qrisData.qris_string,
+          simulatorUrl: 'https://simulator.sandbox.midtrans.com/qris/index',
           redirectUrl: qrisData.redirect_url || null,
           snapToken: qrisData.snap_token || null,
           expiredAt: qrisData.expired_at,
@@ -345,6 +350,14 @@ exports.getOrder = async (req, res) => {
       } catch (syncErr) {
         console.warn(`[AUTO-SYNC] Midtrans check notice for ${order.invoice_number}:`, syncErr.message);
       }
+    }
+
+    if (order && !order.redirect_url && order.qris_string && order.qris_string.startsWith('http')) {
+      order.redirect_url = order.qris_string;
+    }
+
+    if (order) {
+      order.simulator_url = 'https://simulator.sandbox.midtrans.com/qris/index';
     }
 
     return res.json({

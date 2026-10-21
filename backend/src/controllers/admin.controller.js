@@ -1,6 +1,7 @@
 const { dbAsync } = require('../config/db');
 const { dbService } = require('../config/prisma');
 const orderQueue = require('../jobs/processOrderQueue');
+const topupProvider = require('../services/topupProvider');
 
 // Audit Trail Logger Helper
 async function logAdminAction(adminId, action, targetType, targetId, detail = {}) {
@@ -487,14 +488,15 @@ exports.toggleBlockUser = async (req, res) => {
 // 5. PROVIDER BALANCE & PAYMENT SETTINGS
 exports.getProviderBalance = async (req, res) => {
   try {
-    // Check Digiflazz API configuration
-    const username = process.env.DIGIFLAZZ_USERNAME;
-    const isConfigured = Boolean(username && username !== 'your_digiflazz_username');
+    const isConfigured = topupProvider.isConfigured();
+    const username = topupProvider.getUsername();
 
     return res.json({
       success: true,
       provider: 'Digiflazz H2H Top Up',
       configured: isConfigured,
+      username: username,
+      mode: topupProvider.isDevelopment() ? 'Development (Testing)' : 'Production',
       balance: isConfigured ? 15400000 : 2500000,
       currency: 'IDR',
       status: 'Online',
@@ -504,6 +506,31 @@ exports.getProviderBalance = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Gagal memeriksa saldo provider.' });
   }
 };
+
+exports.testProviderTransaction = async (req, res) => {
+  try {
+    const { buyer_sku_code = 'xld10', customer_no = '087800001232', testing = true } = req.body || {};
+    const ref_id = `test_${Date.now()}`;
+
+    const result = await topupProvider.requestTransaction({
+      buyer_sku_code,
+      customer_no,
+      ref_id,
+      testing
+    });
+
+    return res.json({
+      success: true,
+      data: result
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Gagal melakukan test transaksi Digiflazz'
+    });
+  }
+};
+
 
 exports.getPaymentSettings = async (req, res) => {
   try {

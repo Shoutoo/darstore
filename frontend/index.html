@@ -3,13 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dar'sstore - Tempat Top Up Games Cepat, Aman & Terpercaya</title>
-  <meta name="description" content="Dar'sstore adalah tempat top up games yang aman, murah dan terpercaya. Proses cepat 1-3 Detik. Open 24 jam. Pembayaran QRIS instan." />
+  <title>Pengembangan Website Top-Up Game Online dengan Integrasi Pembayaran QRIS melalui Midtrans pada Lingkungan Sandbox</title>
+  <meta name="description" content="Pengembangan Website Top-Up Game Online dengan Integrasi Pembayaran QRIS melalui Midtrans pada Lingkungan Sandbox. Platform top up games modern, cepat, aman, dan terpercaya." />
   <link rel="icon" type="image/svg+xml" href="/assets/logo/darsstore_emblem.svg" />
   <link rel="alternate icon" type="image/png" href="/assets/logo/darsstore_logo.png" />
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
+
+  <!-- ==================== THESIS HEADER / MIDTRANS SANDBOX BANNER ==================== -->
+  <aside class="thesis-header-banner" aria-label="Informasi Sistem Skripsi dan Lingkungan Sandbox">
+    <div class="container thesis-banner-container">
+      <div class="thesis-info-left">
+        <span class="thesis-sandbox-pill">
+          <span class="pulse-dot"></span>
+          MIDTRANS SANDBOX
+        </span>
+        <span class="thesis-main-title">
+          Pengembangan Website Top-Up Game Online dengan Integrasi Pembayaran QRIS melalui Midtrans pada Lingkungan Sandbox
+        </span>
+      </div>
+      <div class="thesis-info-right">
+        <a href="https://simulator.sandbox.midtrans.com/qris/index" target="_blank" rel="noopener noreferrer" class="thesis-simulator-btn" title="Buka Midtrans Payment Simulator resmi untuk simulasi bayar QRIS Sandbox">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          <span>Payment Simulator Midtrans</span>
+        </a>
+      </div>
+    </div>
+  </aside>
 
   <!-- ==================== HEADER / NAVBAR ==================== -->
   <header class="site-header">
@@ -576,9 +597,13 @@
       <div class="modal-body" id="checkout-modal-body">
         <!-- Rendered dynamically by JS -->
       </div>
-      <div class="modal-footer" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+      <div class="modal-footer" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; align-items: center;">
+        <a href="https://simulator.sandbox.midtrans.com/qris/index" target="_blank" rel="noopener noreferrer" class="btn-load-more" id="btn-open-simulator-checkout" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); text-decoration: none; font-weight: 700; padding: 10px 16px; border-radius: var(--radius-md);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          <span>Payment Simulator Midtrans</span>
+        </a>
         <button class="btn-load-more" id="btn-simulate-pay" style="background: var(--accent-gold); color: #ffffff; border-color: var(--accent-gold); font-weight: 700;">
-          ⚡ Simulasi Bayar QRIS (Demo)
+          ⚡ Simulasi Bayar Instan (Demo)
         </button>
         <button class="btn-load-more" id="btn-copy-invoice-code">Salin Invoice</button>
         <button class="btn-order-now" id="btn-goto-check-trans" style="padding: 10px 20px; width: auto;">Cek Status Pesanan</button>

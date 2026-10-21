@@ -6,6 +6,10 @@
     "dev": "npm --prefix frontend run dev",
     "server": "npm --prefix backend run start",
     "dev:backend": "npm --prefix backend run dev",
+    "test:digiflazz": "node backend/test-digiflazz.js",
+    "sync:prices": "node backend/scripts/sync_digiflazz_prices.js",
+    "populate:products": "node backend/scripts/populate_all_products.js",
+    "bulk:midtrans": "node backend/scripts/generate_bulk_midtrans.js",
     "build": "npm --prefix frontend run build"
   },
   "dependencies": {

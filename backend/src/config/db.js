@@ -34,6 +34,10 @@ const dbPath = process.env.DB_PATH || path.join(__dirname, '../../database.sqlit
 let db = null;
 if (!pgPool) {
   try {
+    const dbDir = path.dirname(dbPath);
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
     const sqlite3 = require('sqlite3').verbose();
     db = new sqlite3.Database(dbPath, (err) => {
       if (err) {
@@ -74,7 +78,7 @@ const dbAsync = {
         const returnedId = res.rows && res.rows.length > 0 ? res.rows[0].id : null;
         return { id: returnedId || res.rowCount, changes: res.rowCount };
       } catch (err) {
-        if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated/i.test(err.message)) {
+        if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated|socket disconnected|TLS|closed/i.test(err.message)) {
           await new Promise(r => setTimeout(r, 600));
           const currentPool = getPgPool();
           if (currentPool) {
@@ -102,7 +106,7 @@ const dbAsync = {
         const res = await pool.query(pgSql, params);
         return res.rows && res.rows.length > 0 ? res.rows[0] : null;
       } catch (err) {
-        if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated/i.test(err.message)) {
+        if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated|socket disconnected|TLS|closed/i.test(err.message)) {
           await new Promise(r => setTimeout(r, 600));
           const currentPool = getPgPool();
           if (currentPool) {
@@ -129,7 +133,7 @@ const dbAsync = {
         const res = await pool.query(pgSql, params);
         return res.rows || [];
       } catch (err) {
-        if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated/i.test(err.message)) {
+        if (/ENOTFOUND|ECONNRESET|ETIMEDOUT|Connection terminated|socket disconnected|TLS|closed/i.test(err.message)) {
           await new Promise(r => setTimeout(r, 600));
           const currentPool = getPgPool();
           if (currentPool) {

@@ -1,6 +1,6 @@
-# 🎮 Dar'sstore — Platform Top Up Games Cepat, Murah & Terpercaya
+# 🎮 Pengembangan Website Top-Up Game Online dengan Integrasi Pembayaran QRIS melalui Midtrans pada Lingkungan Sandbox
 
-Website platform top up game modern dan responsif untuk Mobile Legends: Bang Bang dan Valorant, dilengkapi integrasi backend Express API, basis data transaksi, serta Admin Dashboard.
+Website platform top up game modern dan responsif untuk Mobile Legends: Bang Bang dan Valorant dengan integrasi resmi sistem pembayaran QRIS melalui **Midtrans (Lingkungan Sandbox)**, pemenuhan pesanan otomatis via H2H Digiflazz, basis data transaksi, serta Admin Dashboard.
 
 ---
 
@@ -44,11 +44,32 @@ darstore/
 
 ## 🛠️ Panduan Memulai (Instalasi & Menjalankan)
 
-### Prasyarat
+### 🐳 Menjalankan dengan Docker (Rekomendasi untuk Deployment & Portabilitas)
+
+Proyek ini sudah dilengkapi `Dockerfile` multi-stage dan `docker-compose.yml`. Anda dapat menjalankannya di mana saja (VPS, cloud, local PC):
+
+```bash
+# 1. Jalankan langsung dengan Docker Compose (Port 3000)
+docker compose up -d --build
+
+# 2. Cek status container & log
+docker compose ps
+docker compose logs -f
+
+# 3. Menghentikan container
+docker compose down
+```
+*Aplikasi langsung dapat diakses di: `http://localhost:3000` (Storefront) dan `http://localhost:3000/admin` (Admin Dashboard).*
+
+---
+
+### 💻 Menjalankan Secara Manual (Development Lokal)
+
+#### Prasyarat
 - [Node.js](https://nodejs.org/) (versi 18+)
 - [Git](https://git-scm.com/)
 
-### 1. Menjalankan dari Root Proyek (Paling Praktis)
+#### 1. Menjalankan dari Root Proyek (Paling Praktis)
 ```bash
 # Menjalankan backend server (Port 3000)
 npm run server
@@ -57,7 +78,7 @@ npm run server
 npm run dev
 ```
 
-### 2. Atau Menjalankan Secara Manual per Folder
+#### 2. Atau Menjalankan Secara Manual per Folder
 
 #### Backend:
 ```bash
@@ -89,18 +110,33 @@ JWT_SECRET=darstore_super_secret_jwt_key_2026
 # Loyalty points ratio: Rp 10.000 = 1 Point
 RUPIAH_PER_POINT=10000
 
-# Opsional: PostgreSQL (Supabase / Railway). Jika kosong, otomatis fallback ke SQLite lokal
-# DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[REF].supabase.co:5432/postgres?schema=public"
+# PostgreSQL (Supabase / Railway / Self-hosted)
+DATABASE_URL="postgresql://postgres:[PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres"
 
-# Tripay Payment Gateway (QRIS)
-TRIPAY_API_KEY=your_tripay_api_key
-TRIPAY_PRIVATE_KEY=your_tripay_private_key
-TRIPAY_MERCHANT_CODE=your_tripay_merchant_code
+# Midtrans Payment Gateway (Mode Sandbox)
+MIDTRANS_MERCHANT_ID=M738281649
+MIDTRANS_SERVER_KEY=SB-Mid-server-xxxxxxxxxxxxx
+MIDTRANS_CLIENT_KEY=SB-Mid-client-xxxxxxxxxxxxx
+MIDTRANS_IS_PRODUCTION=false
 
-# Digiflazz Top Up Provider API
+# Digiflazz H2H Top Up Provider API
 DIGIFLAZZ_USERNAME=your_digiflazz_username
 DIGIFLAZZ_KEY=your_digiflazz_api_key
+DIGIFLAZZ_MODE=development
 ```
+
+---
+
+## 🧪 Uji Coba Simulasi Pembayaran (Midtrans Sandbox Simulator)
+
+Pada mode **Sandbox**, pembayaran QRIS tidak menggunakan uang asli. Sistem telah terintegrasi dengan **Midtrans Payment Simulator**:
+
+1. Lakukan pemesanan top-up di halaman game (Mobile Legends / Valorant).
+2. Pada modal popup tagihan, klik tombol **"Buka Midtrans Payment Simulator"** atau akses langsung:
+   👉 **[https://simulator.sandbox.midtrans.com/qris/index](https://simulator.sandbox.midtrans.com/qris/index)**
+3. Klik tombol **"Salin URL Gambar QR"** di modal pembayaran Dar'sstore, lalu tempel (*paste*) URL tersebut ke kolom *QR Code Image Url* pada simulator Midtrans, kemudian klik **Scan QR** (atau gunakan tombol **"⚡ Simulasi Bayar Instan (Demo)"**).
+4. Status pembayaran otomatis terverifikasi secara *real-time* dan pesanan langsung diproses.
+
 
 ---
 

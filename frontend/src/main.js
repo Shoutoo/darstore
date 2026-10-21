@@ -604,6 +604,33 @@ document.addEventListener('click', (e) => {
   navigateTo(route);
 });
 
+// Helper for copying QR URL to use in Midtrans Simulator
+window.copyQrCodeUrl = function(url) {
+  if (!url) {
+    showCyberToast('URL Gambar QRIS belum tersedia.', 'warning', 'SALIN URL');
+    return;
+  }
+  const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+  navigator.clipboard.writeText(fullUrl).then(() => {
+    showCyberToast('URL Gambar QRIS berhasil disalin! Tempel di Midtrans Payment Simulator.', 'success', 'SALIN QRIS');
+  }).catch(() => {
+    showCyberToast('Gagal menyalin ke clipboard.', 'warning', 'SALIN QRIS');
+  });
+};
+
+// Helper for copying raw QR string
+window.copyQrString = function(str) {
+  if (!str) {
+    showCyberToast('String QRIS belum tersedia.', 'warning', 'SALIN STRING');
+    return;
+  }
+  navigator.clipboard.writeText(str).then(() => {
+    showCyberToast('String QRIS berhasil disalin!', 'success', 'SALIN QRIS');
+  }).catch(() => {
+    showCyberToast('Gagal menyalin ke clipboard.', 'warning', 'SALIN QRIS');
+  });
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   renderHomepage();
   renderHomepageLeaderboardTeaser();

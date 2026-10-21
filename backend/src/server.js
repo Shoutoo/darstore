@@ -56,6 +56,21 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', app: "Dar'sstore Backend API", version: '1.0.0', time: new Date() });
 });
 
+// Serve frontend dist static files
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+if (require('fs').existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+      if (req.path === '/admin' || req.path === '/admin/') {
+        return res.sendFile(path.join(frontendDist, 'admin.html'));
+      }
+      return res.sendFile(path.join(frontendDist, 'index.html'));
+    }
+    next();
+  });
+}
+
 // Start server
 async function startServer() {
   try {

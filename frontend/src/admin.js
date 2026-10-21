@@ -1229,11 +1229,60 @@ async function loadProviderBalance() {
       if (valEl) valEl.innerText = formatted;
       const headEl = document.getElementById('header-provider-balance');
       if (headEl) headEl.innerText = formatted;
+
+      const userEl = document.getElementById('provider-username-val');
+      if (userEl && data.username) userEl.innerText = data.username;
+
+      const modeEl = document.getElementById('provider-mode-val');
+      if (modeEl && data.mode) modeEl.innerText = data.mode;
     }
   } catch (err) {
     console.error('loadProviderBalance error:', err);
   }
 }
+
+document.getElementById('btn-test-digiflazz')?.addEventListener('click', async () => {
+  const btn = document.getElementById('btn-test-digiflazz');
+  const resContainer = document.getElementById('test-digiflazz-result');
+  const statusEl = document.getElementById('test-digiflazz-status');
+  const outputEl = document.getElementById('test-digiflazz-output');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳ Mengirim...</span>';
+  resContainer?.classList.remove('hidden');
+  outputEl.innerText = 'Mengirim request ke https://api.digiflazz.com/v1/transaction...';
+
+  try {
+    const res = await adminFetch('/api/admin/provider/test', {
+      method: 'POST',
+      body: JSON.stringify({
+        buyer_sku_code: 'xld10',
+        customer_no: '087800001232',
+        testing: true
+      })
+    });
+    const d = await res.json();
+    btn.disabled = false;
+    btn.innerHTML = '<span>🚀 Jalankan Test</span>';
+
+    if (d.data?.response) {
+      outputEl.innerText = JSON.stringify(d.data.response, null, 2);
+      const status = d.data.response.data?.status || 'Selesai';
+      const rc = d.data.response.data?.rc || '-';
+      statusEl.innerText = `Status: ${status} (RC: ${rc})`;
+      statusEl.className = status === 'Sukses' ? 'font-mono text-emerald-400' : 'font-mono text-amber-400';
+      showCyberToast('Request test transaksi Digiflazz selesai!', 'info', 'Test H2H Digiflazz');
+    } else {
+      outputEl.innerText = JSON.stringify(d, null, 2);
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerHTML = '<span>🚀 Jalankan Test</span>';
+    outputEl.innerText = `Error: ${err.message}`;
+    showCyberToast('Gagal menghubungi backend: ' + err.message, 'error', 'Error Test');
+  }
+});
+
 
 // ----------------------------------------------------------
 // 6. REPORTS & EXPORT

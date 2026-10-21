@@ -29,6 +29,7 @@ router.post('/users/:id/toggle-block', adminController.toggleBlockUser);
 
 // Providers & Payment
 router.get('/provider/balance', adminController.getProviderBalance);
+router.post('/provider/test', adminController.testProviderTransaction);
 router.get('/payment-settings', adminController.getPaymentSettings);
 
 // Reports

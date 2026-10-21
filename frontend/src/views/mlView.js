@@ -44,10 +44,29 @@ export async function renderMLView() {
   }
 
   container.innerHTML = `
+    <div style="margin-bottom: 16px; position: relative;">
+      <input 
+        type="text" 
+        id="ml-nominal-search" 
+        placeholder="🔍 Cari nominal (contoh: 50, Weekly Pass, Twilight, 1000...)" 
+        style="width: 100%; padding: 12px 16px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: var(--radius-md); color: #fff; font-size: 13.5px; outline: none; box-sizing: border-box;"
+      />
+    </div>
     <div class="nominals-grid" id="ml-diamonds-grid">
       ${items.map(item => createNominalCardHTML(item)).join('')}
     </div>
   `;
+
+  const searchInput = document.getElementById('ml-nominal-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      container.querySelectorAll('.nominal-card').forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(q) ? '' : 'none';
+      });
+    });
+  }
 
   container.querySelectorAll('.nominal-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -349,7 +368,11 @@ export async function handleMLCheckout() {
           </div>
         </div>
 
-        <div class="qr-code-wrap" style="background: #ffffff; padding: 18px; border-radius: var(--radius-lg); text-align: center; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.25);">
+        <div class="qr-code-wrap" style="background: #ffffff; padding: 18px; border-radius: var(--radius-lg); text-align: center; margin-bottom: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.25);">
+          <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; margin-bottom: 10px; background: rgba(2, 132, 199, 0.1); border: 1px solid rgba(2, 132, 199, 0.35); border-radius: 20px; font-size: 11px; font-weight: 800; color: #0284c7; letter-spacing: 0.5px;">
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: #0284c7; display: inline-block;"></span>
+            LINGKUNGAN SANDBOX MIDTRANS
+          </div>
           <div style="font-size: 13px; color: #16212c; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
             SCAN QRIS UNTUK MEMBAYAR
           </div>
@@ -359,14 +382,41 @@ export async function handleMLCheckout() {
             <img src="/assets/payments/qris_sample.svg" alt="QRIS Midtrans" class="qr-code-img" style="margin: 0 auto; width: 195px; height: 195px; border-radius: 8px; object-fit: contain; display: block;" />
           `}
           <div style="font-size: 11.5px; color: #475569; margin-top: 10px; font-weight: 600;">
-            Mendukung GoPay, DANA, OVO, ShopeePay, LinkAja & Seluruh Mobile Banking
+            Mendukung GoPay, DANA, OVO, ShopeePay, LinkAja & Seluruh Mobile Banking (Sandbox)
+          </div>
+        </div>
+
+        <!-- Midtrans Sandbox Simulator Action Box -->
+        <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 13px 15px; margin-bottom: 16px; text-align: left;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+            <div style="font-size: 12.5px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+              <span>🧪</span> Simulator Pembayaran QRIS Midtrans (Sandbox)
+            </div>
+            <span style="font-size: 10px; font-weight: 700; background: rgba(56, 189, 248, 0.15); color: #7dd3fc; padding: 2px 8px; border-radius: 4px; font-family: monospace;">SANDBOX MODE</span>
+          </div>
+          <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.45; margin-bottom: 10px;">
+            Untuk uji coba scan QRIS Sandbox, buka Payment Simulator Midtrans resmi lalu tempel URL Gambar QR atau gunakan tombol simulasi instan di bawah:
+          </p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="https://simulator.sandbox.midtrans.com/qris/index" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; background: linear-gradient(135deg, #0284c7, #0369a1); color: #ffffff; text-decoration: none; border-radius: 7px; font-size: 11.5px; font-weight: 700; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              <span>Buka Midtrans Payment Simulator</span>
+            </a>
+            <button type="button" style="padding: 7px 11px; background: var(--bg-card); border: 1px solid var(--border-card); color: var(--text-primary); border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer;" onclick="window.copyQrCodeUrl('${qrCodeUrl}')">
+              📋 Salin URL Gambar QR
+            </button>
+            ${(order.qris_string || data.qrisString) ? `
+              <button type="button" style="padding: 7px 11px; background: var(--bg-card); border: 1px solid var(--border-card); color: var(--text-primary); border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer;" onclick="window.copyQrCodeString('${order.qris_string || data.qrisString}')">
+                📋 Salin QR String
+              </button>
+            ` : ''}
           </div>
         </div>
 
         ${(data.redirectUrl || order.redirect_url) ? `
           <div style="margin-bottom: 16px;">
-            <a href="${data.redirectUrl || order.redirect_url}" target="_blank" rel="noopener noreferrer" class="btn-order-now" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 12px; font-size: 13.5px; font-weight: 700; border-radius: var(--radius-md); background: linear-gradient(135deg, #0070f3, #0050d0); box-shadow: 0 4px 15px rgba(0, 112, 243, 0.4); color: #ffffff;">
-              🚀 Buka Halaman Pembayaran Midtrans Live
+            <a href="${data.redirectUrl || order.redirect_url}" target="_blank" rel="noopener noreferrer" class="btn-order-now" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 13px; font-size: 14px; font-weight: 700; border-radius: var(--radius-md); background: linear-gradient(135deg, #0070f3, #0050d0); box-shadow: 0 4px 15px rgba(0, 112, 243, 0.4); color: #ffffff;">
+              🚀 Buka Halaman Pembayaran Midtrans (Payment Link)
             </a>
           </div>
         ` : ''}

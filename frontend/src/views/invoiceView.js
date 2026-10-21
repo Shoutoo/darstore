@@ -158,13 +158,35 @@ export async function searchInvoice(query, onPaymentSuccess) {
             </div>
           </div>
         ` : (!isSuccess ? `
-          <div style="margin-top: 20px; padding: 14px; background: rgba(0, 97, 153, 0.12); border: 1px solid var(--accent-gold); border-radius: var(--radius-md); text-align: center;">
-            <div style="font-size: 13px; color: var(--accent-gold-light); margin-bottom: 8px;">
+          <div style="margin-top: 20px; padding: 16px; background: rgba(0, 97, 153, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-md); text-align: center;">
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; margin-bottom: 12px; background: rgba(2, 132, 199, 0.15); border: 1px solid rgba(2, 132, 199, 0.35); border-radius: 20px; font-size: 11px; font-weight: 800; color: #38bdf8; letter-spacing: 0.5px;">
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+              LINGKUNGAN SANDBOX MIDTRANS
+            </div>
+            <div style="font-size: 14px; font-weight: 700; color: #e2e8f0; margin-bottom: 6px;">
               Pesanan menunggu pembayaran QRIS.
             </div>
-            <button class="btn-order-now" style="margin: 0 auto; padding: 8px 18px; width: auto; font-size: 13px;" onclick="window.simulateInvoicePayment('${order.invoice_number}')">
-              ⚡ Konfirmasi Bayar Sekarang (Simulasi)
-            </button>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.45;">
+              Gunakan simulator resmi Midtrans untuk mensimulasikan scan QRIS Sandbox, atau gunakan tombol simulasi instan:
+            </p>
+
+            ${(order.redirect_url || (order.qris_string && order.qris_string.startsWith('http'))) ? `
+              <div style="margin-bottom: 12px;">
+                <a href="${order.redirect_url || order.qris_string}" target="_blank" rel="noopener noreferrer" class="btn-order-now" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 12px; font-size: 13.5px; font-weight: 700; border-radius: var(--radius-md); background: linear-gradient(135deg, #0070f3, #0050d0); box-shadow: 0 4px 15px rgba(0, 112, 243, 0.4); color: #ffffff;">
+                  🚀 Buka Halaman Pembayaran Midtrans (Payment Link)
+                </a>
+              </div>
+            ` : ''}
+
+            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+              <a href="https://simulator.sandbox.midtrans.com/qris/index" target="_blank" rel="noopener noreferrer" class="btn-order-now" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; padding: 9px 18px; font-size: 13px; font-weight: 700; border-radius: var(--radius-md); background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 3px 12px rgba(2, 132, 199, 0.35); color: #ffffff;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                <span>Buka Payment Simulator Midtrans</span>
+              </a>
+              <button class="btn-order-now" style="margin: 0; padding: 9px 18px; width: auto; font-size: 13px; background: var(--accent-gold);" onclick="window.simulateInvoicePayment('${order.invoice_number}')">
+                ⚡ Simulasi Bayar Instan (Demo)
+              </button>
+            </div>
           </div>
         ` : ''))}
 
