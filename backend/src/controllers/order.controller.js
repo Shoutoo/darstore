@@ -247,7 +247,7 @@ exports.createOrder = async (req, res) => {
         invoiceNumber: invoice_number,
         qrCodeUrl: qrisData.qris_url,
         qrisString: qrisData.qris_string,
-        simulatorUrl: 'https://simulator.sandbox.midtrans.com/qris/index',
+        simulatorUrl: qrisData.simulator_url || null,
         redirectUrl: qrisData.redirect_url || null,
         snapToken: qrisData.snap_token || null,
         expiredAt: qrisData.expired_at,
@@ -258,7 +258,7 @@ exports.createOrder = async (req, res) => {
           ...updatedOrder,
           qrCodeUrl: qrisData.qris_url,
           qrisString: qrisData.qris_string,
-          simulatorUrl: 'https://simulator.sandbox.midtrans.com/qris/index',
+          simulatorUrl: qrisData.simulator_url || null,
           redirectUrl: qrisData.redirect_url || null,
           snapToken: qrisData.snap_token || null,
           expiredAt: qrisData.expired_at,
@@ -357,7 +357,7 @@ exports.getOrder = async (req, res) => {
     }
 
     if (order) {
-      order.simulator_url = 'https://simulator.sandbox.midtrans.com/qris/index';
+      order.simulator_url = paymentGateway.isProduction ? null : 'https://simulator.sandbox.midtrans.com/qris/index';
     }
 
     return res.json({

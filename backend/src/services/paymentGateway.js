@@ -2,8 +2,8 @@ const crypto = require('crypto');
 const midtransClient = require('midtrans-client');
 
 /**
- * Midtrans Payment Gateway Service (Sandbox Mode Dedicated)
- * Implements Midtrans CoreApi (QRIS) & Snap (Multi-payment) in Sandbox mode.
+ * Midtrans Payment Gateway Service (Production & Sandbox Mode)
+ * Implements Midtrans CoreApi (QRIS) & Snap (Multi-payment).
  */
 class PaymentGatewayService {
   constructor() {
@@ -122,18 +122,23 @@ class PaymentGatewayService {
         payment_ref: chargeResponse.transaction_id,
         qris_string: chargeResponse.qr_string || null,
         qris_url: qrCodeUrl,
-        simulator_url: 'https://simulator.sandbox.midtrans.com/qris/index',
+        simulator_url: this.isProduction ? null : 'https://simulator.sandbox.midtrans.com/qris/index',
         expired_at: chargeResponse.expiry_time || new Date(Date.now() + 15 * 60 * 1000).toISOString(),
         raw_response: chargeResponse,
       };
     } catch (chargeErr) {
       if (this.isProduction) {
         console.error(`[MIDTRANS PRODUCTION NOTICE]: Core API QRIS: ${chargeErr.message}`);
-        // Jika channel GoPay/QRIS Core API belum aktif di MAP atau timeout, alihkan otomatis ke Midtrans Snap Live Checkout
+        // Jika channel GoPay/QRIS Core API belum aktif di MAP atau timeout atau 404, alihkan otomatis ke Midtrans Snap Live Checkout
         if (
           chargeErr.message.includes('Payment channel is not activated') ||
+          chargeErr.message.includes('Merchant pop id') ||
+          chargeErr.message.includes('404') ||
           chargeErr.message.includes('timeout') ||
-          (chargeErr.ApiResponse && chargeErr.ApiResponse.status_message && chargeErr.ApiResponse.status_message.includes('Payment channel is not activated'))
+          (chargeErr.ApiResponse && chargeErr.ApiResponse.status_message && (
+            chargeErr.ApiResponse.status_message.includes('Payment channel is not activated') ||
+            chargeErr.ApiResponse.status_message.includes('Merchant pop id')
+          ))
         ) {
           console.log('[MIDTRANS PRODUCTION] Core API QRIS channel belum diaktifkan di dashboard Midtrans. Mengalihkan ke Midtrans Snap Live Checkout...');
           try {
@@ -151,7 +156,7 @@ class PaymentGatewayService {
               qris_string: snapRes.redirect_url,
               qris_url: snapQrUrl,
               redirect_url: snapRes.redirect_url,
-              simulator_url: 'https://simulator.sandbox.midtrans.com/qris/index',
+              simulator_url: null,
               snap_token: snapRes.token,
               expired_at: expiryTime,
               raw_response: {

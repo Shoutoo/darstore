@@ -1,6 +1,6 @@
-# 🎮 Pengembangan Website Top-Up Game Online dengan Integrasi Pembayaran QRIS melalui Midtrans pada Lingkungan Sandbox
+# 🎮 Dar'sstore — Platform Top Up Games Cepat, Murah & Terpercaya
 
-Website platform top up game modern dan responsif untuk Mobile Legends: Bang Bang dan Valorant dengan integrasi resmi sistem pembayaran QRIS melalui **Midtrans (Lingkungan Sandbox)**, pemenuhan pesanan otomatis via H2H Digiflazz, basis data transaksi, serta Admin Dashboard.
+Website platform top up game modern dan responsif untuk Mobile Legends: Bang Bang dan Valorant, dilengkapi integrasi sistem pembayaran Midtrans (QRIS & Snap), pemenuhan pesanan otomatis via H2H Digiflazz, basis data transaksi, serta Admin Dashboard.
 
 ---
 
@@ -94,30 +94,17 @@ RUPIAH_PER_POINT=10000
 # PostgreSQL (Supabase / Railway / Self-hosted)
 DATABASE_URL="postgresql://postgres:[PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres"
 
-# Midtrans Payment Gateway (Mode Sandbox)
+# Midtrans Payment Gateway (Mode Production)
 MIDTRANS_MERCHANT_ID=M738281649
-MIDTRANS_SERVER_KEY=SB-Mid-server-xxxxxxxxxxxxx
-MIDTRANS_CLIENT_KEY=SB-Mid-client-xxxxxxxxxxxxx
-MIDTRANS_IS_PRODUCTION=false
+MIDTRANS_SERVER_KEY=Mid-server-xxxxxxxxxxxxx
+MIDTRANS_CLIENT_KEY=Mid-client-xxxxxxxxxxxxx
+MIDTRANS_IS_PRODUCTION=true
 
 # Digiflazz H2H Top Up Provider API
 DIGIFLAZZ_USERNAME=your_digiflazz_username
 DIGIFLAZZ_KEY=your_digiflazz_api_key
 DIGIFLAZZ_MODE=development
 ```
-
----
-
-## 🧪 Uji Coba Simulasi Pembayaran (Midtrans Sandbox Simulator)
-
-Pada mode **Sandbox**, pembayaran QRIS tidak menggunakan uang asli. Sistem telah terintegrasi dengan **Midtrans Payment Simulator**:
-
-1. Lakukan pemesanan top-up di halaman game (Mobile Legends / Valorant).
-2. Pada modal popup tagihan, klik tombol **"Buka Midtrans Payment Simulator"** atau akses langsung:
-   👉 **[https://simulator.sandbox.midtrans.com/qris/index](https://simulator.sandbox.midtrans.com/qris/index)**
-3. Klik tombol **"Salin URL Gambar QR"** di modal pembayaran Dar'sstore, lalu tempel (*paste*) URL tersebut ke kolom *QR Code Image Url* pada simulator Midtrans, kemudian klik **Scan QR** (atau gunakan tombol **"⚡ Simulasi Bayar Instan (Demo)"**).
-4. Status pembayaran otomatis terverifikasi secara *real-time* dan pesanan langsung diproses.
-
 
 ---
 
