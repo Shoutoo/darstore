@@ -218,10 +218,10 @@ exports.createOrder = async (req, res) => {
     try {
       const qrisData = await paymentGateway.createQrisTransaction(tempOrder);
 
-      // 3. Update data order dengan payment_ref dan URL QRIS Midtrans
+      // 3. Update data order dengan payment_ref, URL QRIS dan redirect_url Midtrans
       await dbAsync.run(
-        `UPDATE orders SET payment_ref = ?, qris_string = ?, qris_url = ?, expired_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-        [qrisData.payment_ref, qrisData.qris_string, qrisData.qris_url, qrisData.expired_at, createdOrder.id]
+        `UPDATE orders SET payment_ref = ?, qris_string = ?, qris_url = ?, redirect_url = ?, expired_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [qrisData.payment_ref, qrisData.qris_string, qrisData.qris_url, qrisData.redirect_url || null, qrisData.expired_at, createdOrder.id]
       );
 
       // 4. Catat payment log transaksi Midtrans
