@@ -10,5 +10,6 @@ router.all('/payment', (req, res, next) => {
 });
 router.post('/payment', webhookController.handlePaymentWebhook);
 router.post('/simulate-payment', webhookController.simulatePayment);
+router.post('/digiflazz', webhookController.handleDigiflazzWebhook);
 
 module.exports = router;

@@ -181,3 +181,51 @@ exports.simulatePayment = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Gagal mensimulasikan pembayaran.' });
   }
 };
+
+/**
+ * Handle Digiflazz Webhook Callback
+ * Endpoint: POST /api/webhook/digiflazz
+ */
+exports.handleDigiflazzWebhook = async (req, res) => {
+  try {
+    const body = req.body || {};
+    const data = body.data || body;
+    console.log('[DIGIFLAZZ WEBHOOK] Received callback:', JSON.stringify(data));
+
+    const refId = data.ref_id;
+    if (!refId) {
+      return res.status(200).json({ status: 'ok', message: 'Ping acknowledged' });
+    }
+
+    const order = await dbAsync.get(
+      'SELECT * FROM orders WHERE UPPER(invoice_number) = ?',
+      [refId.trim().toUpperCase()]
+    );
+
+    if (!order) {
+      console.log(`[DIGIFLAZZ WEBHOOK] Order ${refId} not found in DB`);
+      return res.status(200).json({ status: 'ok', message: 'Order unmapped' });
+    }
+
+    const status = data.status; // 'Sukses', 'Gagal', 'Pending'
+    if (status === 'Sukses') {
+      await dbAsync.run(
+        `UPDATE orders SET status = 'Berhasil', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [order.id]
+      );
+      console.log(`[DIGIFLAZZ WEBHOOK] Order ${order.invoice_number} marked as Berhasil (SN: ${data.sn})`);
+    } else if (status === 'Gagal') {
+      await dbAsync.run(
+        `UPDATE orders SET status = 'Gagal', failure_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [data.message || 'Gagal dari provider Digiflazz', order.id]
+      );
+      console.log(`[DIGIFLAZZ WEBHOOK] Order ${order.invoice_number} marked as Gagal: ${data.message}`);
+    }
+
+    return res.status(200).json({ status: 'ok' });
+  } catch (err) {
+    console.error('[DIGIFLAZZ WEBHOOK ERROR]:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+

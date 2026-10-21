@@ -25,6 +25,33 @@ class TopupProviderService {
   }
 
   /**
+   * Check deposit/balance directly from Digiflazz
+   * Endpoint: POST https://api.digiflazz.com/v1/cek-saldo
+   */
+  async checkBalance() {
+    const username = this.getUsername();
+    const apiKey = this.getApiKey();
+    const sign = crypto.createHash('md5').update(`${username}${apiKey}depo`).digest('hex');
+
+    try {
+      const response = await fetch('https://api.digiflazz.com/v1/cek-saldo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cmd: 'deposit',
+          username,
+          sign
+        })
+      });
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      console.error('[DIGIFLAZZ CHECK BALANCE ERROR]:', err.message);
+      return null;
+    }
+  }
+
+  /**
    * Direct API request to Digiflazz transaction endpoint
    * Useful for testing test cases & live transactions
    */

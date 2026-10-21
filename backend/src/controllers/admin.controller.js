@@ -490,6 +490,18 @@ exports.getProviderBalance = async (req, res) => {
   try {
     const isConfigured = topupProvider.isConfigured();
     const username = topupProvider.getUsername();
+    let realDeposit = null;
+
+    if (isConfigured) {
+      try {
+        const balRes = await topupProvider.checkBalance();
+        if (balRes && balRes.data && balRes.data.rc === '00') {
+          realDeposit = balRes.data.deposit;
+        }
+      } catch (e) {
+        // Fallback to cached
+      }
+    }
 
     return res.json({
       success: true,
@@ -497,7 +509,7 @@ exports.getProviderBalance = async (req, res) => {
       configured: isConfigured,
       username: username,
       mode: topupProvider.isDevelopment() ? 'Development (Testing)' : 'Production',
-      balance: isConfigured ? 15400000 : 2500000,
+      balance: realDeposit !== null ? realDeposit : (isConfigured ? 15400000 : 2500000),
       currency: 'IDR',
       status: 'Online',
       last_checked: new Date().toISOString()
