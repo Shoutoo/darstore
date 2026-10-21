@@ -137,18 +137,30 @@ export async function searchInvoice(query, onPaymentSuccess) {
             <span>Total Pembayaran</span>
             <span>${formatRupiah(order.total_harga)}</span>
           </div>
+
+          ${order.sn ? `
+          <div class="summary-row" style="background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: var(--radius-sm); padding: 10px 14px; margin-top: 6px;">
+            <div style="display: flex; flex-direction: column;">
+              <span style="font-size: 11px; color: #4ade80; font-weight: 700; text-transform: uppercase;">Serial Number (SN) / Bukti Top Up:</span>
+              <strong style="font-family: monospace; font-size: 14px; color: #ffffff; letter-spacing: 0.5px; margin-top: 2px;">${order.sn}</strong>
+            </div>
+            <button onclick="navigator.clipboard.writeText('${order.sn}').then(() => alert('SN berhasil disalin!'))" style="background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.4); color: #4ade80; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">
+              Salin
+            </button>
+          </div>
+          ` : ''}
         </div>
 
         ${isFailed ? `
-          <div style="margin-top: 20px; padding: 16px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-md); text-align: center;">
-            <div style="font-size: 14px; font-weight: 700; color: #f87171; margin-bottom: 6px;">
-              ⚠️ Transaksi Gagal Diproses Provider
+          <div style="margin-top: 20px; padding: 16px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-md); text-align: left;">
+            <div style="font-size: 14px; font-weight: 700; color: #f87171; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <span>⚠️</span> Transaksi Gagal Diproses Provider
             </div>
-            <div style="font-size: 13px; color: var(--text-primary); margin-bottom: 6px;">
-              <strong>Keterangan:</strong> ${order.failure_reason || 'Transaksi ditolak oleh provider game. Pastikan format ID Akun atau Region server akun sudah sesuai (Khusus Valorant wajib region Indonesia).'}
+            <div style="font-size: 13px; color: var(--text-primary); margin-bottom: 8px; line-height: 1.5;">
+              <strong>Penyebab:</strong> <span style="color: #fca5a5;">${order.failure_reason || 'ID Game atau Server tidak ditemukan / tidak terdaftar di publisher game.'}</span>
             </div>
-            <div style="font-size: 12px; color: var(--text-muted);">
-              Jangan khawatir, dana Anda tetap aman. Silakan hubungi CS kami via WhatsApp di bawah untuk pengecekan atau permohonan bantuan/refund.
+            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+              🛡️ <strong>Dana & Poin Aman:</strong> Poin reward yang digunakan otomatis di-refund ke akun Anda. Jika dana pembayaran sudah terpotong melalui QRIS, silakan hubungi CS melalui WhatsApp di bawah untuk penggantian ID yang benar atau permohonan refund dana.
             </div>
           </div>
         ` : (isProcess ? `
@@ -176,7 +188,7 @@ export async function searchInvoice(query, onPaymentSuccess) {
         ` : ''))}
 
         <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; gap: 12px;">
-          <a href="https://wa.me/6281234567890?text=Halo%20Dar'sstore,%20saya%20ingin%20cek%20invoice%20${order.invoice_number}" target="_blank" rel="noreferrer" class="btn-order-now" style="flex: 1; text-align: center; text-decoration: none; justify-content: center;">
+          <a href="https://wa.me/6281234567890?text=Halo%20Dar'sstore,%20saya%20ingin%20cek%20invoice%20${order.invoice_number}%20(Akun%20Game:%20${encodeURIComponent(targetAccount)})" target="_blank" rel="noreferrer" class="btn-order-now" style="flex: 1; text-align: center; text-decoration: none; justify-content: center;">
             Bantuan CS via WhatsApp
           </a>
         </div>

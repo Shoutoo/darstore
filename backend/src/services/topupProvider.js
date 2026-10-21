@@ -144,8 +144,26 @@ class TopupProviderService {
           raw: resData
         };
       } else {
-        const errorMsg = resData.data?.message || resData.message || (resData.data?.rc ? `Error provider RC: ${resData.data.rc}` : 'Gagal memproses transaksi di provider game');
-        throw new Error(errorMsg);
+        const rc = resData.data?.rc;
+        const msg = resData.data?.message || resData.message || '';
+        let errorMsg = msg;
+
+        if (rc === '40' || /tujuan salah|tidak ditemukan|invalid customer|nomor tidak terdaftar|region/i.test(msg)) {
+          errorMsg = `ID Akun Game / Server tidak ditemukan atau tidak sesuai region (RC: 40 - ${msg || 'Tujuan Salah'})`;
+        } else if (rc === '02') {
+          errorMsg = `Transaksi Gagal dari Provider Digiflazz (RC: 02 - ${msg || 'Gagal'})`;
+        } else if (rc === '43' || /saldo/i.test(msg)) {
+          errorMsg = `Saldo Deposit Digiflazz tidak mencukupi (RC: 43)`;
+        } else if (rc === '42') {
+          errorMsg = `IP Server belum terdaftar di IP Whitelist Digiflazz (RC: 42)`;
+        } else {
+          errorMsg = rc ? `Gagal dari provider game (RC: ${rc} - ${msg || 'Transaksi Gagal'})` : (msg || 'Gagal memproses transaksi di provider game');
+        }
+
+        const err = new Error(errorMsg);
+        err.rc = rc;
+        err.raw = resData;
+        throw err;
       }
     } catch (err) {
       throw err;

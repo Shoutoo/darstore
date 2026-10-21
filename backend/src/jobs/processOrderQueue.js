@@ -94,8 +94,8 @@ class OrderQueue {
       const errorMsg = err.message || 'Gagal memproses ke provider game.';
       console.error(`[QUEUE] Error processing order ${order.invoice_number}:`, errorMsg);
 
-      // Detect fatal non-retryable errors from provider (e.g. region mismatch, invalid account, rejected)
-      const isFatal = /region|tujuan salah|user id salah|invalid customer|tidak ditemukan|saldo tidak cukup|nomor tidak terdaftar|blocked|unauthorized/i.test(errorMsg);
+      // Detect fatal non-retryable errors from provider (e.g. region mismatch, invalid account, rejected, RC 40, RC 02)
+      const isFatal = /rc:\s*(40|02|41|42)|region|tujuan salah|user id salah|invalid customer|tidak ditemukan|saldo tidak cukup|nomor tidak terdaftar|blocked|unauthorized/i.test(errorMsg);
 
       if (task.attempts < task.maxAttempts && !isFatal) {
         console.log(`[QUEUE] Re-queueing order ${order.invoice_number} for retry (Attempt ${task.attempts}/${task.maxAttempts})...`);
@@ -109,6 +109,32 @@ class OrderQueue {
           `UPDATE orders SET status = 'Gagal', failure_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
           [errorMsg, order.id]
         );
+
+        // Refund point loyalitas jika customer menggunakan poin
+        if (order.user_id && order.points_used > 0) {
+          try {
+            await dbAsync.run('UPDATE users SET points = points + ? WHERE id = ?', [order.points_used, order.user_id]);
+            await dbAsync.run(
+              `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
+              [
+                order.user_id,
+                order.id,
+                order.points_used,
+                `[REFUND] Pengembalian ${order.points_used} poin karena pesanan ${order.invoice_number} gagal (${errorMsg})`
+              ]
+            );
+            console.log(`[LOYALTY] Refunded ${order.points_used} points to user ${order.user_id} for order ${order.invoice_number}`);
+          } catch (refundErr) {
+            console.warn('[LOYALTY REFUND ERROR]:', refundErr.message);
+          }
+        }
+
+        // Kirim email notifikasi kegagalan pesanan ke customer
+        try {
+          await emailService.sendOrderFailedNotice(order, errorMsg);
+        } catch (mailErr) {
+          console.warn('[EMAIL SERVICE] Gagal kirim email kegagalan pesanan:', mailErr.message);
+        }
       }
     } finally {
       this.isProcessing = false;

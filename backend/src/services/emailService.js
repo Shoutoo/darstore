@@ -332,6 +332,101 @@ class EmailService {
       return { success: false, error: err.message };
     }
   }
+
+  /**
+   * Send order failure notification email
+   * @param {Object} order - Database order object
+   * @param {string} failureReason - Error message
+   */
+  async sendOrderFailedNotice(order, failureReason) {
+    this.reloadConfig();
+
+    const recipient = (order.wa_email_guest || '').trim();
+    if (!recipient || !recipient.includes('@')) {
+      return { success: false, reason: 'Invalid or missing email' };
+    }
+
+    const emailSubject = `[Pemberitahuan] Pesanan ${order.invoice_number} Gagal Diproses - Dar'sstore`;
+    const targetAccount = order.game === 'mlbb' ? `${order.game_user_id} (${order.server_id})` : (order.riot_id || '-');
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family: Arial, sans-serif; background-color: #f8fafc; padding: 20px; color: #1e293b;">
+        <div style="max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+          <div style="background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 24px; text-align: center; color: #ffffff;">
+            <h2 style="margin: 0; font-size: 20px;">⚠️ Pesanan Gagal Diproses</h2>
+            <p style="margin: 6px 0 0; font-size: 13px; opacity: 0.9;">Provider Game Menolak Permintaan Top-Up</p>
+          </div>
+          <div style="padding: 24px;">
+            <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6;">
+              Halo Pelanggan <strong>Dar'sstore</strong>,<br>
+              Pesanan dengan nomor invoice <strong>${order.invoice_number}</strong> tidak dapat diselesaikan oleh server provider game.
+            </p>
+            
+            <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+              <strong style="color: #991b1b; font-size: 13px;">Alasan Kegagalan:</strong>
+              <div style="color: #b91c1c; font-size: 13px; margin-top: 4px;">${failureReason || 'ID Akun / Server tidak ditemukan di publisher game.'}</div>
+            </div>
+
+            <table width="100%" cellpadding="6" cellspacing="0" style="font-size: 13px; margin-bottom: 20px; border-collapse: collapse;">
+              <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="color: #64748b;">Invoice:</td>
+                <td style="text-align: right; font-weight: bold;">${order.invoice_number}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="color: #64748b;">Game & Item:</td>
+                <td style="text-align: right; font-weight: bold;">${order.nama_item}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="color: #64748b;">Akun Tujuan:</td>
+                <td style="text-align: right; font-weight: bold; color: #ef4444;">${targetAccount}</td>
+              </tr>
+            </table>
+
+            <p style="font-size: 13px; color: #475569; line-height: 1.5;">
+              <strong>Jangan Khawatir:</strong> Poin reward yang Anda gunakan (jika ada) telah otomatis dikembalikan ke akun Anda. Untuk bantuan perbaikan ID atau proses pengembalian dana (refund), silakan hubungi tim Customer Support kami:
+            </p>
+
+            <div style="text-align: center; margin: 24px 0 10px;">
+              <a href="https://wa.me/6281234567890?text=Halo%20Dar'sstore,%20pesanan%20saya%20${order.invoice_number}%20gagal%20karena%20salah%20ID.%20Mohon%20bantuan." 
+                 style="background: #22c55e; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 14px; display: inline-block;">
+                Hubungi CS via WhatsApp
+              </a>
+            </div>
+          </div>
+          <div style="background: #f8fafc; padding: 14px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
+            © 2026 Dar'sstore. Layanan Top Up Game Resmi & Terpercaya.
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    try {
+      if (this.resend) {
+        await this.resend.emails.send({
+          from: this.fromEmail,
+          to: recipient,
+          subject: emailSubject,
+          html: emailHtml,
+        });
+        console.log(`[EMAIL SERVICE] Notifikasi kegagalan dikirim via Resend ke: ${recipient}`);
+      } else if (this.transporter) {
+        await this.transporter.sendMail({
+          from: this.fromEmail,
+          to: recipient,
+          subject: emailSubject,
+          html: emailHtml,
+        });
+        console.log(`[EMAIL SERVICE] Notifikasi kegagalan dikirim via SMTP ke: ${recipient}`);
+      }
+      return { success: true };
+    } catch (err) {
+      console.warn(`[EMAIL SERVICE] Gagal kirim email kegagalan:`, err.message);
+      return { success: false, error: err.message };
+    }
+  }
 }
 
 module.exports = new EmailService();
