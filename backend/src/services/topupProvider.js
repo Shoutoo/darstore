@@ -6,16 +6,19 @@ const crypto = require('crypto');
  */
 class TopupProviderService {
   getUsername() {
-    return process.env.DIGIFLAZZ_USERNAME || 'tuwumiWXAdqg';
+    return process.env.DIGIFLAZZ_USERNAME || 'viziziDbLbOg';
   }
 
   getApiKey() {
-    return process.env.DIGIFLAZZ_KEY || 'dev-b8bd5f40-d97c-11ef-8d09-333896381645';
+    if (process.env.DIGIFLAZZ_MODE === 'production') {
+      return process.env.DIGIFLAZZ_PROD_KEY || process.env.DIGIFLAZZ_KEY || '0b367413-6219-533c-8602-515ee3d45e31';
+    }
+    return process.env.DIGIFLAZZ_DEV_KEY || process.env.DIGIFLAZZ_KEY || 'dev-dd8fea20-cd56-11f1-9889-539063f8d4ac';
   }
 
   isDevelopment() {
     const key = this.getApiKey();
-    return key.startsWith('dev-') || process.env.DIGIFLAZZ_MODE === 'development';
+    return key.startsWith('dev-') || process.env.DIGIFLAZZ_MODE !== 'production';
   }
 
   isConfigured() {
@@ -105,11 +108,21 @@ class TopupProviderService {
     }
 
     const customerNo = order.game === 'mlbb' ? `${order.game_user_id}${order.server_id}` : order.riot_id;
+    const isDev = this.isDevelopment();
+
+    // Di mode development sandbox Digiflazz, customer_no non-test akan berstatus 'Pending' terus.
+    // Jika customer_no bukan format test 0878..., gunakan 087800001230 agar sandbox merespons 'Sukses' (RC: 00)
+    const sendCustomerNo = (isDev && (!customerNo || !String(customerNo).startsWith('08780000123')))
+      ? '087800001230'
+      : customerNo;
+
+    // Di mode sandbox dev, SKU internal dapat diteruskan atau difallback ke xld10
+    const sendBuyerSku = order.product_id || 'xld10';
 
     try {
       const { payload, response: resData } = await this.requestTransaction({
-        buyer_sku_code: order.product_id,
-        customer_no: customerNo,
+        buyer_sku_code: sendBuyerSku,
+        customer_no: sendCustomerNo,
         ref_id: order.invoice_number
       });
 

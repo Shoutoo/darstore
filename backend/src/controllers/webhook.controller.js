@@ -210,16 +210,47 @@ exports.handleDigiflazzWebhook = async (req, res) => {
     const status = data.status; // 'Sukses', 'Gagal', 'Pending'
     if (status === 'Sukses') {
       await dbAsync.run(
-        `UPDATE orders SET status = 'Berhasil', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-        [order.id]
+        `UPDATE orders SET status = 'Berhasil', sn = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [data.sn || null, order.id]
       );
       console.log(`[DIGIFLAZZ WEBHOOK] Order ${order.invoice_number} marked as Berhasil (SN: ${data.sn})`);
+
+      // Kirim email receipt jika belum pernah dikirim
+      try {
+        const emailService = require('../services/emailService');
+        await emailService.sendOrderReceipt(order, { sn: data.sn, message: data.message || 'Sukses' });
+      } catch (mailErr) {
+        console.warn(`[DIGIFLAZZ WEBHOOK] Warning email receipt:`, mailErr.message);
+      }
+
+      // Berikan reward poin jika ada user_id
+      if (order.user_id) {
+        const RUPIAH_PER_POINT = parseInt(process.env.RUPIAH_PER_POINT || '10000', 10);
+        const pointsToAward = Math.floor(order.total_harga / RUPIAH_PER_POINT);
+        if (pointsToAward > 0) {
+          await dbAsync.run(
+            `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
+            [order.user_id, order.id, pointsToAward, `Reward top up ${order.nama_item} (${order.invoice_number})`]
+          );
+          await dbAsync.run(`UPDATE users SET points = points + ? WHERE id = ?`, [pointsToAward, order.user_id]);
+          console.log(`[DIGIFLAZZ WEBHOOK] Awarded ${pointsToAward} points to user ${order.user_id}`);
+        }
+      }
     } else if (status === 'Gagal') {
       await dbAsync.run(
         `UPDATE orders SET status = 'Gagal', failure_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
         [data.message || 'Gagal dari provider Digiflazz', order.id]
       );
       console.log(`[DIGIFLAZZ WEBHOOK] Order ${order.invoice_number} marked as Gagal: ${data.message}`);
+
+      // Refund used points if any
+      if (order.user_id && order.points_used > 0) {
+        await dbAsync.run('UPDATE users SET points = points + ? WHERE id = ?', [order.points_used, order.user_id]);
+        await dbAsync.run(
+          `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
+          [order.user_id, order.id, order.points_used, `[REFUND] Pengembalian ${order.points_used} poin karena provider gagal`]
+        );
+      }
     }
 
     return res.status(200).json({ status: 'ok' });

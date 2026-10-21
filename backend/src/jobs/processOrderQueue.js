@@ -40,10 +40,21 @@ class OrderQueue {
       // Call top-up provider
       const result = await topupProvider.processTopup(order);
 
-      // Success! Update order to 'Berhasil'
+      if (result.pending) {
+        console.log(`[QUEUE] Order ${order.invoice_number} is pending at Digiflazz. Waiting for webhook callback.`);
+        if (result.sn) {
+          await dbAsync.run(
+            `UPDATE orders SET sn = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+            [result.sn, order.id]
+          );
+        }
+        return;
+      }
+
+      // Success! Update order to 'Berhasil' with SN
       await dbAsync.run(
-        `UPDATE orders SET status = 'Berhasil', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-        [order.id]
+        `UPDATE orders SET status = 'Berhasil', sn = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [result.sn || null, order.id]
       );
 
       console.log(`[QUEUE] Order ${order.invoice_number} completed successfully with SN: ${result.sn}`);
