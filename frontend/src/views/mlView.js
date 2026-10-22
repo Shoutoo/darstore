@@ -372,31 +372,40 @@ export async function handleMLCheckout() {
           </div>
         </div>
 
-        <div class="qr-code-wrap" style="background: #ffffff; padding: 18px; border-radius: var(--radius-lg); text-align: center; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.25);">
-          <div style="font-size: 13px; color: #16212c; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
-            SCAN QRIS UNTUK MEMBAYAR
-          </div>
-          ${qrCodeUrl ? `
-            <img src="${qrCodeUrl}" onerror="this.onerror=null; this.src='/assets/payments/qris_sample.svg';" alt="QRIS Midtrans" class="qr-code-img" style="margin: 0 auto; width: 195px; height: 195px; border-radius: 8px; object-fit: contain; display: block;" />
-          ` : `
-            <img src="/assets/payments/qris_sample.svg" alt="QRIS Midtrans" class="qr-code-img" style="margin: 0 auto; width: 195px; height: 195px; border-radius: 8px; object-fit: contain; display: block;" />
-          `}
-          <div style="font-size: 11.5px; color: #475569; margin-top: 10px; font-weight: 600;">
-            Mendukung GoPay, Bank Mandiri, BNI, BRI, Permata & CIMB Niaga
-          </div>
-        </div>
+        ${(() => {
+          const isNativeQris = Boolean(data.qrisString && data.qrisString.startsWith('000201'));
+          const hasRedirect = Boolean(data.redirectUrl || order.redirect_url);
 
-        ${(data.redirectUrl || order.redirect_url) ? `
-          <div style="margin-bottom: 16px;">
-            <a href="${data.redirectUrl || order.redirect_url}" target="_blank" rel="noopener noreferrer" class="btn-order-now" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 12px; font-size: 13.5px; font-weight: 700; border-radius: var(--radius-md); background: linear-gradient(135deg, #0070f3, #0050d0); box-shadow: 0 4px 15px rgba(0, 112, 243, 0.4); color: #ffffff;">
-              🚀 Buka Halaman Pembayaran Midtrans Live
-            </a>
-          </div>
-        ` : ''}
+          return `
+            <div class="qr-code-wrap" style="background: #ffffff; padding: 18px; border-radius: var(--radius-lg); text-align: center; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.25);">
+              <div style="font-size: 13px; color: #16212c; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                ${isNativeQris ? 'SCAN QRIS DINAMIS UNTUK MEMBAYAR' : 'PEMBAYARAN MIDTRANS LIVE (GOPAY & VA)'}
+              </div>
+              ${qrCodeUrl ? `
+                <img src="${qrCodeUrl}" onerror="this.onerror=null; this.src='/assets/payments/qris_sample.svg';" alt="QRIS Midtrans" class="qr-code-img" style="margin: 0 auto; width: 195px; height: 195px; border-radius: 8px; object-fit: contain; display: block;" />
+              ` : `
+                <img src="/assets/payments/qris_sample.svg" alt="QRIS Midtrans" class="qr-code-img" style="margin: 0 auto; width: 195px; height: 195px; border-radius: 8px; object-fit: contain; display: block;" />
+              `}
+              <div style="font-size: 11.5px; color: #475569; margin-top: 10px; font-weight: 600;">
+                ${isNativeQris
+                  ? 'Bisa discan langsung lewat BCA Mobile, Livin, BRImo, BNI, GoPay, OVO, DANA & ShopeePay'
+                  : 'Scan dengan kamera HP atau klik tombol di bawah untuk bayar via GoPay / Bank Transfer'}
+              </div>
+            </div>
 
-        <p style="font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.5;">
-          Selesaikan pembayaran dalam waktu <strong id="ml-qris-timer" style="color: var(--accent-gold); font-weight: 800; font-size: 14px;">15:00</strong>. Pesanan diproses otomatis dalam 1-3 detik setelah scan QRIS berhasil.
-        </p>
+            ${hasRedirect ? `
+              <div style="margin-bottom: 16px;">
+                <a href="${data.redirectUrl || order.redirect_url}" target="_blank" rel="noopener noreferrer" class="btn-order-now" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 12px; font-size: 13.5px; font-weight: 700; border-radius: var(--radius-md); background: linear-gradient(135deg, #0070f3, #0050d0); box-shadow: 0 4px 15px rgba(0, 112, 243, 0.4); color: #ffffff;">
+                  🚀 Buka Halaman Pembayaran Midtrans Live
+                </a>
+              </div>
+            ` : ''}
+
+            <p style="font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.5;">
+              Selesaikan pembayaran dalam waktu <strong id="ml-qris-timer" style="color: var(--accent-gold); font-weight: 800; font-size: 14px;">15:00</strong>. Pesanan diproses otomatis dalam 1-3 detik setelah pembayaran berhasil.
+            </p>
+          `;
+        })()}
       `;
 
       startQrisCountdown('ml-qris-timer', expiredAt);
