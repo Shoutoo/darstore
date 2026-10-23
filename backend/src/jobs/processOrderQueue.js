@@ -31,6 +31,13 @@ class OrderQueue {
       task.attempts++;
       console.log(`[QUEUE] Processing order ${order.invoice_number} (Attempt ${task.attempts}/${task.maxAttempts})...`);
 
+      // Cek status terkini di database sebelum memanggil provider (mencegah pemrosesan ganda)
+      const currentOrder = await dbAsync.get('SELECT * FROM orders WHERE id = ?', [order.id]);
+      if (!currentOrder || currentOrder.status === 'Berhasil') {
+        console.log(`[QUEUE] Order ${order.invoice_number} sudah selesai sebelumnya. Melewati pemrosesan provider.`);
+        return;
+      }
+
       // Update status to 'Diproses'
       await dbAsync.run(
         `UPDATE orders SET status = 'Diproses', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
@@ -66,36 +73,38 @@ class OrderQueue {
         console.warn(`[EMAIL] Peringatan pengiriman struk email untuk ${order.invoice_number}:`, mailErr.message);
       }
 
-      // If user is registered, award loyalty points
+      // If user is registered, award loyalty points (idempoten: hanya 1 kali)
       if (order.user_id) {
         const pointsToAward = Math.floor(order.total_harga / RUPIAH_PER_POINT);
         if (pointsToAward > 0) {
-          // Add to point history
-          await dbAsync.run(
-            `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
-            [
-              order.user_id,
-              order.id,
-              pointsToAward,
-              `Reward top up ${order.nama_item} (${order.invoice_number})`
-            ]
+          const claim = await dbAsync.run(
+            `UPDATE orders SET points_awarded = 1 WHERE id = ? AND (points_awarded = 0 OR points_awarded IS NULL)`,
+            [order.id]
           );
-
-          // Update user total points
-          await dbAsync.run(
-            `UPDATE users SET points = points + ? WHERE id = ?`,
-            [pointsToAward, order.user_id]
-          );
-
-          console.log(`[LOYALTY] Awarded ${pointsToAward} points to user ID ${order.user_id} for order ${order.invoice_number}`);
+          if (claim.changes > 0) {
+            await dbAsync.run(
+              `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
+              [
+                order.user_id,
+                order.id,
+                pointsToAward,
+                `Reward top up ${order.nama_item} (${order.invoice_number})`
+              ]
+            );
+            await dbAsync.run(
+              `UPDATE users SET points = points + ? WHERE id = ?`,
+              [pointsToAward, order.user_id]
+            );
+            console.log(`[LOYALTY] Awarded ${pointsToAward} points to user ID ${order.user_id} for order ${order.invoice_number}`);
+          }
         }
       }
     } catch (err) {
       const errorMsg = err.message || 'Gagal memproses ke provider game.';
       console.error(`[QUEUE] Error processing order ${order.invoice_number}:`, errorMsg);
 
-      // Detect fatal non-retryable errors from provider (e.g. region mismatch, invalid account, rejected, RC 40, RC 02)
-      const isFatal = /rc:\s*(40|02|41|42)|region|tujuan salah|user id salah|invalid customer|tidak ditemukan|saldo tidak cukup|nomor tidak terdaftar|blocked|unauthorized/i.test(errorMsg);
+      // Detect fatal non-retryable errors from provider (e.g. region mismatch, invalid account, rejected, RC 40, RC 02, RC 43, RC 44)
+      const isFatal = /rc:\s*(40|02|41|42|43|44|45|49|50|53)|region|tujuan salah|user id salah|invalid customer|tidak ditemukan|saldo tidak cukup|saldo kurang|nomor tidak terdaftar|blocked|unauthorized/i.test(errorMsg);
 
       if (task.attempts < task.maxAttempts && !isFatal) {
         console.log(`[QUEUE] Re-queueing order ${order.invoice_number} for retry (Attempt ${task.attempts}/${task.maxAttempts})...`);
@@ -110,20 +119,26 @@ class OrderQueue {
           [errorMsg, order.id]
         );
 
-        // Refund point loyalitas jika customer menggunakan poin
+        // Refund point loyalitas jika customer menggunakan poin (idempoten: hanya 1 kali)
         if (order.user_id && order.points_used > 0) {
           try {
-            await dbAsync.run('UPDATE users SET points = points + ? WHERE id = ?', [order.points_used, order.user_id]);
-            await dbAsync.run(
-              `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
-              [
-                order.user_id,
-                order.id,
-                order.points_used,
-                `[REFUND] Pengembalian ${order.points_used} poin karena pesanan ${order.invoice_number} gagal (${errorMsg})`
-              ]
+            const refundClaim = await dbAsync.run(
+              `UPDATE orders SET points_refunded = 1 WHERE id = ? AND (points_refunded = 0 OR points_refunded IS NULL)`,
+              [order.id]
             );
-            console.log(`[LOYALTY] Refunded ${order.points_used} points to user ${order.user_id} for order ${order.invoice_number}`);
+            if (refundClaim.changes > 0) {
+              await dbAsync.run('UPDATE users SET points = points + ? WHERE id = ?', [order.points_used, order.user_id]);
+              await dbAsync.run(
+                `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
+                [
+                  order.user_id,
+                  order.id,
+                  order.points_used,
+                  `[REFUND] Pengembalian ${order.points_used} poin karena pesanan ${order.invoice_number} gagal (${errorMsg})`
+                ]
+              );
+              console.log(`[LOYALTY] Refunded ${order.points_used} points to user ${order.user_id} for order ${order.invoice_number}`);
+            }
           } catch (refundErr) {
             console.warn('[LOYALTY REFUND ERROR]:', refundErr.message);
           }

@@ -12,6 +12,11 @@ frontend/.vite/
 # Backend
 backend/node_modules/
 backend/database.sqlite
+backend/test-database.sqlite
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.db
 backend/.env
 .env
 .env*.local

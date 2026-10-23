@@ -1,65 +1,85 @@
 export const PAYMENT_GROUPS = [
   {
-    id: 'ewallet_qris',
-    title: 'E-Wallet & QRIS (Instan 24 Jam)',
-    badge: 'AKTIF',
-    minPrice: 1000,
-    methods: [
-      {
-        id: 'gopay',
-        name: 'GoPay / QRIS',
-        fee: 0,
-        image: '/assets/payments/qris_gopay.png',
-        channel: 'gopay',
-        description: 'Scan QR atau bayar langsung via aplikasi GoPay'
-      }
-    ]
-  },
-  {
     id: 'virtual_account',
-    title: 'Transfer Bank (Virtual Account Verifikasi Otomatis)',
-    badge: 'AKTIF',
+    title: 'Virtual Account',
+    status: 'Tersedia',
+    badge: 'TERSEDIA',
+    badgeClass: 'badge-available',
+    description: 'Pembayaran melalui transfer bank dengan verifikasi otomatis Midtrans.',
     minPrice: 1000,
+    isDemo: false,
     methods: [
-      {
-        id: 'mandiri_va',
-        name: 'Bank Mandiri (Livin / VA)',
-        fee: 0,
-        image: '/assets/payments/va_mandiri.png',
-        channel: 'echannel',
-        description: 'Bayar via Livin by Mandiri, ATM, atau Internet Banking'
-      },
       {
         id: 'bni_va',
-        name: 'Bank BNI (Mobile / VA)',
+        name: 'Bank BNI (VA)',
+        bank: 'BNI',
         fee: 0,
         image: '/assets/payments/va_bni.png',
         channel: 'bni_va',
-        description: 'Bayar via BNI Mobile Banking, ATM, atau SMS Banking'
+        description: 'Bayar via BNI Mobile Banking, ATM, atau SMS Banking',
+        isDemo: false
       },
       {
         id: 'bri_va',
         name: 'Bank BRI (BRIVA)',
+        bank: 'BRI',
         fee: 0,
         image: '/assets/payments/va_briva.png',
         channel: 'bri_va',
-        description: 'Bayar via BRImo, ATM BRI, atau Agen BRILink'
+        description: 'Bayar via BRImo, ATM BRI, atau Agen BRILink',
+        isDemo: false
+      },
+      {
+        id: 'mandiri_va',
+        name: 'Bank Mandiri (Livin / VA)',
+        bank: 'Mandiri',
+        fee: 0,
+        image: '/assets/payments/va_mandiri.png',
+        channel: 'echannel',
+        description: 'Bayar via Livin by Mandiri, ATM, atau Internet Banking',
+        isDemo: false
       },
       {
         id: 'cimb_va',
         name: 'CIMB Niaga (OCTO / VA)',
+        bank: 'CIMB',
         fee: 0,
         image: '/assets/payments/va_cimb.png',
         channel: 'cimb_va',
-        description: 'Bayar via OCTO Mobile, OCTO Clicks, atau ATM CIMB'
+        description: 'Bayar via OCTO Mobile, OCTO Clicks, atau ATM CIMB',
+        isDemo: false
       },
       {
         id: 'permata_va',
-        name: 'PermataBank (PermataMobile / VA)',
+        name: 'PermataBank (VA)',
+        bank: 'Permata',
         fee: 0,
         image: '/assets/payments/va_permata.png',
         channel: 'permata_va',
-        description: 'Bayar via PermataMobile X, PermataNet, atau ATM'
+        description: 'Bayar via PermataMobile X, PermataNet, atau ATM',
+        isDemo: false
+      }
+    ]
+  },
+  {
+    id: 'qris_demo',
+    title: 'QRIS (Demo)',
+    status: 'Belum Aktif',
+    badge: 'BELUM AKTIF',
+    badgeClass: 'badge-demo',
+    description: 'Pratinjau fitur QRIS. Belum dapat digunakan untuk pembayaran.',
+    minPrice: 1000,
+    isDemo: true,
+    methods: [
+      {
+        id: 'qris_demo_method',
+        name: 'QRIS Instant (Demo)',
+        fee: 0,
+        image: '/assets/payments/qris_demo_watermark.svg',
+        channel: 'qris_demo',
+        isDemo: true,
+        badge: 'DEMO',
+        description: 'Pratinjau antarmuka QRIS. Tidak memproses pembayaran nyata.'
       }
     ]
   }

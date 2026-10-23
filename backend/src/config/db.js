@@ -210,6 +210,11 @@ async function initDatabase() {
       await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS failure_reason TEXT;");
       await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_used INTEGER DEFAULT 0;");
       await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount INTEGER DEFAULT 0;");
+      await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS access_token TEXT;");
+      await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_awarded INTEGER DEFAULT 0;");
+      await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_refunded INTEGER DEFAULT 0;");
+      await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS sn TEXT;");
+      await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS redirect_url TEXT;");
       
       await dbAsync.run(`
         CREATE TABLE IF NOT EXISTS reward_items (
@@ -298,6 +303,11 @@ async function initDatabase() {
       total_harga INTEGER NOT NULL,
       points_used INTEGER DEFAULT 0,
       discount_amount INTEGER DEFAULT 0,
+      access_token TEXT NULL,
+      points_awarded INTEGER DEFAULT 0,
+      points_refunded INTEGER DEFAULT 0,
+      sn TEXT NULL,
+      redirect_url TEXT NULL,
       failure_reason TEXT NULL,
       expired_at TEXT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -430,6 +440,21 @@ async function initDatabase() {
   } catch (e) {
     // Column already exists, ignore
   }
+  try {
+    await dbAsync.run("ALTER TABLE orders ADD COLUMN access_token TEXT NULL");
+  } catch (e) {}
+  try {
+    await dbAsync.run("ALTER TABLE orders ADD COLUMN points_awarded INTEGER DEFAULT 0");
+  } catch (e) {}
+  try {
+    await dbAsync.run("ALTER TABLE orders ADD COLUMN points_refunded INTEGER DEFAULT 0");
+  } catch (e) {}
+  try {
+    await dbAsync.run("ALTER TABLE orders ADD COLUMN sn TEXT NULL");
+  } catch (e) {}
+  try {
+    await dbAsync.run("ALTER TABLE orders ADD COLUMN redirect_url TEXT NULL");
+  } catch (e) {}
 
 
   // Seed products if empty

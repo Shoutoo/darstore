@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" width="320" height="320">
+  <defs>
+    <linearGradient id="gradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f8fafc"/>
+    </linearGradient>
+    <linearGradient id="demoBanner" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="320" height="320" rx="16" fill="url(#gradBg)" stroke="#e2e8f0" stroke-width="2"/>
+
+  <!-- QR Header -->
+  <g id="qr-header" transform="translate(20, 16)">
+    <rect x="0" y="0" width="280" height="28" rx="6" fill="#0f172a"/>
+    <text x="140" y="18" fill="#f8fafc" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="800" text-anchor="middle" letter-spacing="1.5">
+      QRIS DEMO — DAR'SSTORE
+    </text>
+  </g>
+
+  <!-- QR Finder Patterns (Top-Left, Top-Right, Bottom-Left) -->
+  <g id="finders" transform="translate(30, 56)">
+    <!-- Top Left -->
+    <rect x="0" y="0" width="60" height="60" rx="6" fill="#1e293b"/>
+    <rect x="8" y="8" width="44" height="44" rx="3" fill="#ffffff"/>
+    <rect x="16" y="16" width="28" height="28" rx="2" fill="#0284c7"/>
+
+    <!-- Top Right -->
+    <rect x="200" y="0" width="60" height="60" rx="6" fill="#1e293b"/>
+    <rect x="208" y="8" width="44" height="44" rx="3" fill="#ffffff"/>
+    <rect x="216" y="16" width="28" height="28" rx="2" fill="#0284c7"/>
+
+    <!-- Bottom Left -->
+    <rect x="0" y="170" width="60" height="60" rx="6" fill="#1e293b"/>
+    <rect x="8" y="178" width="44" height="44" rx="3" fill="#ffffff"/>
+    <rect x="16" y="186" width="28" height="28" rx="2" fill="#0284c7"/>
+
+    <!-- Decorative QR Modules -->
+    <g fill="#334155" opacity="0.85">
+      <rect x="76" y="8" width="12" height="12" rx="2"/>
+      <rect x="104" y="8" width="24" height="12" rx="2"/>
+      <rect x="144" y="8" width="12" height="12" rx="2"/>
+      <rect x="172" y="8" width="12" height="24" rx="2"/>
+
+      <rect x="76" y="32" width="24" height="12" rx="2"/>
+      <rect x="116" y="32" width="12" height="12" rx="2"/>
+      <rect x="144" y="32" width="24" height="12" rx="2"/>
+
+      <rect x="8" y="76" width="12" height="24" rx="2"/>
+      <rect x="32" y="76" width="24" height="12" rx="2"/>
+      <rect x="76" y="76" width="32" height="32" rx="4" fill="#0369a1"/>
+      <rect x="124" y="76" width="12" height="24" rx="2"/>
+      <rect x="152" y="76" width="24" height="12" rx="2"/>
+      <rect x="192" y="76" width="24" height="24" rx="2"/>
+      <rect x="232" y="76" width="12" height="32" rx="2"/>
+
+      <rect x="8" y="116" width="24" height="12" rx="2"/>
+      <rect x="48" y="116" width="12" height="24" rx="2"/>
+      <rect x="124" y="116" width="32" height="32" rx="4" fill="#0369a1"/>
+      <rect x="172" y="116" width="12" height="12" rx="2"/>
+      <rect x="200" y="116" width="24" height="12" rx="2"/>
+      <rect x="240" y="116" width="12" height="24" rx="2"/>
+
+      <rect x="76" y="160" width="24" height="12" rx="2"/>
+      <rect x="116" y="160" width="12" height="24" rx="2"/>
+      <rect x="144" y="160" width="24" height="12" rx="2"/>
+      <rect x="184" y="160" width="12" height="12" rx="2"/>
+      <rect x="212" y="160" width="24" height="24" rx="2"/>
+
+      <rect x="76" y="188" width="12" height="24" rx="2"/>
+      <rect x="104" y="188" width="32" height="12" rx="2"/>
+      <rect x="152" y="188" width="24" height="24" rx="2"/>
+      <rect x="192" y="188" width="12" height="12" rx="2"/>
+      <rect x="220" y="188" width="24" height="12" rx="2"/>
+
+      <rect x="76" y="218" width="24" height="12" rx="2"/>
+      <rect x="116" y="218" width="24" height="12" rx="2"/>
+      <rect x="160" y="218" width="12" height="12" rx="2"/>
+      <rect x="188" y="218" width="24" height="12" rx="2"/>
+      <rect x="228" y="218" width="12" height="12" rx="2"/>
+    </g>
+  </g>
+
+  <!-- Watermark Diagonal Banner -->
+  <g transform="translate(160, 160) rotate(-28)" filter="url(#shadow)">
+    <rect x="-190" y="-22" width="380" height="44" rx="8" fill="url(#demoBanner)" opacity="0.95" stroke="#ffffff" stroke-width="2"/>
+    <text x="0" y="6" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" text-anchor="middle" letter-spacing="1.2">
+      DEMO — TIDAK UNTUK PEMBAYARAN
+    </text>
+  </g>
+
+  <!-- Footer Notice -->
+  <g transform="translate(20, 290)">
+    <rect x="0" y="0" width="280" height="22" rx="4" fill="#fef2f2" stroke="#fecaca"/>
+    <text x="140" y="15" fill="#b91c1c" font-family="system-ui, -apple-system, sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">
+      HANYA UNTUK KEPERLUAN DEMONSTRASI • BUKAN ALAT PEMBAYARAN
+    </text>
+  </g>
+</svg>

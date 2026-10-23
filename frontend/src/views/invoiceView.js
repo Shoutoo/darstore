@@ -160,7 +160,7 @@ export async function searchInvoice(query, onPaymentSuccess) {
               <strong>Penyebab:</strong> <span style="color: #fca5a5;">${order.failure_reason || 'ID Game atau Server tidak ditemukan / tidak terdaftar di publisher game.'}</span>
             </div>
             <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
-              🛡️ <strong>Dana & Poin Aman:</strong> Poin reward yang digunakan otomatis di-refund ke akun Anda. Jika dana pembayaran sudah terpotong melalui QRIS, silakan hubungi CS melalui WhatsApp di bawah untuk penggantian ID yang benar atau permohonan refund dana.
+              🛡️ <strong>Dana & Poin Aman:</strong> Poin reward yang digunakan otomatis di-refund ke akun Anda. Jika dana pembayaran sudah terpotong melalui Virtual Account, silakan hubungi CS melalui WhatsApp di bawah untuk penggantian ID yang benar atau permohonan bantuan.
             </div>
           </div>
         ` : (isProcess ? `
@@ -172,18 +172,15 @@ export async function searchInvoice(query, onPaymentSuccess) {
         ` : (!isSuccess ? `
           <div style="margin-top: 20px; padding: 14px; background: rgba(0, 97, 153, 0.12); border: 1px solid var(--accent-gold); border-radius: var(--radius-md); text-align: center;">
             <div style="font-size: 13px; color: var(--accent-gold-light); margin-bottom: 8px;">
-              Pesanan menunggu pembayaran QRIS.
+              Pesanan menunggu pembayaran transfer Virtual Account.
             </div>
             ${(order.redirect_url || (order.qris_string && order.qris_string.startsWith('http'))) ? `
               <div style="margin-bottom: 12px;">
                 <a href="${order.redirect_url || order.qris_string}" target="_blank" rel="noopener noreferrer" class="btn-order-now" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 12px; font-size: 13.5px; font-weight: 700; border-radius: var(--radius-md); background: linear-gradient(135deg, #0070f3, #0050d0); box-shadow: 0 4px 15px rgba(0, 112, 243, 0.4); color: #ffffff;">
-                  🚀 Buka Halaman Pembayaran Midtrans Live
+                  🚀 Buka Halaman Panduan Transfer Midtrans
                 </a>
               </div>
             ` : ''}
-            <button class="btn-order-now" style="margin: 0 auto; padding: 8px 18px; width: auto; font-size: 13px;" onclick="window.simulateInvoicePayment('${order.invoice_number}')">
-              ⚡ Konfirmasi Bayar Sekarang (Demo)
-            </button>
           </div>
         ` : ''))}
 

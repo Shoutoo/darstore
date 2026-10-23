@@ -61,6 +61,11 @@ model Order {
   failureReason  String?      @map("failure_reason")
   pointsUsed     Int?         @default(0) @map("points_used")
   discountAmount Int?         @default(0) @map("discount_amount")
+  accessToken    String?      @map("access_token")
+  pointsAwarded  Int?         @default(0) @map("points_awarded")
+  pointsRefunded Int?         @default(0) @map("points_refunded")
+  sn             String?      @map("sn")
+  redirectUrl    String?      @map("redirect_url")
 
   user           User?        @relation(fields: [userId], references: [id])
   product        Product      @relation(fields: [productId], references: [id])

@@ -392,35 +392,36 @@ function setupCheckoutModalButtons() {
     });
   }
 
-  const btnSimulate = document.getElementById('btn-simulate-pay');
-  if (btnSimulate) {
-    btnSimulate.addEventListener('click', async () => {
-      if (!appState.currentInvoice) return;
-      btnSimulate.disabled = true;
-      btnSimulate.textContent = 'Memproses...';
+  // QRIS Demonstration Preview Modal Handlers
+  window.openQrisDemoModal = function(gameKey = 'ml') {
+    window._lastActiveGameKey = gameKey;
+    openModal('qris-demo-modal');
+  };
 
-      try {
-        const data = await simulatePayment(appState.currentInvoice.invoice_number);
-        if (data.success) {
-          showCyberToast('Pembayaran QRIS Berhasil Dikonfirmasi! Item top up telah dikirim otomatis.', 'success', 'TRANSAKSI SUKSES');
-          closeModal('checkout-modal');
-          navigateTo('/cek-transaksi');
-          const input = document.getElementById('invoice-search-input');
-          if (input) input.value = appState.currentInvoice.invoice_number;
-          searchInvoice(appState.currentInvoice.invoice_number);
-          fetchRealtimeTable();
-          checkCurrentUser();
-        } else {
-          showCyberToast(data.message || 'Gagal simulasi pembayaran.', 'error', 'SIMULASI GAGAL');
-        }
-      } catch (err) {
-        showCyberToast('Gagal menghubungi server backend.', 'error', 'KONEKSI SERVER');
-      } finally {
-        btnSimulate.disabled = false;
-        btnSimulate.textContent = '⚡ Simulasi Bayar QRIS (Demo)';
+  document.getElementById('btn-close-qris-demo')?.addEventListener('click', () => {
+    closeModal('qris-demo-modal');
+  });
+
+  document.getElementById('btn-dismiss-qris-demo')?.addEventListener('click', () => {
+    closeModal('qris-demo-modal');
+  });
+
+  document.getElementById('btn-use-va-from-demo')?.addEventListener('click', () => {
+    closeModal('qris-demo-modal');
+    const gameKey = window._lastActiveGameKey || 'ml';
+    const containerId = gameKey === 'valo' ? 'valo-payments-container' : 'ml-payments-container';
+    const container = document.getElementById(containerId);
+
+    if (container) {
+      // Find first Virtual Account card
+      const firstVaCard = container.querySelector('.payment-method-card[data-is-demo="false"]') || container.querySelector('.payment-method-card:not([data-is-demo="true"])');
+      if (firstVaCard) {
+        firstVaCard.click();
+        firstVaCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    });
-  }
+    }
+    showCyberToast('Metode dialihkan ke Virtual Account. Silakan lanjutkan pemesanan.', 'success', 'VIRTUAL ACCOUNT DIPILIH');
+  });
 
   const btnCheckStatus = document.getElementById('btn-goto-check-trans');
   if (btnCheckStatus) {
@@ -487,10 +488,10 @@ export function startCheckoutPoller(invoiceNumber) {
               <div style="text-align: center; padding: 24px 12px;">
                 <div style="font-size: 52px; margin-bottom: 12px; filter: drop-shadow(0 0 16px rgba(34, 197, 94, 0.5));">🎉</div>
                 <h3 style="color: #22c55e; font-size: 20px; font-weight: 800; margin-bottom: 8px;">
-                  PEMBAYARAN QRIS BERHASIL!
+                  PEMBAYARAN VIRTUAL ACCOUNT BERHASIL!
                 </h3>
                 <p style="color: var(--text-secondary); font-size: 13.5px; margin-bottom: 16px;">
-                  Invoice <strong style="color: var(--accent-gold);">${invoiceNumber}</strong> telah lunas terverifikasi. Item game otomatis dikirim.
+                  Invoice <strong style="color: var(--accent-gold);">${invoiceNumber}</strong> telah lunas terverifikasi via Transfer Bank. Item game otomatis dikirim.
                 </p>
                 <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 20px; color: #22c55e; font-size: 12px; font-weight: 700;">
                   <span>Mengalihkan ke Bukti Struk...</span>
@@ -499,7 +500,7 @@ export function startCheckoutPoller(invoiceNumber) {
             `;
           }
 
-          showCyberToast('Pembayaran QRIS Berhasil Dikonfirmasi!', 'success', 'TRANSAKSI BERHASIL');
+          showCyberToast('Pembayaran Berhasil Dikonfirmasi!', 'success', 'TRANSAKSI BERHASIL');
 
           setTimeout(() => {
             closeModal('checkout-modal');

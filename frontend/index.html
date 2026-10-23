@@ -577,11 +577,53 @@
         <!-- Rendered dynamically by JS -->
       </div>
       <div class="modal-footer" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
-        <button class="btn-load-more" id="btn-simulate-pay" style="background: var(--accent-gold); color: #ffffff; border-color: var(--accent-gold); font-weight: 700;">
-          ⚡ Simulasi Bayar QRIS (Demo)
-        </button>
         <button class="btn-load-more" id="btn-copy-invoice-code">Salin Invoice</button>
         <button class="btn-order-now" id="btn-goto-check-trans" style="padding: 10px 20px; width: auto;">Cek Status Pesanan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1B. QRIS Demonstration Preview Modal (Informational Only - No Payment Transaction) -->
+  <div class="modal-backdrop" id="qris-demo-modal">
+    <div class="modal-box" style="max-width: 480px; text-align: center;">
+      <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px;">ℹ️</span>
+          <h3 class="modal-title" style="font-size: 17px; margin: 0;">Pratinjau Fitur: QRIS Demonstrasi</h3>
+        </div>
+        <button class="modal-close" id="btn-close-qris-demo">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px 16px;">
+        <div style="margin-bottom: 14px;">
+          <span class="payment-status-badge badge-demo" style="font-size: 11px; padding: 4px 12px;">
+            STATUS: BELUM AKTIF DI PRODUCTION
+          </span>
+          <div style="font-size: 13px; font-weight: 800; color: #ef4444; margin-top: 6px; letter-spacing: 0.5px;">
+            DEMO — TIDAK UNTUK PEMBAYARAN
+          </div>
+        </div>
+
+        <div style="background: #ffffff; border-radius: 12px; padding: 16px; margin: 0 auto 16px; max-width: 240px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); position: relative;">
+          <img src="/assets/payments/qris_demo_watermark.svg" alt="QRIS Demo Watermark" style="width: 100%; height: auto; display: block; border-radius: 8px;" />
+        </div>
+
+        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 10px; padding: 14px; text-align: left; margin-bottom: 18px;">
+          <div style="color: #f87171; font-weight: 800; font-size: 13px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+            <span>⚠️</span> PERHATIAN PENGGUNA
+          </div>
+          <p style="font-size: 12.5px; color: var(--text-primary); line-height: 1.5; margin: 0;">
+            Fitur pembayaran QRIS sedang dalam tahap aktivasi. Kode QR yang ditampilkan merupakan demonstrasi dan tidak dapat digunakan untuk melakukan pembayaran. Silakan gunakan <strong>Virtual Account</strong> untuk menyelesaikan transaksi.
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button class="btn-order-now" id="btn-use-va-from-demo" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 800; justify-content: center; gap: 8px;">
+            <span>👉 Gunakan Virtual Account (Tersedia)</span>
+          </button>
+          <button class="btn-load-more" id="btn-dismiss-qris-demo" style="width: 100%; justify-content: center; padding: 10px; font-size: 13px;">
+            Tutup Pratinjau
+          </button>
+        </div>
       </div>
     </div>
   </div>

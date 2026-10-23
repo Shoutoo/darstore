@@ -29,8 +29,8 @@ const dbService = {
         invoice_number, user_id, product_id, game, nama_item,
         game_user_id, server_id, riot_id, wa_email_guest,
         status, payment_method, payment_ref, qris_string, qris_url, total_harga, expired_at,
-        points_used, discount_amount
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        points_used, discount_amount, access_token, redirect_url, points_awarded, points_refunded
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`,
       [
         data.invoice_number,
         data.user_id,
@@ -49,7 +49,9 @@ const dbService = {
         data.total_harga,
         data.expired_at || null,
         data.points_used || 0,
-        data.discount_amount || 0
+        data.discount_amount || 0,
+        data.access_token || null,
+        data.redirect_url || null
       ]
     );
     return await dbAsync.get('SELECT * FROM orders WHERE id = ?', [result.id]);

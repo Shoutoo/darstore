@@ -325,15 +325,21 @@ exports.completeOrder = async (req, res) => {
 
     await dbAsync.run("UPDATE orders SET status = 'Berhasil', updated_at = CURRENT_TIMESTAMP WHERE id = ?", [id]);
 
-    // Give loyalty points if order is attached to a registered user
+    // Give loyalty points if order is attached to a registered user (idempoten: hanya 1 kali)
     if (order.user_id) {
       const earned = Math.floor((order.total_harga || 0) / 10000);
       if (earned > 0) {
-        await dbAsync.run('UPDATE users SET points = points + ? WHERE id = ?', [earned, order.user_id]);
-        await dbAsync.run(
-          'INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)',
-          [order.user_id, order.id, earned, `Manual Complete Order: ${order.invoice_number}`]
+        const claim = await dbAsync.run(
+          'UPDATE orders SET points_awarded = 1 WHERE id = ? AND (points_awarded = 0 OR points_awarded IS NULL)',
+          [order.id]
         );
+        if (claim.changes > 0) {
+          await dbAsync.run('UPDATE users SET points = points + ? WHERE id = ?', [earned, order.user_id]);
+          await dbAsync.run(
+            'INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)',
+            [order.user_id, order.id, earned, `Manual Complete Order: ${order.invoice_number}`]
+          );
+        }
       }
     }
 
@@ -381,6 +387,21 @@ exports.cancelOrder = async (req, res) => {
     }
 
     await dbAsync.run("UPDATE orders SET status = 'Refunded', updated_at = CURRENT_TIMESTAMP WHERE id = ?", [id]);
+
+    // Refund used loyalty points if customer used points (idempoten: hanya 1 kali)
+    if (order.user_id && order.points_used > 0) {
+      const refundClaim = await dbAsync.run(
+        'UPDATE orders SET points_refunded = 1 WHERE id = ? AND (points_refunded = 0 OR points_refunded IS NULL)',
+        [order.id]
+      );
+      if (refundClaim.changes > 0) {
+        await dbAsync.run('UPDATE users SET points = points + ? WHERE id = ?', [order.points_used, order.user_id]);
+        await dbAsync.run(
+          'INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)',
+          [order.user_id, order.id, order.points_used, `[REFUND] Pengembalian ${order.points_used} poin karena pesanan dibatalkan Admin (${reason})`]
+        );
+      }
+    }
 
     await logAdminAction(req.user.id, 'refund_order', 'order', id, {
       invoice: order.invoice_number,
@@ -521,14 +542,21 @@ exports.getProviderBalance = async (req, res) => {
 
 exports.testProviderTransaction = async (req, res) => {
   try {
-    const { buyer_sku_code = 'xld10', customer_no = '087800001232', testing = true } = req.body || {};
+    if (!topupProvider.isDevelopment()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Pengujian transaksi provider dinonaktifkan pada mode production untuk mencegah transaksi nyata.'
+      });
+    }
+
+    const { buyer_sku_code = 'xld10', customer_no = '087800001232' } = req.body || {};
     const ref_id = `test_${Date.now()}`;
 
     const result = await topupProvider.requestTransaction({
       buyer_sku_code,
       customer_no,
       ref_id,
-      testing
+      testing: true // Selalu enforce mode testing pada endpoint uji coba
     });
 
     return res.json({

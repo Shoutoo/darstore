@@ -13,10 +13,18 @@ class PaymentGatewayService {
   /**
    * Reload configuration and enforce sandbox guardrails
    */
-  reloadConfig() {
-    this.isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true';
-    this.serverKey = (process.env.MIDTRANS_SERVER_KEY || '').trim() || 'SB-Mid-server-xxxxxxxxxxxxx';
-    this.clientKey = (process.env.MIDTRANS_CLIENT_KEY || '').trim() || 'SB-Mid-client-xxxxxxxxxxxxx';
+  reloadConfig(force = false) {
+    const isProd = process.env.MIDTRANS_IS_PRODUCTION === 'true';
+    const sKey = (process.env.MIDTRANS_SERVER_KEY || '').trim() || 'SB-Mid-server-xxxxxxxxxxxxx';
+    const cKey = (process.env.MIDTRANS_CLIENT_KEY || '').trim() || 'SB-Mid-client-xxxxxxxxxxxxx';
+
+    if (!force && this.isProduction === isProd && this.serverKey === sKey && this.clientKey === cKey && this.coreApi && this.snap) {
+      return;
+    }
+
+    this.isProduction = isProd;
+    this.serverKey = sKey;
+    this.clientKey = cKey;
 
     // Validasi pencegahan salah pasang key
     if (this.isProduction) {
@@ -41,6 +49,162 @@ class PaymentGatewayService {
       serverKey: this.serverKey,
       clientKey: this.clientKey,
     });
+  }
+
+  /**
+   * Charge Midtrans for Virtual Account Payment (Bank Transfer)
+   * Active Channels: 'bni_va', 'bri_va', 'echannel' (Mandiri), 'cimb_va', 'permata_va'
+   * @param {Object} order - { invoice_number, total_harga, nama_item, payment_channel, payment_method, ... }
+   * @param {Object} customer - { name, email, phone }
+   */
+  async createVaTransaction(order, customer = {}) {
+    this.reloadConfig();
+
+    // Guard: QRIS Demo dilarang membuat transaksi nyata pada payment gateway
+    const methodStr = String(order.payment_method || '').toLowerCase();
+    const channelStr = String(order.payment_channel || '').toLowerCase();
+    if (methodStr.includes('demo') || channelStr.includes('demo')) {
+      throw new Error('QRIS Demo hanya merupakan pratinjau antarmuka dan tidak dapat digunakan untuk memproses transaksi pembayaran.');
+    }
+
+    const isMock = !this.serverKey || this.serverKey.includes('xxxxxxxxxxxxx') || this.serverKey === 'SB-Mid-server-test-key';
+
+    // Normalisasi channel bank
+    let bank = 'bni';
+    let channel = order.payment_channel || 'bni_va';
+    if (channel.includes('bri')) { bank = 'bri'; channel = 'bri_va'; }
+    else if (channel.includes('mandiri') || channel.includes('echannel')) { bank = 'mandiri'; channel = 'echannel'; }
+    else if (channel.includes('cimb')) { bank = 'cimb'; channel = 'cimb_va'; }
+    else if (channel.includes('permata')) { bank = 'permata'; channel = 'permata_va'; }
+    else { bank = 'bni'; channel = 'bni_va'; }
+
+    // Expiry Virtual Account 24 jam (bukan 15 menit QRIS)
+    const expiryTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    if (isMock) {
+      console.log(`[MIDTRANS] Mode Mock/Sandbox Test: Mengenerate Virtual Account ${bank.toUpperCase()} untuk invoice ${order.invoice_number}`);
+      const mockRef = `MID-VA-${Date.now()}`;
+      
+      let vaNum = null;
+      let billKey = null;
+      let billerCode = null;
+
+      if (bank === 'mandiri') {
+        billerCode = '70012';
+        billKey = `0812${Math.floor(10000000 + Math.random() * 90000000)}`;
+      } else if (bank === 'bri') {
+        vaNum = `12800${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+      } else if (bank === 'cimb') {
+        vaNum = `5919${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+      } else if (bank === 'permata') {
+        vaNum = `8471${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+      } else {
+        // BNI
+        vaNum = `8808${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+      }
+
+      return {
+        payment_ref: mockRef,
+        payment_type: bank === 'mandiri' ? 'echannel' : 'bank_transfer',
+        bank: bank.toUpperCase(),
+        va_number: vaNum,
+        bill_key: billKey,
+        biller_code: billerCode,
+        redirect_url: `https://simulator.sandbox.midtrans.com/openapi/va/index?order_id=${order.invoice_number}`,
+        expired_at: expiryTime,
+        raw_response: {
+          status_code: '201',
+          status_message: `Midtrans mock ${bank.toUpperCase()} VA generated`,
+          transaction_id: mockRef,
+          order_id: order.invoice_number,
+          gross_amount: String(order.total_harga),
+          payment_type: bank === 'mandiri' ? 'echannel' : 'bank_transfer',
+          va_numbers: vaNum ? [{ bank, va_number: vaNum }] : undefined,
+          bill_key: billKey,
+          biller_code: billerCode,
+          permata_va_number: bank === 'permata' ? vaNum : undefined,
+          transaction_time: new Date().toISOString(),
+          transaction_status: 'pending'
+        }
+      };
+    }
+
+    // Live Midtrans Execution (Production)
+    try {
+      const chargePayload = {
+        payment_type: bank === 'mandiri' ? 'echannel' : (bank === 'permata' ? 'permata' : 'bank_transfer'),
+        transaction_details: {
+          order_id: order.invoice_number,
+          gross_amount: Math.round(Number(order.total_harga))
+        },
+        customer_details: {
+          first_name: customer.name || order.wa_email_guest || 'Pelanggan',
+          email: customer.email || (order.wa_email_guest && order.wa_email_guest.includes('@') ? order.wa_email_guest : 'customer@darstore.com'),
+          phone: customer.phone || '081234567890'
+        },
+        custom_expiry: {
+          expiry_duration: 24,
+          unit: 'hour'
+        }
+      };
+
+      if (bank === 'mandiri') {
+        chargePayload.echannel = {
+          bill_info1: 'Pembayaran Top Up:',
+          bill_info2: (order.nama_item || 'Game Top Up').slice(0, 30)
+        };
+      } else if (bank !== 'permata') {
+        chargePayload.bank_transfer = { bank };
+      }
+
+      const chargeRes = await this.coreApi.charge(chargePayload);
+
+      let extractedVa = null;
+      if (Array.isArray(chargeRes.va_numbers) && chargeRes.va_numbers.length > 0) {
+        extractedVa = chargeRes.va_numbers[0].va_number;
+      } else if (chargeRes.permata_va_number) {
+        extractedVa = chargeRes.permata_va_number;
+      }
+
+      return {
+        payment_ref: chargeRes.transaction_id || chargeRes.order_id,
+        payment_type: chargeRes.payment_type || 'bank_transfer',
+        bank: bank.toUpperCase(),
+        va_number: extractedVa,
+        bill_key: chargeRes.bill_key || null,
+        biller_code: chargeRes.biller_code || null,
+        redirect_url: chargeRes.redirect_url || null,
+        expired_at: chargeRes.expiry_time || expiryTime,
+        raw_response: chargeRes
+      };
+    } catch (coreErr) {
+      console.warn(`[MIDTRANS CORE API VA] Core API VA ${bank} dialihkan ke Snap:`, coreErr.message);
+
+      // Fallback ke Snap dengan channel bank yang dipilih
+      const snapRes = await this.createSnapTransaction(order, {
+        name: customer.name || order.wa_email_guest || 'Pelanggan Darstore',
+        email: customer.email || (order.wa_email_guest && order.wa_email_guest.includes('@') ? order.wa_email_guest : 'customer@darstore.com')
+      });
+
+      return {
+        payment_ref: snapRes.token,
+        payment_type: 'bank_transfer',
+        bank: bank.toUpperCase(),
+        va_number: null,
+        bill_key: null,
+        biller_code: null,
+        redirect_url: snapRes.redirect_url,
+        snap_token: snapRes.token,
+        expired_at: expiryTime,
+        raw_response: {
+          status_code: '201',
+          status_message: `Midtrans Snap ${bank.toUpperCase()} VA generated`,
+          token: snapRes.token,
+          redirect_url: snapRes.redirect_url,
+          order_id: order.invoice_number
+        }
+      };
+    }
   }
 
   /**
@@ -129,17 +293,22 @@ class PaymentGatewayService {
     } catch (chargeErr) {
       if (this.isProduction) {
         console.error(`[MIDTRANS PRODUCTION NOTICE]: Core API QRIS: ${chargeErr.message}`);
-        // Jika channel GoPay/QRIS Core API belum aktif di MAP atau timeout atau 404, alihkan otomatis ke Midtrans Snap Live Checkout
-        if (
-          chargeErr.message.includes('Payment channel is not activated') ||
-          chargeErr.message.includes('Merchant pop id') ||
-          chargeErr.message.includes('404') ||
-          chargeErr.message.includes('timeout') ||
-          (chargeErr.ApiResponse && chargeErr.ApiResponse.status_message && (
-            chargeErr.ApiResponse.status_message.includes('Payment channel is not activated') ||
-            chargeErr.ApiResponse.status_message.includes('Merchant pop id')
-          ))
-        ) {
+        
+        // Klasifikasi error: hanya alihkan ke Snap jika QRIS memang belum aktif di akun merchant
+        const errMsg = (chargeErr.message || '').toLowerCase();
+        const apiStatusMsg = (chargeErr.ApiResponse?.status_message || '').toLowerCase();
+        const combinedErr = `${errMsg} ${apiStatusMsg}`;
+
+        const isChannelInactive =
+          combinedErr.includes('payment channel is not activated') ||
+          combinedErr.includes('channel is not activated') ||
+          combinedErr.includes('merchant pop id') ||
+          combinedErr.includes('acquirer is not active') ||
+          combinedErr.includes('not activated for this merchant') ||
+          combinedErr.includes('404') ||
+          (chargeErr.ApiResponse && Number(chargeErr.ApiResponse.status_code) === 404);
+
+        if (isChannelInactive) {
           console.log('[MIDTRANS PRODUCTION] Core API QRIS channel belum diaktifkan di dashboard Midtrans. Mengalihkan ke Midtrans Snap Live Checkout...');
           try {
             const snapRes = await this.createSnapTransaction(order, {
@@ -147,21 +316,20 @@ class PaymentGatewayService {
               email: order.wa_email_guest && order.wa_email_guest.includes('@') ? order.wa_email_guest : 'customer@darstore.com'
             });
 
-            // Buat QR code yang mengarahkan langsung ke halaman pembayaran Snap
-            const snapQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(snapRes.redirect_url)}`;
             const expiryTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
             return {
               payment_ref: snapRes.token,
-              qris_string: snapRes.redirect_url,
-              qris_url: snapQrUrl,
+              qris_string: null,
+              qris_url: null,
               redirect_url: snapRes.redirect_url,
               simulator_url: null,
               snap_token: snapRes.token,
+              is_fallback_snap: true,
               expired_at: expiryTime,
               raw_response: {
                 status_code: '201',
-                status_message: 'Midtrans Snap production transaction generated (Seamless Channel Fallback)',
+                status_message: 'Midtrans Snap production transaction generated (QRIS Channel Inactive Fallback)',
                 token: snapRes.token,
                 redirect_url: snapRes.redirect_url,
                 order_id: order.invoice_number,
@@ -174,6 +342,7 @@ class PaymentGatewayService {
           }
         }
 
+        // Jangan fallback untuk error otentikasi (401) atau bad request (400)
         throw new Error(`Gagal membuat tagihan QRIS Midtrans Production: ${chargeErr.message}`);
       }
 
@@ -184,7 +353,7 @@ class PaymentGatewayService {
         );
       }
 
-      // Fallback aman untuk development/sandbox agar alur UI & testing tetap berjalan mulus
+      // Fallback aman HANYA untuk mode sandbox / development
       const mockRef = `MID-SANDBOX-${Date.now()}`;
       const qrisString = `00020101021226570014ID.DARSSTORE.WWW01189360091800000000000208${order.invoice_number}520454115303360540${order.total_harga.toString().length}${order.total_harga}5802ID5910DARSSTORE6007JAKARTA62070703A016304`;
       const mockQrisUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrisString)}`;
@@ -338,13 +507,18 @@ class PaymentGatewayService {
    */
   verifyWebhookSignature(payload, headerSignature) {
     this.reloadConfig();
+    if (!payload || typeof payload !== 'object') {
+      return false;
+    }
+
     const { order_id, status_code, gross_amount, signature_key } = payload;
     const signature = signature_key || headerSignature;
 
-    if (!signature) {
-      if (process.env.NODE_ENV !== 'production' && (!this.serverKey || this.serverKey.includes('xxxxxxxxxxxxx'))) {
-        return true; // Allow local mock test
-      }
+    if (!signature || !order_id || !status_code || gross_amount === undefined || gross_amount === null) {
+      return false;
+    }
+
+    if (!this.serverKey) {
       return false;
     }
 

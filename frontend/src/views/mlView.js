@@ -273,8 +273,8 @@ export async function handleMLCheckout() {
   state.userId = uid;
   state.server = srv;
 
-  if (!state.selectedPayment) {
-    showCyberToast('Silakan pilih metode pembayaran QRIS Instant!', 'warning', 'METODE PEMBAYARAN');
+  if (!state.selectedPayment || state.selectedPayment.isDemo) {
+    showCyberToast('Silakan pilih salah satu Bank Virtual Account untuk melakukan pembayaran!', 'warning', 'METODE PEMBAYARAN');
     return;
   }
 
@@ -314,10 +314,15 @@ export async function handleMLCheckout() {
     }
 
     const order = data.order || {};
-    const qrCodeUrl = data.qrCodeUrl || order.qris_url || order.qrCodeUrl;
     const expiredAt = data.expiredAt || order.expired_at || order.expiredAt;
     const invoiceNumber = data.invoiceNumber || order.invoice_number;
-    appState.currentInvoice = { ...order, invoice_number: invoiceNumber, qris_url: qrCodeUrl, expired_at: expiredAt };
+    const vaNumber = data.vaNumber || order.va_number;
+    const billKey = data.billKey || order.bill_key;
+    const billerCode = data.billerCode || order.biller_code;
+    const bankName = data.bank || order.bank || 'Bank Transfer';
+    const redirectUrl = data.redirectUrl || order.redirect_url;
+
+    appState.currentInvoice = { ...order, invoice_number: invoiceNumber, expired_at: expiredAt, va_number: vaNumber, bank: bankName };
 
     // If points used, update user local points balance and header
     if (data.pointsUsed > 0 && appState.currentUser) {
@@ -343,7 +348,7 @@ export async function handleMLCheckout() {
           </div>
         </div>
 
-        <div style="background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px;">
+        <div style="background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
           <div class="summary-row" style="margin-bottom: 8px;">
             <span>Game:</span>
             <strong>Mobile Legends: Bang Bang</strong>
@@ -358,7 +363,7 @@ export async function handleMLCheckout() {
           </div>
           <div class="summary-row" style="margin-bottom: 8px;">
             <span>Metode Bayar:</span>
-            <strong>${order.payment_method || state.selectedPayment.name} (Midtrans)</strong>
+            <strong style="color: #38bdf8;">${order.payment_method || state.selectedPayment.name}</strong>
           </div>
           ${order.discount_amount > 0 ? `
             <div class="summary-row" style="margin-bottom: 8px; color: #fde047;">
@@ -372,43 +377,60 @@ export async function handleMLCheckout() {
           </div>
         </div>
 
-        ${(() => {
-          const isNativeQris = Boolean(data.qrisString && data.qrisString.startsWith('000201'));
-          const hasRedirect = Boolean(data.redirectUrl || order.redirect_url);
+        <!-- Virtual Account Payment Box -->
+        <div style="background: rgba(15, 23, 42, 0.9); border: 2px solid rgba(0, 112, 243, 0.5); border-radius: var(--radius-lg); padding: 18px; text-align: center; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0, 112, 243, 0.2);">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px;">
+            <span class="payment-status-badge badge-available" style="font-size: 11px;">VERIFIKASI OTOMATIS MIDTRANS</span>
+          </div>
 
-          return `
-            <div class="qr-code-wrap" style="background: #ffffff; padding: 18px; border-radius: var(--radius-lg); text-align: center; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.25);">
-              <div style="font-size: 13px; color: #16212c; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
-                ${isNativeQris ? 'SCAN QRIS DINAMIS UNTUK MEMBAYAR' : 'PEMBAYARAN MIDTRANS LIVE (GOPAY & VA)'}
-              </div>
-              ${qrCodeUrl ? `
-                <img src="${qrCodeUrl}" onerror="this.onerror=null; this.src='/assets/payments/qris_sample.svg';" alt="QRIS Midtrans" class="qr-code-img" style="margin: 0 auto; width: 195px; height: 195px; border-radius: 8px; object-fit: contain; display: block;" />
-              ` : `
-                <img src="/assets/payments/qris_sample.svg" alt="QRIS Midtrans" class="qr-code-img" style="margin: 0 auto; width: 195px; height: 195px; border-radius: 8px; object-fit: contain; display: block;" />
-              `}
-              <div style="font-size: 11.5px; color: #475569; margin-top: 10px; font-weight: 600;">
-                ${isNativeQris
-                  ? 'Bisa discan langsung lewat BCA Mobile, Livin, BRImo, BNI, GoPay, OVO, DANA & ShopeePay'
-                  : 'Scan dengan kamera HP atau klik tombol di bawah untuk bayar via GoPay / Bank Transfer'}
-              </div>
+          ${vaNumber ? `
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">
+              Nomor Virtual Account (${bankName})
             </div>
+            <div style="font-family: monospace; font-size: 26px; font-weight: 900; color: #ffffff; letter-spacing: 2px; margin-bottom: 12px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; border: 1px dashed rgba(255,255,255,0.2);">
+              ${vaNumber}
+            </div>
+            <button onclick="navigator.clipboard.writeText('${vaNumber}').then(() => alert('Nomor Virtual Account disalin: ${vaNumber}'))" class="btn-order-now" style="margin: 0 auto 12px; padding: 7px 18px; font-size: 12.5px; width: auto; background: var(--accent-gold); color: #000; font-weight: 800; border-radius: 6px;">
+              📋 Salin No. Virtual Account
+            </button>
+          ` : (billKey ? `
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">
+              Kode Perusahaan: <strong style="color: #fff;">${billerCode || '70012'}</strong>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">
+              Nomor Pembayaran (Bill Key):
+            </div>
+            <div style="font-family: monospace; font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: 2px; margin-bottom: 12px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px;">
+              ${billKey}
+            </div>
+            <button onclick="navigator.clipboard.writeText('${billKey}').then(() => alert('Bill Key disalin: ${billKey}'))" class="btn-order-now" style="margin: 0 auto 12px; padding: 7px 18px; font-size: 12.5px; width: auto; background: var(--accent-gold); color: #000; font-weight: 800; border-radius: 6px;">
+              📋 Salin Bill Key
+            </button>
+          ` : `
+            <div style="font-size: 13.5px; color: var(--text-primary); margin-bottom: 10px;">
+              Instruksi Virtual Account siap diakses melalui portal resmi Midtrans:
+            </div>
+          `)}
 
-            ${hasRedirect ? `
-              <div style="margin-bottom: 16px;">
-                <a href="${data.redirectUrl || order.redirect_url}" target="_blank" rel="noopener noreferrer" class="btn-order-now" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 12px; font-size: 13.5px; font-weight: 700; border-radius: var(--radius-md); background: linear-gradient(135deg, #0070f3, #0050d0); box-shadow: 0 4px 15px rgba(0, 112, 243, 0.4); color: #ffffff;">
-                  🚀 Buka Halaman Pembayaran Midtrans Live
-                </a>
-              </div>
-            ` : ''}
+          ${redirectUrl ? `
+            <div style="margin-top: 10px; margin-bottom: 10px;">
+              <a href="${redirectUrl}" target="_blank" rel="noopener noreferrer" class="btn-order-now" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 12px; font-size: 13.5px; font-weight: 700; border-radius: var(--radius-md); background: linear-gradient(135deg, #0070f3, #0050d0); box-shadow: 0 4px 15px rgba(0, 112, 243, 0.4); color: #ffffff;">
+                🚀 Buka Panduan & Halaman Transfer Midtrans
+              </a>
+            </div>
+          ` : ''}
 
-            <p style="font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.5;">
-              Selesaikan pembayaran dalam waktu <strong id="ml-qris-timer" style="color: var(--accent-gold); font-weight: 800; font-size: 14px;">15:00</strong>. Pesanan diproses otomatis dalam 1-3 detik setelah pembayaran berhasil.
-            </p>
-          `;
-        })()}
+          <div style="font-size: 11.5px; color: var(--text-muted); text-align: left; background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: 6px; margin-top: 10px; line-height: 1.5;">
+            💡 <strong>Panduan Transfer:</strong> Buka m-Banking/ATM &rarr; Pilih menu Bayar/Transfer Virtual Account &rarr; Masukkan nomor VA di atas &rarr; Pastikan total bayar tepat <strong>${formatRupiah(data.totalHarga || order.total_harga)}</strong>.
+          </div>
+        </div>
+
+        <p style="font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.5;">
+          Selesaikan transfer sebelum batas waktu: <strong id="ml-va-timer" style="color: var(--accent-gold); font-weight: 800; font-size: 14px;">23:59:59</strong>. Status transaksi diperbarui otomatis saat dana diterima.
+        </p>
       `;
 
-      startQrisCountdown('ml-qris-timer', expiredAt);
+      startQrisCountdown('ml-va-timer', expiredAt);
     }
 
     openModal('checkout-modal');

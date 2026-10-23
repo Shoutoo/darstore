@@ -11,9 +11,9 @@ class TopupProviderService {
 
   getApiKey() {
     if (process.env.DIGIFLAZZ_MODE === 'production') {
-      return process.env.DIGIFLAZZ_PROD_KEY || process.env.DIGIFLAZZ_KEY || '0b367413-6219-533c-8602-515ee3d45e31';
+      return (process.env.DIGIFLAZZ_PROD_KEY || process.env.DIGIFLAZZ_KEY || process.env.DIGIFLAZZ_API_KEY || '').trim() || '0b367413-6219-533c-8602-515ee3d45e31';
     }
-    return process.env.DIGIFLAZZ_DEV_KEY || process.env.DIGIFLAZZ_KEY || 'dev-dd8fea20-cd56-11f1-9889-539063f8d4ac';
+    return (process.env.DIGIFLAZZ_DEV_KEY || process.env.DIGIFLAZZ_KEY || process.env.DIGIFLAZZ_API_KEY || '').trim() || 'dev-dd8fea20-cd56-11f1-9889-539063f8d4ac';
   }
 
   isDevelopment() {
@@ -24,7 +24,7 @@ class TopupProviderService {
   isConfigured() {
     const username = this.getUsername();
     const key = this.getApiKey();
-    return Boolean(username && key && username !== 'your_digiflazz_username');
+    return Boolean(username && key && username !== 'your_digiflazz_username' && key !== 'your_digiflazz_api_key');
   }
 
   /**
@@ -58,6 +58,10 @@ class TopupProviderService {
    * Direct API request to Digiflazz transaction endpoint
    * Useful for testing test cases & live transactions
    */
+  /**
+   * Direct API request to Digiflazz transaction endpoint
+   * Useful for testing test cases & live transactions
+   */
   async requestTransaction({ buyer_sku_code, customer_no, ref_id, testing }) {
     const username = this.getUsername();
     const apiKey = this.getApiKey();
@@ -77,7 +81,8 @@ class TopupProviderService {
     const response = await fetch('https://api.digiflazz.com/v1/transaction', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10000)
     });
 
     const resData = await response.json();
@@ -85,6 +90,19 @@ class TopupProviderService {
       payload,
       response: resData
     };
+  }
+
+  /**
+   * Reconcile transaction status with Digiflazz using the existing ref_id
+   * According to Digiflazz API, calling with the same ref_id returns current status without duplicate charging
+   */
+  async reconcileTransaction(order) {
+    const customerNo = order.game === 'mlbb' ? `${order.game_user_id}${order.server_id}` : order.riot_id;
+    return await this.requestTransaction({
+      buyer_sku_code: order.product_id,
+      customer_no: customerNo,
+      ref_id: order.invoice_number
+    });
   }
 
   /**
@@ -148,14 +166,23 @@ class TopupProviderService {
         const msg = resData.data?.message || resData.message || '';
         let errorMsg = msg;
 
-        if (rc === '40' || /tujuan salah|tidak ditemukan|invalid customer|nomor tidak terdaftar|region/i.test(msg)) {
-          errorMsg = `ID Akun Game / Server tidak ditemukan atau tidak sesuai region (RC: 40 - ${msg || 'Tujuan Salah'})`;
-        } else if (rc === '02') {
-          errorMsg = `Transaksi Gagal dari Provider Digiflazz (RC: 02 - ${msg || 'Gagal'})`;
-        } else if (rc === '43' || /saldo/i.test(msg)) {
-          errorMsg = `Saldo Deposit Digiflazz tidak mencukupi (RC: 43)`;
+        // Pemetaan resmi Response Code Digiflazz
+        if (rc === '40') {
+          errorMsg = `Kesalahan format parameter/payload pesanan (RC: 40 - ${msg || 'Payload Error'})`;
+        } else if (rc === '41') {
+          errorMsg = `Buyer SKU Code tidak valid atau tidak terdaftar (RC: 41 - ${msg || 'SKU Invalid'})`;
         } else if (rc === '42') {
           errorMsg = `IP Server belum terdaftar di IP Whitelist Digiflazz (RC: 42)`;
+        } else if (rc === '43') {
+          errorMsg = `SKU produk sedang gangguan atau tidak aktif di provider (RC: 43 - ${msg || 'SKU Gangguan/Tidak Aktif'})`;
+        } else if (rc === '44') {
+          errorMsg = `Saldo deposit Digiflazz tidak mencukupi (RC: 44 - ${msg || 'Saldo Kurang'})`;
+        } else if (rc === '45' || /tujuan salah|tidak ditemukan|invalid customer|nomor tidak terdaftar|region/i.test(msg)) {
+          errorMsg = `ID Akun Game / Server tidak ditemukan atau tidak sesuai region (RC: 45 - ${msg || 'Tujuan Salah'})`;
+        } else if (rc === '02') {
+          errorMsg = `Transaksi Gagal dari Provider Digiflazz (RC: 02 - ${msg || 'Gagal'})`;
+        } else if (rc === '53') {
+          errorMsg = `Duplikasi transaksi ref_id (RC: 53 - ${msg || 'Duplicate'})`;
         } else {
           errorMsg = rc ? `Gagal dari provider game (RC: ${rc} - ${msg || 'Transaksi Gagal'})` : (msg || 'Gagal memproses transaksi di provider game');
         }
@@ -166,6 +193,16 @@ class TopupProviderService {
         throw err;
       }
     } catch (err) {
+      // Tangani timeout tanpa langsung menganggap transaksi gagal permanen
+      if (err.name === 'TimeoutError' || err.name === 'AbortError' || /timeout|econnreset|etimedout/i.test(err.message)) {
+        console.warn(`[DIGIFLAZZ TIMEOUT] Transaksi ${order.invoice_number} timeout. Status belum pasti, ditandai pending.`);
+        return {
+          success: true,
+          pending: true,
+          message: 'Koneksi ke Digiflazz timeout. Transaksi berstatus pending menunggu konfirmasi callback/rekonsiliasi.',
+          raw: { status: 'Pending', timeout: true }
+        };
+      }
       throw err;
     }
   }

@@ -33,6 +33,16 @@ exports.createOrder = async (req, res) => {
       });
     }
 
+    // Guard: QRIS Demo hanya merupakan pratinjau antarmuka dan dilarang untuk transaksi nyata
+    const methodLower = String(payment_method || '').toLowerCase();
+    const channelLower = String(req.body.payment_channel || '').toLowerCase();
+    if (methodLower.includes('demo') || channelLower.includes('demo') || (methodLower.includes('qris') && !channelLower.includes('va'))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Metode pembayaran QRIS sedang dalam tahap aktivasi dan hanya tersedia sebagai demonstrasi antarmuka. Silakan gunakan Virtual Account untuk menyelesaikan transaksi.'
+      });
+    }
+
     if (game === 'mlbb') {
       const uid = String(game_user_id || '').trim();
       const srv = String(server_id || '').trim();
@@ -134,8 +144,13 @@ exports.createOrder = async (req, res) => {
     const maxAllowedDiscountRupiah = Math.floor(baseProductPrice * MAX_DISCOUNT_PERCENT);
     const maxAllowedPoints = Math.floor(maxAllowedDiscountRupiah / POINT_VALUE_RUPIAH);
 
-    if (req.user && req.user.id && (use_points || points_to_use > 0)) {
-      const userRow = await dbAsync.get('SELECT points FROM users WHERE id = ?', [req.user.id]);
+    const user_id = req.user ? req.user.id : null;
+    const invoice_number = generateInvoiceNumber();
+    const crypto = require('crypto');
+    const accessToken = crypto.randomBytes(24).toString('hex');
+
+    if (user_id && (use_points || points_to_use > 0)) {
+      const userRow = await dbAsync.get('SELECT points FROM users WHERE id = ?', [user_id]);
       const userPoints = userRow ? (userRow.points || 0) : 0;
 
       let wantedPoints = parseInt(points_to_use, 10);
@@ -144,29 +159,33 @@ exports.createOrder = async (req, res) => {
         else wantedPoints = 0;
       }
 
-      // Deduct at most the user's balance and at most the max allowed points (20% cap)
-      pointsUsed = Math.max(0, Math.min(wantedPoints, userPoints, maxAllowedPoints));
-      discountAmount = pointsUsed * POINT_VALUE_RUPIAH;
+      // Potongan maksimal 20% dari modal pokok dan tidak boleh melebihi saldo poin
+      const intendedPoints = Math.max(0, Math.min(wantedPoints, userPoints, maxAllowedPoints));
+      if (intendedPoints > 0) {
+        // Atomic deduction: hanya potong jika saldo poin di database masih mencukupi
+        const deductRes = await dbAsync.run(
+          'UPDATE users SET points = points - ? WHERE id = ? AND points >= ?',
+          [intendedPoints, user_id, intendedPoints]
+        );
+        if (deductRes.changes > 0) {
+          pointsUsed = intendedPoints;
+          discountAmount = pointsUsed * POINT_VALUE_RUPIAH;
+          await dbAsync.run(
+            `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
+            [
+              user_id,
+              null,
+              -pointsUsed,
+              `Potongan diskon Rp ${discountAmount.toLocaleString('id-ID')} untuk invoice ${invoice_number}`
+            ]
+          );
+        } else {
+          console.warn(`[LOYALTY CONCURRENCY] Saldo poin user ${user_id} tidak mencukupi untuk pemotongan ${intendedPoints} poin.`);
+        }
+      }
     }
 
     const total_harga = Math.max(fee, (baseProductPrice + fee) - discountAmount);
-
-    const invoice_number = generateInvoiceNumber();
-    const user_id = req.user ? req.user.id : null;
-
-    // Deduct points immediately if applied
-    if (pointsUsed > 0 && user_id) {
-      await dbAsync.run('UPDATE users SET points = points - ? WHERE id = ?', [pointsUsed, user_id]);
-      await dbAsync.run(
-        `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
-        [
-          user_id,
-          null,
-          -pointsUsed,
-          `Potongan diskon Rp ${discountAmount.toLocaleString('id-ID')} untuk invoice ${invoice_number}`
-        ]
-      );
-    }
 
     // Create temporary order object for payment gateway
     const tempOrder = {
@@ -199,7 +218,8 @@ exports.createOrder = async (req, res) => {
         qris_url: null,
         total_harga,
         points_used: pointsUsed,
-        discount_amount: discountAmount
+        discount_amount: discountAmount,
+        access_token: accessToken
       });
 
       if (pointsUsed > 0 && user_id) {
@@ -216,14 +236,17 @@ exports.createOrder = async (req, res) => {
       throw orderErr;
     }
 
-    // 2. Charge ke Midtrans Core API dengan payment_type: 'qris'
+    // 2. Charge ke Midtrans Virtual Account (Bank Transfer)
     try {
-      const qrisData = await paymentGateway.createQrisTransaction(tempOrder);
+      const vaData = await paymentGateway.createVaTransaction(tempOrder, {
+        name: wa_email_guest,
+        email: wa_email_guest && wa_email_guest.includes('@') ? wa_email_guest : 'customer@darstore.com'
+      });
 
-      // 3. Update data order dengan payment_ref, URL QRIS dan redirect_url Midtrans
+      // 3. Update data order dengan payment_ref, redirect_url Midtrans dan expired_at (24 jam)
       await dbAsync.run(
-        `UPDATE orders SET payment_ref = ?, qris_string = ?, qris_url = ?, redirect_url = ?, expired_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-        [qrisData.payment_ref, qrisData.qris_string, qrisData.qris_url, qrisData.redirect_url || null, qrisData.expired_at, createdOrder.id]
+        `UPDATE orders SET payment_ref = ?, redirect_url = ?, expired_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [vaData.payment_ref, vaData.redirect_url || null, vaData.expired_at, createdOrder.id]
       );
 
       // 4. Catat payment log transaksi Midtrans
@@ -232,9 +255,9 @@ exports.createOrder = async (req, res) => {
           `INSERT INTO payment_logs (order_id, gateway_ref, status, raw_response) VALUES (?, ?, ?, ?)`,
           [
             createdOrder.id,
-            qrisData.payment_ref,
+            vaData.payment_ref,
             'pending',
-            JSON.stringify(qrisData.raw_response || { initiated: true })
+            JSON.stringify(vaData.raw_response || { initiated: true })
           ]
         );
       } catch (logErr) {
@@ -245,31 +268,38 @@ exports.createOrder = async (req, res) => {
 
       return res.status(201).json({
         success: true,
-        message: 'Pesanan berhasil dibuat.',
+        message: 'Pesanan berhasil dibuat. Silakan lakukan pembayaran ke Virtual Account.',
         invoiceNumber: invoice_number,
-        qrCodeUrl: qrisData.qris_url,
-        qrisString: qrisData.qris_string,
-        simulatorUrl: qrisData.simulator_url || null,
-        redirectUrl: qrisData.redirect_url || null,
-        snapToken: qrisData.snap_token || null,
-        expiredAt: qrisData.expired_at,
+        accessToken,
+        paymentMethod: createdOrder.payment_method,
+        paymentChannel: req.body.payment_channel || 'bni_va',
+        bank: vaData.bank || 'BNI',
+        vaNumber: vaData.va_number || null,
+        billKey: vaData.bill_key || null,
+        billerCode: vaData.biller_code || null,
+        redirectUrl: vaData.redirect_url || null,
+        snapToken: vaData.snap_token || null,
+        expiredAt: vaData.expired_at,
         totalHarga: total_harga,
         pointsUsed,
         discountAmount,
+        payment_data: vaData,
         order: {
           ...updatedOrder,
-          qrCodeUrl: qrisData.qris_url,
-          qrisString: qrisData.qris_string,
-          simulatorUrl: qrisData.simulator_url || null,
-          redirectUrl: qrisData.redirect_url || null,
-          snapToken: qrisData.snap_token || null,
-          expiredAt: qrisData.expired_at,
+          access_token: accessToken,
+          va_number: vaData.va_number || null,
+          bill_key: vaData.bill_key || null,
+          biller_code: vaData.biller_code || null,
+          bank: vaData.bank || 'BNI',
+          redirectUrl: vaData.redirect_url || null,
+          snapToken: vaData.snap_token || null,
+          expiredAt: vaData.expired_at,
           points_used: pointsUsed,
           discount_amount: discountAmount
         }
       });
     } catch (chargeErr) {
-      console.error('Midtrans QRIS charge error:', chargeErr);
+      console.error('Midtrans VA charge error:', chargeErr);
       // Jika charge Midtrans gagal, rollback poin & tandai status order jadi Gagal
       if (pointsUsed > 0 && user_id) {
         await dbAsync.run('UPDATE users SET points = points + ? WHERE id = ?', [pointsUsed, user_id]);
@@ -322,31 +352,60 @@ exports.getOrder = async (req, res) => {
     if (isPending) {
       try {
         const midtransRes = await paymentGateway.checkTransactionStatus(order.invoice_number);
-        if (midtransRes && (midtransRes.transaction_status === 'settlement' || midtransRes.transaction_status === 'capture')) {
-          console.log(`[AUTO-SYNC] Midtrans payment confirmed (${midtransRes.transaction_status}) for invoice ${order.invoice_number}`);
-          
-          await dbAsync.run(
-            `UPDATE orders SET status = 'Berhasil', payment_ref = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-            [midtransRes.transaction_id || order.payment_ref, order.id]
-          );
+        if (midtransRes && (midtransRes.transaction_status === 'settlement' || (midtransRes.transaction_status === 'capture' && midtransRes.fraud_status === 'accept'))) {
+          // Validasi nominal pembayaran cocok sebelum mengkonfirmasi status lunas
+          const syncGross = Math.round(Number(midtransRes.gross_amount));
+          const expectedGross = Math.round(Number(order.total_harga));
 
-          try {
-            const orderQueue = require('../jobs/processOrderQueue');
-            await orderQueue.enqueue({ ...order, status: 'Berhasil' });
-          } catch (qErr) {
-            console.warn('[AUTO-SYNC] Queue enqueue error:', qErr.message);
-          }
+          if (!isNaN(syncGross) && syncGross === expectedGross) {
+            console.log(`[AUTO-SYNC] Midtrans payment confirmed (${midtransRes.transaction_status}) for invoice ${order.invoice_number}`);
+            
+            const updateRes = await dbAsync.run(
+              `UPDATE orders SET status = 'Diproses', payment_ref = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status IN ('Menunggu Pembayaran', 'pending')`,
+              [midtransRes.transaction_id || order.payment_ref, order.id]
+            );
 
-          order.status = 'Berhasil';
-          if (midtransRes.transaction_id) {
-            order.payment_ref = midtransRes.transaction_id;
+            if (updateRes.changes > 0) {
+              try {
+                const orderQueue = require('../jobs/processOrderQueue');
+                await orderQueue.enqueue({ ...order, status: 'Diproses', payment_ref: midtransRes.transaction_id || order.payment_ref });
+              } catch (qErr) {
+                console.warn('[AUTO-SYNC] Queue enqueue error:', qErr.message);
+              }
+            }
+
+            order.status = 'Diproses';
+            if (midtransRes.transaction_id) {
+              order.payment_ref = midtransRes.transaction_id;
+            }
+          } else {
+            console.warn(`[AUTO-SYNC SECURITY ALERT] Nominal mismatch pada auto-sync untuk ${order.invoice_number}: Midtrans=${syncGross}, DB=${expectedGross}`);
           }
         } else if (midtransRes && ['expire', 'deny', 'cancel'].includes(midtransRes.transaction_status)) {
           console.log(`[AUTO-SYNC] Midtrans payment failed (${midtransRes.transaction_status}) for invoice ${order.invoice_number}`);
-          await dbAsync.run(
-            `UPDATE orders SET status = 'Gagal', failure_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+          const failRes = await dbAsync.run(
+            `UPDATE orders SET status = 'Gagal', failure_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status IN ('Menunggu Pembayaran', 'pending')`,
             [`Midtrans: Pembayaran ${midtransRes.transaction_status}`, order.id]
           );
+
+          if (failRes.changes > 0 && order.user_id && order.points_used > 0) {
+            const refundClaim = await dbAsync.run(
+              `UPDATE orders SET points_refunded = 1 WHERE id = ? AND (points_refunded = 0 OR points_refunded IS NULL)`,
+              [order.id]
+            );
+            if (refundClaim.changes > 0) {
+              await dbAsync.run('UPDATE users SET points = points + ? WHERE id = ?', [order.points_used, order.user_id]);
+              await dbAsync.run(
+                `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
+                [
+                  order.user_id,
+                  order.id,
+                  order.points_used,
+                  `[REFUND] Pengembalian ${order.points_used} poin karena pesanan ${order.invoice_number} ${midtransRes.transaction_status}`
+                ]
+              );
+            }
+          }
           order.status = 'Gagal';
         }
       } catch (syncErr) {
@@ -358,8 +417,19 @@ exports.getOrder = async (req, res) => {
       order.redirect_url = order.qris_string;
     }
 
+    const nodeEnv = (process.env.NODE_ENV || '').toLowerCase().trim();
+    const vercelEnv = (process.env.VERCEL_ENV || '').toLowerCase().trim();
+    const isProd = nodeEnv === 'production' || vercelEnv === 'production' || paymentGateway.isProduction;
+
     if (order) {
-      order.simulator_url = paymentGateway.isProduction ? null : 'https://simulator.sandbox.midtrans.com/qris/index';
+      order.simulator_url = isProd ? null : 'https://simulator.sandbox.midtrans.com/qris/index';
+
+      const { evaluateOrderAuthorization, sanitizeOrderForPublic } = require('../utils/orderAuth');
+      const authResult = evaluateOrderAuthorization(order, req);
+      if (!authResult.authorized) {
+        // Pelacakan publik tanpa otorisasi sah: lindungi data pribadi & informasi pembayaran
+        order = sanitizeOrderForPublic(order, authResult.isLegacy);
+      }
     }
 
     return res.json({
