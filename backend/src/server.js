@@ -75,6 +75,8 @@ if (require('fs').existsSync(frontendDist)) {
 async function startServer() {
   try {
     await initDatabase();
+    const orderQueue = require('./jobs/processOrderQueue');
+    orderQueue.startRelayWorker(4000);
     app.listen(PORT, () => {
       console.log(`===========================================`);
       console.log(`  DAR'SSTORE BACKEND SERVER RUNNING       `);

@@ -9,15 +9,49 @@ class OrderQueue {
   constructor() {
     this.queue = [];
     this.isProcessing = false;
+    this.dispatchedInvoices = new Set();
+    this.relayTimer = null;
   }
 
   async enqueue(order) {
+    if (order && order.invoice_number) {
+      this.dispatchedInvoices.add(order.invoice_number);
+    }
     this.queue.push({
       order,
       attempts: 0,
       maxAttempts: 3
     });
     return await this.processNext();
+  }
+
+  /**
+   * Background relay worker (dijalankan pada server/lokal ber-IP Whitelist Digiflazz)
+   * Memantau pesanan baru berstatus 'Diproses' dari webhook cloud (Vercel/Supabase)
+   * agar otomatis dieksekusi ke Digiflazz secara real-time.
+   */
+  startRelayWorker(intervalMs = 4000) {
+    if (this.relayTimer || process.env.VERCEL || process.env.NODE_ENV === 'test') return;
+    const sinceTime = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    console.log(`[RELAY WORKER] Memantau antrean pesanan 'Diproses' sejak ${sinceTime}...`);
+
+    this.relayTimer = setInterval(async () => {
+      if (this.isProcessing) return;
+      try {
+        const pendingOrders = await dbAsync.all(
+          `SELECT * FROM orders WHERE status = 'Diproses' AND (sn IS NULL OR sn = '') AND updated_at >= ? ORDER BY id ASC LIMIT 5`,
+          [sinceTime]
+        );
+        for (const ord of (pendingOrders || [])) {
+          if (!this.dispatchedInvoices.has(ord.invoice_number)) {
+            console.log(`[RELAY WORKER] Menemukan pesanan lunas siap top-up: ${ord.invoice_number}`);
+            await this.enqueue(ord);
+          }
+        }
+      } catch (err) {
+        // Abaikan gangguan jaringan sementara ke pooler DB
+      }
+    }, intervalMs);
   }
 
   async processNext() {

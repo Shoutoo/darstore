@@ -192,23 +192,39 @@ class TopupProviderService {
         const msg = resData.data?.message || resData.message || '';
         let errorMsg = msg;
 
+        // Jika berjalan di Serverless (Vercel) dengan IP dinamis yang belum ter-whitelist,
+        // tunda pemrosesan agar tidak langsung menandai Gagal dan biarkan worker ber-IP whitelist memprosesnya
+        if (process.env.VERCEL && (/ip anda tidak kami kenali/i.test(msg) || rc === '42')) {
+          console.warn(`[DIGIFLAZZ DEFER] Serverless dynamic IP terdeteksi (${msg}). Menjaga status Diproses untuk worker IP Whitelist.`);
+          return {
+            success: true,
+            pending: true,
+            deferredToWorker: true,
+            sn: '',
+            message: 'Menunggu eksekusi otomatis oleh worker H2H ber-IP Whitelist',
+            raw: resData
+          };
+        }
+
         // Pemetaan resmi Response Code Digiflazz
         if (rc === '40') {
           errorMsg = `Kesalahan format parameter/payload pesanan (RC: 40 - ${msg || 'Payload Error'})`;
         } else if (rc === '41') {
-          errorMsg = `Buyer SKU Code tidak valid atau tidak terdaftar (RC: 41 - ${msg || 'SKU Invalid'})`;
-        } else if (rc === '42') {
-          errorMsg = `IP Server belum terdaftar di IP Whitelist Digiflazz (RC: 42)`;
+          errorMsg = /signature/i.test(msg)
+            ? `Signature API Digiflazz tidak valid, periksa Production Key (RC: 41 - ${msg})`
+            : `Buyer SKU Code / Signature tidak valid (RC: 41 - ${msg || 'SKU/Signature Invalid'})`;
+        } else if (rc === '42' || /ip anda tidak kami kenali/i.test(msg)) {
+          errorMsg = `IP Server belum terdaftar di IP Whitelist Digiflazz (RC: ${rc || '45'} - ${msg})`;
         } else if (rc === '43') {
           errorMsg = `SKU produk sedang gangguan atau tidak aktif di provider (RC: 43 - ${msg || 'SKU Gangguan/Tidak Aktif'})`;
         } else if (rc === '44') {
           errorMsg = `Saldo deposit Digiflazz tidak mencukupi (RC: 44 - ${msg || 'Saldo Kurang'})`;
-        } else if (rc === '45' || /tujuan salah|tidak ditemukan|invalid customer|nomor tidak terdaftar|region/i.test(msg)) {
-          errorMsg = `ID Akun Game / Server tidak ditemukan atau tidak sesuai region (RC: 45 - ${msg || 'Tujuan Salah'})`;
+        } else if (['50', '54', '56'].includes(rc) || /tujuan salah|tidak ditemukan|invalid customer|nomor tidak terdaftar|region|salah/i.test(msg)) {
+          errorMsg = `ID Akun Game / Server tidak ditemukan atau tidak sesuai region (RC: ${rc || '54'} - ${msg || 'Tujuan Salah'})`;
         } else if (rc === '02') {
           errorMsg = `Transaksi Gagal dari Provider Digiflazz (RC: 02 - ${msg || 'Gagal'})`;
-        } else if (rc === '53') {
-          errorMsg = `Duplikasi transaksi ref_id (RC: 53 - ${msg || 'Duplicate'})`;
+        } else if (rc === '49' || rc === '53') {
+          errorMsg = `Duplikasi transaksi ref_id (RC: ${rc} - ${msg || 'Duplicate'})`;
         } else {
           errorMsg = rc ? `Gagal dari provider game (RC: ${rc} - ${msg || 'Transaksi Gagal'})` : (msg || 'Gagal memproses transaksi di provider game');
         }

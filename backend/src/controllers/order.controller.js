@@ -374,9 +374,14 @@ exports.getOrder = async (req, res) => {
               }
             }
 
-            order.status = 'Diproses';
-            if (midtransRes.transaction_id) {
-              order.payment_ref = midtransRes.transaction_id;
+            const refreshedOrder = await dbService.getOrderByInvoice(invoice);
+            if (refreshedOrder) {
+              order = refreshedOrder;
+            } else {
+              order.status = 'Diproses';
+              if (midtransRes.transaction_id) {
+                order.payment_ref = midtransRes.transaction_id;
+              }
             }
           } else {
             console.warn(`[AUTO-SYNC SECURITY ALERT] Nominal mismatch pada auto-sync untuk ${order.invoice_number}: Midtrans=${syncGross}, DB=${expectedGross}`);
