@@ -106,9 +106,11 @@ class TopupProviderService {
 
     if (game === 'mlbb' || nama.includes('mobile legends')) {
       if (nama.includes('weekly') || nama.includes('pass')) return 'mlweek';
-      if (/(^|\D)12(\D|$)/.test(nama)) return 'ml12';
-      if (/(^|\D)10(\D|$)/.test(nama)) return 'ml10';
-      if (/(^|\D)5(\D|$)/.test(nama)) return 'ml5';
+      const cleaned = nama.replace(/\(x\d+\)/gi, '').replace(/\./g, '');
+      const numMatch = cleaned.match(/(\d+)\s*diamond/i) || cleaned.match(/(?:^|\D)(\d+)(?:\D|$)/);
+      if (numMatch && numMatch[1]) {
+        return `ml${numMatch[1]}`;
+      }
     }
 
     if (this.isDevelopment()) {
@@ -167,7 +169,7 @@ class TopupProviderService {
       const { payload, response: resData } = await this.requestTransaction({
         buyer_sku_code: sendBuyerSku,
         customer_no: sendCustomerNo,
-        ref_id: order.invoice_number
+        ref_id: order.digiflazz_ref_id || order.invoice_number
       });
 
       const status = resData.data?.status;

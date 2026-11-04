@@ -16,6 +16,9 @@ function getPgPool() {
           idleTimeoutMillis: 30000,
           max: 10,
         });
+        pgPool.on('error', (err) => {
+          console.warn('[DATABASE] Idle PostgreSQL client reconnecting:', err.message);
+        });
         console.log('[DATABASE] Connected to PostgreSQL (Supabase Cloud Pooler)');
       } catch (err) {
         console.warn('[DATABASE] Failed to initialize PostgreSQL pool:', err.message);

@@ -82,19 +82,27 @@ class OrderQueue {
       const result = await topupProvider.processTopup(order);
 
       if (result.pending) {
-        console.log(`[QUEUE] Order ${order.invoice_number} is pending at Digiflazz. Waiting for webhook callback.`);
+        console.log(`[QUEUE] Order ${order.invoice_number} is pending at Digiflazz. Waiting for webhook/reconcile.`);
         if (result.sn) {
           await dbAsync.run(
             `UPDATE orders SET sn = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
             [result.sn, order.id]
           );
         }
+        // Auto-reconcile status pada Digiflazz (idempoten via ref_id yang sama)
+        if (!result.deferredToWorker && !process.env.VERCEL && (task.reconcileCount || 0) < 4) {
+          const nextRec = (task.reconcileCount || 0) + 1;
+          setTimeout(() => {
+            this.queue.push({ order, attempts: 0, maxAttempts: 2, reconcileCount: nextRec });
+            this.processNext();
+          }, 5000 * nextRec);
+        }
         return;
       }
 
-      // Success! Update order to 'Berhasil' with SN
+      // Success! Update order to 'Berhasil' with SN and clear any prior failure_reason
       await dbAsync.run(
-        `UPDATE orders SET status = 'Berhasil', sn = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        `UPDATE orders SET status = 'Berhasil', sn = ?, failure_reason = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
         [result.sn || null, order.id]
       );
 

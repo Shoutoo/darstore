@@ -279,9 +279,10 @@ exports.handleDigiflazzWebhook = async (req, res) => {
       return res.status(200).json({ status: 'ok', message: 'Ping acknowledged' });
     }
 
+    const baseRefId = refId.trim().toUpperCase().replace(/-R\d+$/, '');
     const order = await dbAsync.get(
       'SELECT * FROM orders WHERE UPPER(invoice_number) = ?',
-      [refId.trim().toUpperCase()]
+      [baseRefId]
     );
 
     if (!order) {
