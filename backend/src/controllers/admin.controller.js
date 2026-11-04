@@ -516,7 +516,7 @@ exports.getProviderBalance = async (req, res) => {
     if (isConfigured) {
       try {
         const balRes = await topupProvider.checkBalance();
-        if (balRes && balRes.data && balRes.data.rc === '00') {
+        if (balRes && balRes.data && (balRes.data.rc === '00' || typeof balRes.data.deposit === 'number')) {
           realDeposit = balRes.data.deposit;
         }
       } catch (e) {

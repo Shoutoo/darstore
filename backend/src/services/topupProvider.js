@@ -93,13 +93,39 @@ class TopupProviderService {
   }
 
   /**
+   * Resolve appropriate Digiflazz buyer_sku_code based on order details
+   */
+  resolveBuyerSku(order) {
+    if (order.buyer_sku_code) return order.buyer_sku_code;
+    const prodId = String(order.product_id || '').trim();
+    if (/^(ml\d+|mlweek|xld\d+|ff\d+|valo\d+|vp\d+)$/i.test(prodId)) {
+      return prodId.toLowerCase();
+    }
+    const nama = String(order.nama_item || '').toLowerCase();
+    const game = String(order.game || '').toLowerCase();
+
+    if (game === 'mlbb' || nama.includes('mobile legends')) {
+      if (nama.includes('weekly') || nama.includes('pass')) return 'mlweek';
+      if (/(^|\D)12(\D|$)/.test(nama)) return 'ml12';
+      if (/(^|\D)10(\D|$)/.test(nama)) return 'ml10';
+      if (/(^|\D)5(\D|$)/.test(nama)) return 'ml5';
+    }
+
+    if (this.isDevelopment()) {
+      return 'xld10';
+    }
+
+    return prodId || 'ml5';
+  }
+
+  /**
    * Reconcile transaction status with Digiflazz using the existing ref_id
    * According to Digiflazz API, calling with the same ref_id returns current status without duplicate charging
    */
   async reconcileTransaction(order) {
     const customerNo = order.game === 'mlbb' ? `${order.game_user_id}${order.server_id}` : order.riot_id;
     return await this.requestTransaction({
-      buyer_sku_code: order.product_id,
+      buyer_sku_code: this.resolveBuyerSku(order),
       customer_no: customerNo,
       ref_id: order.invoice_number
     });
@@ -119,7 +145,7 @@ class TopupProviderService {
         raw: {
           ref_id: order.invoice_number,
           status: 'Sukses',
-          buyer_sku_code: order.product_id,
+          buyer_sku_code: this.resolveBuyerSku(order),
           customer_no: order.game === 'mlbb' ? `${order.game_user_id}${order.server_id}` : order.riot_id
         }
       };
@@ -134,8 +160,8 @@ class TopupProviderService {
       ? '087800001230'
       : customerNo;
 
-    // Di mode sandbox dev, SKU internal dapat diteruskan atau difallback ke xld10
-    const sendBuyerSku = order.product_id || 'xld10';
+    // Resolve buyer_sku_code
+    const sendBuyerSku = this.resolveBuyerSku(order);
 
     try {
       const { payload, response: resData } = await this.requestTransaction({
