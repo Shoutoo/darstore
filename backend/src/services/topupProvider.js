@@ -213,16 +213,18 @@ class TopupProviderService {
         const msg = resData.data?.message || resData.message || '';
         let errorMsg = msg;
 
-        // Jika berjalan di Serverless (Vercel) dengan IP dinamis yang belum ter-whitelist,
-        // tunda pemrosesan agar tidak langsung menandai Gagal dan biarkan worker ber-IP whitelist memprosesnya
-        if (process.env.VERCEL && (/ip anda tidak kami kenali/i.test(msg) || rc === '42')) {
-          console.warn(`[DIGIFLAZZ DEFER] Serverless dynamic IP terdeteksi (${msg}). Menjaga status Diproses untuk worker IP Whitelist.`);
+        // Jika IP pemanggil (Serverless Vercel maupun jaringan lokal yang berganti IP dinamis)
+        // belum terdaftar di Whitelist IP Digiflazz, jaga status tetap 'Diproses' agar otomatis
+        // tereksekusi begitu IP Whitelist diperbarui tanpa menggagalkan pesanan yang sudah dibayar
+        if (/ip anda tidak kami kenali/i.test(msg) || rc === '42') {
+          console.warn(`[DIGIFLAZZ DEFER] IP belum ter-whitelist di Digiflazz (${msg}). Menjaga status Diproses untuk retry otomatis.`);
           return {
             success: true,
             pending: true,
             deferredToWorker: true,
+            ipNotWhitelisted: true,
             sn: '',
-            message: 'Menunggu eksekusi otomatis oleh worker H2H ber-IP Whitelist',
+            message: msg || 'Menunggu eksekusi otomatis oleh worker H2H ber-IP Whitelist',
             raw: resData
           };
         }

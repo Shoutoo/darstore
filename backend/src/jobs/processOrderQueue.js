@@ -10,12 +10,14 @@ class OrderQueue {
     this.queue = [];
     this.isProcessing = false;
     this.dispatchedInvoices = new Set();
+    this.retryAfterMap = new Map();
     this.relayTimer = null;
   }
 
   async enqueue(order) {
     if (order && order.invoice_number) {
       this.dispatchedInvoices.add(order.invoice_number);
+      this.retryAfterMap.delete(order.invoice_number);
     }
     this.queue.push({
       order,
@@ -32,19 +34,21 @@ class OrderQueue {
    */
   startRelayWorker(intervalMs = 4000) {
     if (this.relayTimer || process.env.VERCEL || process.env.NODE_ENV === 'test') return;
-    const sinceTime = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-    console.log(`[RELAY WORKER] Memantau antrean pesanan 'Diproses' sejak ${sinceTime}...`);
+    const emailSinceTime = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    console.log(`[RELAY WORKER] Memantau antrean pesanan lunas ('Diproses') secara real-time...`);
 
     this.relayTimer = setInterval(async () => {
       if (this.isProcessing) return;
       try {
+        const orderCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
         const pendingOrders = await dbAsync.all(
           `SELECT * FROM orders WHERE status = 'Diproses' AND (sn IS NULL OR sn = '') AND updated_at >= ? ORDER BY id ASC LIMIT 5`,
-          [sinceTime]
+          [orderCutoff]
         );
         for (const ord of (pendingOrders || [])) {
-          if (!this.dispatchedInvoices.has(ord.invoice_number)) {
-            console.log(`[RELAY WORKER] Menemukan pesanan lunas siap top-up: ${ord.invoice_number}`);
+          const retryReady = this.retryAfterMap.has(ord.invoice_number) && Date.now() >= this.retryAfterMap.get(ord.invoice_number);
+          if (!this.dispatchedInvoices.has(ord.invoice_number) || retryReady) {
+            console.log(`[RELAY WORKER] Memproses pesanan lunas siap top-up: ${ord.invoice_number}`);
             await this.enqueue(ord);
           }
         }
@@ -52,7 +56,7 @@ class OrderQueue {
         // Kirim email tagihan otomatis via SMTP lokal jika checkout di cloud belum mengirim email (pending_email_sent = 0)
         const unsentPending = await dbAsync.all(
           `SELECT * FROM orders WHERE status = 'Menunggu Pembayaran' AND (pending_email_sent = 0 OR pending_email_sent IS NULL) AND created_at >= ? ORDER BY id ASC LIMIT 5`,
-          [sinceTime]
+          [emailSinceTime]
         );
         for (const pendOrd of (unsentPending || [])) {
           try {
@@ -82,7 +86,7 @@ class OrderQueue {
         // Kirim struk email otomatis via SMTP lokal jika webhook cloud gagal mengirim email (email_sent = 0)
         const unsentReceipts = await dbAsync.all(
           `SELECT * FROM orders WHERE status = 'Berhasil' AND (email_sent = 0 OR email_sent IS NULL) AND updated_at >= ? ORDER BY id ASC LIMIT 5`,
-          [sinceTime]
+          [emailSinceTime]
         );
         for (const doneOrd of (unsentReceipts || [])) {
           try {
@@ -135,6 +139,11 @@ class OrderQueue {
       const result = await topupProvider.processTopup(order);
 
       if (result.pending) {
+        if (result.ipNotWhitelisted && !process.env.VERCEL) {
+          this.retryAfterMap.set(order.invoice_number, Date.now() + 12000);
+          console.log(`[QUEUE] Order ${order.invoice_number} menunggu IP Whitelist Digiflazz diperbarui. Auto-retry dalam 12 detik...`);
+          return;
+        }
         console.log(`[QUEUE] Order ${order.invoice_number} is pending at Digiflazz. Waiting for webhook/reconcile.`);
         if (result.sn) {
           await dbAsync.run(
