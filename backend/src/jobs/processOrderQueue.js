@@ -48,6 +48,50 @@ class OrderQueue {
             await this.enqueue(ord);
           }
         }
+
+        // Kirim email tagihan otomatis via SMTP lokal jika checkout di cloud belum mengirim email (pending_email_sent = 0)
+        const unsentPending = await dbAsync.all(
+          `SELECT * FROM orders WHERE status = 'Menunggu Pembayaran' AND (pending_email_sent = 0 OR pending_email_sent IS NULL) AND created_at >= ? ORDER BY id ASC LIMIT 5`,
+          [sinceTime]
+        );
+        for (const pendOrd of (unsentPending || [])) {
+          try {
+            let vaExtra = {};
+            const plog = await dbAsync.get(
+              `SELECT raw_response FROM payment_logs WHERE order_id = ? ORDER BY id ASC LIMIT 1`,
+              [pendOrd.id]
+            );
+            if (plog && plog.raw_response) {
+              const raw = typeof plog.raw_response === 'string' ? JSON.parse(plog.raw_response) : plog.raw_response;
+              const vaObj = Array.isArray(raw.va_numbers) && raw.va_numbers[0] ? raw.va_numbers[0] : null;
+              vaExtra = {
+                bank: vaObj?.bank || (raw.permata_va_number ? 'permata' : (raw.bill_key ? 'mandiri' : '')),
+                va_number: vaObj?.va_number || raw.permata_va_number || null,
+                bill_key: raw.bill_key || null,
+                biller_code: raw.biller_code || null,
+                expired_at: pendOrd.expired_at
+              };
+            }
+            const pRes = await emailService.sendPendingPaymentEmail(pendOrd, vaExtra);
+            if (pRes && pRes.delivered) {
+              await dbAsync.run('UPDATE orders SET pending_email_sent = 1 WHERE id = ?', [pendOrd.id]);
+            }
+          } catch (e) {}
+        }
+
+        // Kirim struk email otomatis via SMTP lokal jika webhook cloud gagal mengirim email (email_sent = 0)
+        const unsentReceipts = await dbAsync.all(
+          `SELECT * FROM orders WHERE status = 'Berhasil' AND (email_sent = 0 OR email_sent IS NULL) AND updated_at >= ? ORDER BY id ASC LIMIT 5`,
+          [sinceTime]
+        );
+        for (const doneOrd of (unsentReceipts || [])) {
+          try {
+            const mailRes = await emailService.sendOrderReceipt(doneOrd, { sn: doneOrd.sn, message: 'Sukses' });
+            if (mailRes && mailRes.delivered) {
+              await dbAsync.run('UPDATE orders SET email_sent = 1 WHERE id = ?', [doneOrd.id]);
+            }
+          } catch (e) {}
+        }
       } catch (err) {
         // Abaikan gangguan jaringan sementara ke pooler DB
       }
@@ -67,7 +111,16 @@ class OrderQueue {
 
       // Cek status terkini di database sebelum memanggil provider (mencegah pemrosesan ganda)
       const currentOrder = await dbAsync.get('SELECT * FROM orders WHERE id = ?', [order.id]);
-      if (!currentOrder || currentOrder.status === 'Berhasil') {
+      if (!currentOrder) return;
+      if (currentOrder.status === 'Berhasil') {
+        if (!currentOrder.email_sent) {
+          try {
+            const mailRes = await emailService.sendOrderReceipt(currentOrder, { sn: currentOrder.sn, message: 'Sukses' });
+            if (mailRes && mailRes.delivered) {
+              await dbAsync.run('UPDATE orders SET email_sent = 1 WHERE id = ?', [currentOrder.id]);
+            }
+          } catch (e) {}
+        }
         console.log(`[QUEUE] Order ${order.invoice_number} sudah selesai sebelumnya. Melewati pemrosesan provider.`);
         return;
       }
@@ -108,9 +161,15 @@ class OrderQueue {
 
       console.log(`[QUEUE] Order ${order.invoice_number} completed successfully with SN: ${result.sn}`);
 
-      // Kirim struk bukti transaksi digital via Email
+      // Kirim struk bukti transaksi digital via Email (idempoten via email_sent)
       try {
-        await emailService.sendOrderReceipt(order, result);
+        const freshOrder = await dbAsync.get('SELECT * FROM orders WHERE id = ?', [order.id]);
+        if (!freshOrder || !freshOrder.email_sent) {
+          const mailRes = await emailService.sendOrderReceipt(freshOrder || order, result);
+          if (mailRes && mailRes.delivered) {
+            await dbAsync.run('UPDATE orders SET email_sent = 1 WHERE id = ?', [order.id]);
+          }
+        }
       } catch (mailErr) {
         console.warn(`[EMAIL] Peringatan pengiriman struk email untuk ${order.invoice_number}:`, mailErr.message);
       }

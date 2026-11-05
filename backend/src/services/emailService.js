@@ -7,43 +7,271 @@ class EmailService {
   }
 
   reloadConfig() {
-    this.emailProvider = (process.env.EMAIL_PROVIDER || '').toLowerCase();
-    this.resendKey = process.env.RESEND_API_KEY || null;
-    
-    // SMTP Config (e.g. Gmail)
-    this.smtpUser = process.env.EMAIL_USER || null;
+    if (process.env.NODE_ENV === 'test') {
+      this.fromEmail = "Dar'sstore <support@darstore.com>";
+      this.resend = null;
+      this.transporter = null;
+      this.preferSmtp = false;
+      return;
+    }
+
+    this.emailProvider = (process.env.EMAIL_PROVIDER || '').toLowerCase().trim();
+    this.resendKey = (process.env.RESEND_API_KEY || '').trim() || null;
+
+    // SMTP Config (e.g. Gmail App Password)
+    this.smtpUser = (process.env.EMAIL_USER || '').trim() || null;
     this.smtpPass = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : null;
     this.smtpHost = process.env.SMTP_HOST || (this.smtpUser && this.smtpUser.includes('@gmail.com') ? 'smtp.gmail.com' : null);
     this.smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
 
-    // Prioritize SMTP if EMAIL_PROVIDER='smtp' OR if EMAIL_USER & EMAIL_PASS exist
-    const useSmtp = (this.emailProvider === 'smtp') || (this.smtpUser && this.smtpPass && this.emailProvider !== 'resend');
+    // Prioritize SMTP whenever EMAIL_USER & EMAIL_PASS exist (unless explicitly forced to 'resend')
+    this.preferSmtp = (this.emailProvider === 'smtp') || Boolean(this.smtpUser && this.smtpPass && this.emailProvider !== 'resend');
 
-    if (useSmtp && this.smtpUser && this.smtpPass) {
-      this.fromEmail = process.env.EMAIL_FROM || `Dar'sstore <${this.smtpUser}>`;
+    if (this.smtpUser && this.smtpPass) {
+      this.smtpFromEmail = process.env.EMAIL_FROM || `Dar'sstore <${this.smtpUser}>`;
       this.transporter = nodemailer.createTransport({
-        service: (this.smtpUser && this.smtpUser.includes('@gmail.com')) ? 'gmail' : undefined,
+        service: this.smtpUser.includes('@gmail.com') ? 'gmail' : undefined,
         host: this.smtpHost || 'smtp.gmail.com',
         port: this.smtpPort,
         secure: this.smtpPort === 465,
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 10000,
         auth: {
           user: this.smtpUser,
           pass: this.smtpPass,
         },
       });
-      this.resend = null;
-      console.log(`[EMAIL SERVICE] Gmail / SMTP provider configured (${this.smtpUser}).`);
-    } else if (this.resendKey) {
-      this.fromEmail = process.env.EMAIL_FROM || "Dar'sstore <onboarding@resend.dev>";
-      this.resend = new Resend(this.resendKey);
+    } else {
       this.transporter = null;
-      console.log('[EMAIL SERVICE] Resend API provider configured.');
+    }
+
+    if (this.resendKey) {
+      this.resendFromEmail = process.env.RESEND_FROM || process.env.EMAIL_FROM || "Dar'sstore <onboarding@resend.dev>";
+      this.resend = new Resend(this.resendKey);
+    } else {
+      this.resend = null;
+    }
+
+    if (this.preferSmtp && this.transporter) {
+      this.fromEmail = this.smtpFromEmail;
+    } else if (this.resend) {
+      this.fromEmail = this.resendFromEmail;
+    } else if (this.transporter) {
+      this.fromEmail = this.smtpFromEmail;
     } else {
       this.fromEmail = process.env.EMAIL_FROM || "Dar'sstore <support@darstore.com>";
-      this.resend = null;
-      this.transporter = null;
-      console.log('[EMAIL SERVICE] Menunggu RESEND_API_KEY atau EMAIL_USER/EMAIL_PASS config. Mode simulasi aktif.');
     }
+  }
+
+  getFrontendBaseUrl() {
+    return (process.env.FRONTEND_URL || 'https://darstore.vercel.app').replace(/\/$/, '');
+  }
+
+  buildTrackingLink(order) {
+    const base = this.getFrontendBaseUrl();
+    const inv = encodeURIComponent(order.invoice_number || '');
+    const tok = order.access_token ? `&token=${encodeURIComponent(order.access_token)}` : '';
+    return `${base}/?invoice=${inv}${tok}`;
+  }
+
+  async _deliverEmail({ to, subject, html, label = 'Email' }) {
+    this.reloadConfig();
+
+    const recipient = (to || '').trim();
+    if (!recipient || !recipient.includes('@')) {
+      return { success: false, delivered: false, reason: 'Invalid or missing email' };
+    }
+
+    const trySmtp = async () => {
+      if (!this.transporter) return null;
+      console.log(`[EMAIL SERVICE] Mengirim ${label} via SMTP (${this.smtpUser}) ke: ${recipient}...`);
+      const info = await this.transporter.sendMail({
+        from: this.smtpFromEmail || this.fromEmail,
+        to: recipient,
+        subject,
+        html,
+      });
+      console.log(`[EMAIL SERVICE] ${label} berhasil dikirim via SMTP! MessageId: ${info.messageId}`);
+      return { success: true, delivered: true, provider: 'smtp', messageId: info.messageId };
+    };
+
+    const tryResend = async () => {
+      if (!this.resend) return null;
+      console.log(`[EMAIL SERVICE] Mengirim ${label} via Resend API ke: ${recipient}...`);
+      const { data, error } = await this.resend.emails.send({
+        from: this.resendFromEmail || this.fromEmail,
+        to: recipient,
+        subject,
+        html,
+      });
+      if (error) {
+        throw new Error(error.message || JSON.stringify(error));
+      }
+      console.log(`[EMAIL SERVICE] ${label} berhasil dikirim via Resend! ID: ${data?.id}`);
+      return { success: true, delivered: true, provider: 'resend', id: data?.id };
+    };
+
+    const providers = this.preferSmtp ? [trySmtp, tryResend] : [tryResend, trySmtp];
+    let lastError = null;
+
+    for (const attempt of providers) {
+      try {
+        const res = await attempt();
+        if (res) return res;
+      } catch (err) {
+        lastError = err;
+        console.warn(`[EMAIL SERVICE] Provider gagal mengirim ${label} ke ${recipient}, mencoba fallback:`, err.message);
+      }
+    }
+
+    if (!this.transporter && !this.resend) {
+      console.log(`[EMAIL SERVICE (SIMULATION)] ${label} untuk ${recipient} | Subject: ${subject}`);
+      return { success: true, delivered: false, simulated: true };
+    }
+
+    console.error(`[EMAIL SERVICE ERROR] Semua provider gagal mengirim ${label} ke ${recipient}:`, lastError?.message);
+    return { success: false, delivered: false, error: lastError?.message || 'Email delivery failed' };
+  }
+
+  /**
+   * Send pending payment invoice & Virtual Account instructions right after checkout
+   * @param {Object} order - Database order object
+   * @param {Object} vaData - { bank, va_number, bill_key, biller_code, expired_at, redirect_url }
+   */
+  async sendPendingPaymentEmail(order, vaData = {}) {
+    const recipient = (order.wa_email_guest || '').trim();
+    if (!recipient || !recipient.includes('@')) {
+      return { success: false, delivered: false, reason: 'Invalid or missing email' };
+    }
+
+    const targetAccount = order.game === 'mlbb'
+      ? `${order.game_user_id} (${order.server_id})`
+      : (order.riot_id || order.game_user_id || '-');
+    const gameTitle = order.game === 'mlbb' ? 'Mobile Legends: Bang Bang' : 'Valorant';
+    const formattedTotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(order.total_harga || 0);
+    const bankName = String(vaData.bank || order.payment_method || 'Virtual Account').toUpperCase();
+    const vaNumber = vaData.va_number || order.va_number || null;
+    const billKey = vaData.bill_key || order.bill_key || null;
+    const billerCode = vaData.biller_code || order.biller_code || null;
+    const expiredStr = (vaData.expired_at || order.expired_at)
+      ? new Date(vaData.expired_at || order.expired_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB'
+      : '24 Jam sejak pemesanan';
+    const trackingUrl = this.buildTrackingLink(order);
+
+    const paymentCodeHtml = vaNumber
+      ? `
+        <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">
+          NOMOR VIRTUAL ACCOUNT (${bankName})
+        </div>
+        <div style="font-size: 20px; font-weight: 900; color: #0284c7; font-family: 'Courier New', Courier, monospace; letter-spacing: 2px; margin: 8px 0 4px;">
+          ${vaNumber}
+        </div>
+      `
+      : (billKey && billerCode)
+        ? `
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">
+            MANDIRI BILL PAYMENT
+          </div>
+          <div style="font-size: 14px; font-weight: 800; color: #0284c7; font-family: 'Courier New', Courier, monospace; margin: 8px 0 4px;">
+            Kode Perusahaan: ${billerCode}<br/>Kode Bayar: ${billKey}
+          </div>
+        `
+        : `
+          <div style="font-size: 12px; font-weight: 700; color: #0284c7;">
+            Metode Pembayaran: ${order.payment_method}
+          </div>
+        `;
+
+    const emailSubject = `[TAGIHAN PEMBAYARAN] ${order.invoice_number} - Menunggu Pembayaran | Dar'sstore`;
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html lang="id">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Tagihan Pembayaran - ${order.invoice_number}</title>
+      </head>
+      <body style="margin: 0; padding: 24px 10px; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <center>
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 480px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); overflow: hidden; text-align: left;">
+            <tr>
+              <td style="background: linear-gradient(135deg, #0f172a, #1e293b); padding: 22px 24px; text-align: center; color: #ffffff;">
+                <div style="font-size: 20px; font-weight: 900; letter-spacing: 2px; font-family: 'Courier New', Courier, monospace;">DAR'SSTORE</div>
+                <div style="font-size: 12px; color: #38bdf8; font-weight: 700; margin-top: 4px; text-transform: uppercase;">Instruksi Pembayaran Pesanan</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 24px;">
+                <div style="text-align: center; margin-bottom: 16px;">
+                  <span style="display: inline-block; background-color: #fef9c3; color: #a16207; border: 1px solid #fde047; font-size: 11.5px; font-weight: 800; padding: 5px 14px; border-radius: 999px; text-transform: uppercase;">
+                    ⏳ Menunggu Pembayaran
+                  </span>
+                </div>
+
+                <p style="font-size: 13.5px; color: #334155; line-height: 1.6; margin: 0 0 16px;">
+                  Terima kasih telah memesan di <strong>Dar'sstore</strong>. Silakan selesaikan pembayaran sesuai rincian di bawah ini agar item otomatis dikirim ke akun game Anda:
+                </p>
+
+                <div style="background-color: #f8fafc; border: 1.5px dashed #0284c7; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 18px;">
+                  ${paymentCodeHtml}
+                  <div style="font-size: 11px; color: #64748b; margin-top: 6px;">
+                    Total Transfer Tepat: <strong style="color: #0f172a; font-size: 14px;">${formattedTotal}</strong>
+                  </div>
+                  <div style="font-size: 11px; color: #dc2626; margin-top: 4px;">
+                    Batas Waktu: ${expiredStr}
+                  </div>
+                </div>
+
+                <table width="100%" cellpadding="5" cellspacing="0" border="0" style="font-size: 12.5px; color: #334155; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; margin-bottom: 18px;">
+                  <tr>
+                    <td style="color: #64748b;">No. Invoice</td>
+                    <td style="text-align: right; font-weight: 800; color: #0f172a; font-family: monospace;">${order.invoice_number}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;">Game</td>
+                    <td style="text-align: right; font-weight: 700;">${gameTitle}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;">Akun Tujuan</td>
+                    <td style="text-align: right; font-weight: 800; color: #0284c7;">${targetAccount}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;">Item Produk</td>
+                    <td style="text-align: right; font-weight: 700;">${order.nama_item}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;">Metode Bayar</td>
+                    <td style="text-align: right;">${order.payment_method}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #0f172a; font-weight: 800;">Total Bayar</td>
+                    <td style="text-align: right; font-weight: 900; color: #0284c7; font-size: 14px;">${formattedTotal}</td>
+                  </tr>
+                </table>
+
+                <div style="text-align: center; margin: 18px 0 8px;">
+                  <a href="${trackingUrl}" target="_blank" style="background: linear-gradient(135deg, #0284c7, #0369a1); background-color: #0284c7; color: #ffffff; display: block; font-size: 13.5px; font-weight: 800; line-height: 44px; text-align: center; text-decoration: none; border-radius: 8px; text-transform: uppercase;">
+                    🔍 Pantau Status Pesanan
+                  </a>
+                </div>
+                <div style="font-size: 11px; color: #64748b; text-align: center; margin-top: 10px;">
+                  Struk resmi beserta Serial Number (SN) akan dikirimkan otomatis ke email ini segera setelah pembayaran Anda terkonfirmasi.
+                </div>
+              </td>
+            </tr>
+          </table>
+        </center>
+      </body>
+      </html>
+    `;
+
+    return await this._deliverEmail({
+      to: recipient,
+      subject: emailSubject,
+      html: emailHtml,
+      label: `tagihan pesanan ${order.invoice_number}`
+    });
   }
 
   /**
@@ -52,21 +280,19 @@ class EmailService {
    * @param {Object} topupResult - { sn, message, success }
    */
   async sendOrderReceipt(order, topupResult = {}) {
-    this.reloadConfig();
-
     const recipient = (order.wa_email_guest || '').trim();
     if (!recipient || !recipient.includes('@')) {
       console.log(`[EMAIL SERVICE] Pembeli (${order.invoice_number}) tidak menyertakan email valid: "${recipient}". Email dilewati.`);
-      return { success: false, reason: 'Invalid or missing email' };
+      return { success: false, delivered: false, reason: 'Invalid or missing email' };
     }
 
-    const sn = topupResult.sn || `SN-${Date.now()}`;
+    const sn = topupResult.sn || order.sn || `SN-${Date.now()}`;
     const targetAccount = order.game === 'mlbb'
       ? `${order.game_user_id} (${order.server_id})`
       : (order.riot_id || order.game_user_id || '-');
     const gameTitle = order.game === 'mlbb' ? 'Mobile Legends: Bang Bang' : 'Valorant';
-    const invoiceUrl = `https://darstore-pearl.vercel.app/cek-transaksi`;
-    const formattedTotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(order.total_harga);
+    const trackingUrl = this.buildTrackingLink(order);
+    const formattedTotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(order.total_harga || 0);
 
     const now = new Date();
     const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -74,8 +300,11 @@ class EmailService {
 
     const discountAmount = order.discount_amount || 0;
     const formattedDiscount = discountAmount > 0 ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(discountAmount) : 'Rp 0';
-    const basePrice = (order.total_harga || 0) + discountAmount;
+    const paymentMethodLabel = order.payment_method || 'Midtrans Virtual Account';
+    const feeAmount = String(paymentMethodLabel).toLowerCase().includes('qris') ? 800 : 1000;
+    const basePrice = Math.max(0, ((order.total_harga || 0) + discountAmount) - feeAmount);
     const formattedBase = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(basePrice);
+    const formattedFee = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(feeAmount);
 
     const emailSubject = `[STRUK RESMI] Pembayaran Sukses - ${order.invoice_number} | Dar'sstore`;
 
@@ -111,7 +340,7 @@ class EmailService {
                       </div>
                       <div style="font-size: 10.5px; color: #64748b; margin-top: 4px; font-family: 'Courier New', Courier, monospace;">
                         Platform Top Up Game Tercepat & Terpercaya<br/>
-                        Website: darstore-pearl.vercel.app | MID: M738281649
+                        MID: M738281649
                       </div>
                     </td>
                   </tr>
@@ -138,8 +367,8 @@ class EmailService {
                     <td style="text-align: right; color: #334155;">${dateStr}, ${timeStr}</td>
                   </tr>
                   <tr>
-                    <td style="color: #64748b;">KASIR / GATEWAY</td>
-                    <td style="text-align: right; color: #334155;">Midtrans (QRIS Auto-Sync)</td>
+                    <td style="color: #64748b;">METODE BAYAR</td>
+                    <td style="text-align: right; color: #334155;">${paymentMethodLabel}</td>
                   </tr>
                   <tr>
                     <td style="color: #64748b;">STATUS TRANSAKSI</td>
@@ -174,7 +403,7 @@ class EmailService {
                   <tr style="border-bottom: 1px solid #cbd5e1;">
                     <td style="text-align: left; width: 55%;">ITEM PRODUK</td>
                     <td style="text-align: center; width: 15%;">QTY</td>
-                    <td style="text-align: right; width: 30%;">TOTAL</td>
+                    <td style="text-align: right; width: 30%;">HARGA</td>
                   </tr>
                 </table>
 
@@ -190,8 +419,12 @@ class EmailService {
                 <!-- Subtotal & Discount Breakdown -->
                 <table width="100%" cellpadding="3" cellspacing="0" border="0" style="font-family: 'Courier New', Courier, monospace; font-size: 11.5px; color: #475569; margin-top: 8px;">
                   <tr>
-                    <td style="text-align: right; width: 70%;">Subtotal:</td>
+                    <td style="text-align: right; width: 70%;">Subtotal Produk:</td>
                     <td style="text-align: right; width: 30%; font-weight: 600;">${formattedBase}</td>
+                  </tr>
+                  <tr>
+                    <td style="text-align: right;">Biaya Layanan:</td>
+                    <td style="text-align: right; font-weight: 600;">${formattedFee}</td>
                   </tr>
                   ${discountAmount > 0 ? `
                   <tr>
@@ -199,10 +432,6 @@ class EmailService {
                     <td style="text-align: right; color: #ca8a04; font-weight: 700;">-${formattedDiscount}</td>
                   </tr>
                   ` : ''}
-                  <tr>
-                    <td style="text-align: right;">Biaya Admin / Fee:</td>
-                    <td style="text-align: right; font-weight: 600; color: #16a34a;">Rp 0 (GRATIS)</td>
-                  </tr>
                 </table>
 
                 <!-- Double Dashed Line for Total -->
@@ -218,10 +447,10 @@ class EmailService {
                     </tr>
                     <tr>
                       <td style="font-size: 10px; color: #64748b; padding-top: 4px;">
-                        METODE: ${order.payment_method}
+                        METODE: ${paymentMethodLabel}
                       </td>
                       <td style="text-align: right; font-size: 10px; color: #16a34a; font-weight: 700; padding-top: 4px;">
-                        ✓ LUNAS / MIDTRANS QRIS
+                        ✓ LUNAS TERKONFIRMASI
                       </td>
                     </tr>
                   </table>
@@ -258,7 +487,7 @@ class EmailService {
                 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 18px 0 10px;">
                   <tr>
                     <td align="center">
-                      <a href="${invoiceUrl}?invoice=${order.invoice_number}" target="_blank" style="background: linear-gradient(135deg, #0284c7, #0369a1); background-color: #0284c7; color: #ffffff; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 800; line-height: 46px; text-align: center; text-decoration: none; border-radius: 6px; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35); text-transform: uppercase; letter-spacing: 0.5px;">
+                      <a href="${trackingUrl}" target="_blank" style="background: linear-gradient(135deg, #0284c7, #0369a1); background-color: #0284c7; color: #ffffff; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 800; line-height: 46px; text-align: center; text-decoration: none; border-radius: 6px; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35); text-transform: uppercase; letter-spacing: 0.5px;">
                         🔍 LIHAT & UNDUH INVOICE DI WEBSITE
                       </a>
                     </td>
@@ -292,45 +521,12 @@ class EmailService {
       </html>
     `;
 
-    try {
-      if (this.resend) {
-        console.log(`[EMAIL SERVICE] Mengirim struk via Resend API ke: ${recipient}...`);
-        const { data, error } = await this.resend.emails.send({
-          from: this.fromEmail,
-          to: recipient,
-          subject: emailSubject,
-          html: emailHtml,
-        });
-
-        if (error) {
-          console.error('[EMAIL RESEND ERROR]:', error);
-          return { success: false, error };
-        }
-
-        console.log(`[EMAIL SERVICE] Struk berhasil dikirim via Resend! ID: ${data?.id}`);
-        return { success: true, provider: 'resend', id: data?.id };
-      } else if (this.transporter) {
-        console.log(`[EMAIL SERVICE] Mengirim struk via SMTP ke: ${recipient}...`);
-        const info = await this.transporter.sendMail({
-          from: this.fromEmail,
-          to: recipient,
-          subject: emailSubject,
-          html: emailHtml,
-        });
-
-        console.log(`[EMAIL SERVICE] Struk berhasil dikirim via SMTP! MessageId: ${info.messageId}`);
-        return { success: true, provider: 'smtp', messageId: info.messageId };
-      } else {
-        console.log(`[EMAIL SERVICE (SIMULATION)] Struk pesanan ${order.invoice_number} dikirim ke ${recipient}:`);
-        console.log(`  Subject: ${emailSubject}`);
-        console.log(`  SN: ${sn}`);
-        console.log(`  Item: ${order.nama_item} | Total: ${formattedTotal}`);
-        return { success: true, simulated: true };
-      }
-    } catch (err) {
-      console.error(`[EMAIL SERVICE ERROR] Gagal mengirim email ke ${recipient}:`, err.message);
-      return { success: false, error: err.message };
-    }
+    return await this._deliverEmail({
+      to: recipient,
+      subject: emailSubject,
+      html: emailHtml,
+      label: `struk resmi ${order.invoice_number}`
+    });
   }
 
   /**
@@ -339,11 +535,9 @@ class EmailService {
    * @param {string} failureReason - Error message
    */
   async sendOrderFailedNotice(order, failureReason) {
-    this.reloadConfig();
-
     const recipient = (order.wa_email_guest || '').trim();
     if (!recipient || !recipient.includes('@')) {
-      return { success: false, reason: 'Invalid or missing email' };
+      return { success: false, delivered: false, reason: 'Invalid or missing email' };
     }
 
     const emailSubject = `[Pemberitahuan] Pesanan ${order.invoice_number} Gagal Diproses - Dar'sstore`;
@@ -403,29 +597,12 @@ class EmailService {
       </html>
     `;
 
-    try {
-      if (this.resend) {
-        await this.resend.emails.send({
-          from: this.fromEmail,
-          to: recipient,
-          subject: emailSubject,
-          html: emailHtml,
-        });
-        console.log(`[EMAIL SERVICE] Notifikasi kegagalan dikirim via Resend ke: ${recipient}`);
-      } else if (this.transporter) {
-        await this.transporter.sendMail({
-          from: this.fromEmail,
-          to: recipient,
-          subject: emailSubject,
-          html: emailHtml,
-        });
-        console.log(`[EMAIL SERVICE] Notifikasi kegagalan dikirim via SMTP ke: ${recipient}`);
-      }
-      return { success: true };
-    } catch (err) {
-      console.warn(`[EMAIL SERVICE] Gagal kirim email kegagalan:`, err.message);
-      return { success: false, error: err.message };
-    }
+    return await this._deliverEmail({
+      to: recipient,
+      subject: emailSubject,
+      html: emailHtml,
+      label: `notifikasi kegagalan ${order.invoice_number}`
+    });
   }
 }
 

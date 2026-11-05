@@ -231,6 +231,21 @@ exports.simulatePayment = async (req, res) => {
       [simSN, order.id]
     );
 
+    if (!order.email_sent) {
+      try {
+        const emailService = require('../services/emailService');
+        const mailRes = await emailService.sendOrderReceipt(
+          { ...order, status: 'Berhasil', sn: simSN },
+          { sn: simSN, message: 'Top up berhasil (Simulasi)' }
+        );
+        if (mailRes && mailRes.delivered) {
+          await dbAsync.run('UPDATE orders SET email_sent = 1 WHERE id = ?', [order.id]);
+        }
+      } catch (mailErr) {
+        console.warn('[SIMULASI EMAIL] Peringatan pengiriman struk:', mailErr.message);
+      }
+    }
+
     // Tambahkan reward poin loyalitas jika pengguna terdaftar (secara idempoten)
     if (order.user_id) {
       const RUPIAH_PER_POINT = parseInt(process.env.RUPIAH_PER_POINT || '10000', 10);
@@ -299,12 +314,20 @@ exports.handleDigiflazzWebhook = async (req, res) => {
       );
       console.log(`[DIGIFLAZZ WEBHOOK] Order ${order.invoice_number} marked as Berhasil (SN: ${data.sn})`);
 
-      // Kirim email receipt
-      try {
-        const emailService = require('../services/emailService');
-        await emailService.sendOrderReceipt(order, { sn: data.sn, message: data.message || 'Sukses' });
-      } catch (mailErr) {
-        console.warn(`[DIGIFLAZZ WEBHOOK] Warning email receipt:`, mailErr.message);
+      // Kirim email receipt jika belum terkirim
+      if (!order.email_sent) {
+        try {
+          const emailService = require('../services/emailService');
+          const mailRes = await emailService.sendOrderReceipt(
+            { ...order, status: 'Berhasil', sn: data.sn || order.sn },
+            { sn: data.sn, message: data.message || 'Sukses' }
+          );
+          if (mailRes && mailRes.delivered) {
+            await dbAsync.run('UPDATE orders SET email_sent = 1 WHERE id = ?', [order.id]);
+          }
+        } catch (mailErr) {
+          console.warn(`[DIGIFLAZZ WEBHOOK] Warning email receipt:`, mailErr.message);
+        }
       }
 
       // Berikan reward poin jika ada user_id secara idempoten
@@ -345,6 +368,15 @@ exports.handleDigiflazzWebhook = async (req, res) => {
             `INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)`,
             [order.user_id, order.id, order.points_used, `[REFUND] Pengembalian ${order.points_used} poin karena provider gagal`]
           );
+        }
+      }
+
+      if (failRes.changes > 0) {
+        try {
+          const emailService = require('../services/emailService');
+          await emailService.sendOrderFailedNotice(order, data.message || 'Gagal dari provider Digiflazz');
+        } catch (mailErr) {
+          console.warn('[DIGIFLAZZ WEBHOOK] Warning email failure notice:', mailErr.message);
         }
       }
     }

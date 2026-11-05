@@ -323,7 +323,27 @@ exports.completeOrder = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order tidak ditemukan.' });
     }
 
-    await dbAsync.run("UPDATE orders SET status = 'Berhasil', updated_at = CURRENT_TIMESTAMP WHERE id = ?", [id]);
+    const manualSn = order.sn || `ADM-SN-${Date.now()}`;
+    await dbAsync.run(
+      "UPDATE orders SET status = 'Berhasil', sn = COALESCE(sn, ?), updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+      [manualSn, id]
+    );
+
+    // Kirim struk resmi via email jika belum pernah terkirim
+    if (!order.email_sent) {
+      try {
+        const emailService = require('../services/emailService');
+        const mailRes = await emailService.sendOrderReceipt(
+          { ...order, status: 'Berhasil', sn: manualSn },
+          { sn: manualSn, message: 'Pesanan diselesaikan oleh Admin' }
+        );
+        if (mailRes && mailRes.delivered) {
+          await dbAsync.run('UPDATE orders SET email_sent = 1 WHERE id = ?', [order.id]);
+        }
+      } catch (mailErr) {
+        console.warn('[ADMIN COMPLETE] Peringatan pengiriman email struk:', mailErr.message);
+      }
+    }
 
     // Give loyalty points if order is attached to a registered user (idempoten: hanya 1 kali)
     if (order.user_id) {

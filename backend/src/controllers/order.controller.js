@@ -268,6 +268,20 @@ exports.createOrder = async (req, res) => {
 
       const updatedOrder = await dbAsync.get('SELECT * FROM orders WHERE id = ?', [createdOrder.id]);
 
+      // 5. Kirim email tagihan & instruksi pembayaran Virtual Account secara otomatis
+      try {
+        const emailService = require('../services/emailService');
+        const pendingMailRes = await emailService.sendPendingPaymentEmail(
+          { ...(updatedOrder || createdOrder), access_token: accessToken },
+          vaData
+        );
+        if (pendingMailRes && pendingMailRes.delivered) {
+          await dbAsync.run('UPDATE orders SET pending_email_sent = 1 WHERE id = ?', [createdOrder.id]);
+        }
+      } catch (mailErr) {
+        console.warn('[ORDER EMAIL] Peringatan pengiriman email tagihan:', mailErr.message);
+      }
+
       return res.status(201).json({
         success: true,
         message: 'Pesanan berhasil dibuat. Silakan lakukan pembayaran ke Virtual Account.',

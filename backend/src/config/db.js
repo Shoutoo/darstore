@@ -218,6 +218,8 @@ async function initDatabase() {
       await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_refunded INTEGER DEFAULT 0;");
       await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS sn TEXT;");
       await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS redirect_url TEXT;");
+      await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS email_sent INTEGER DEFAULT 0;");
+      await dbAsync.run("ALTER TABLE orders ADD COLUMN IF NOT EXISTS pending_email_sent INTEGER DEFAULT 0;");
       
       await dbAsync.run(`
         CREATE TABLE IF NOT EXISTS reward_items (
@@ -311,6 +313,8 @@ async function initDatabase() {
       points_refunded INTEGER DEFAULT 0,
       sn TEXT NULL,
       redirect_url TEXT NULL,
+      email_sent INTEGER DEFAULT 0,
+      pending_email_sent INTEGER DEFAULT 0,
       failure_reason TEXT NULL,
       expired_at TEXT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -457,6 +461,12 @@ async function initDatabase() {
   } catch (e) {}
   try {
     await dbAsync.run("ALTER TABLE orders ADD COLUMN redirect_url TEXT NULL");
+  } catch (e) {}
+  try {
+    await dbAsync.run("ALTER TABLE orders ADD COLUMN email_sent INTEGER DEFAULT 0");
+  } catch (e) {}
+  try {
+    await dbAsync.run("ALTER TABLE orders ADD COLUMN pending_email_sent INTEGER DEFAULT 0");
   } catch (e) {}
 
 
