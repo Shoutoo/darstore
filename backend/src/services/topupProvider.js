@@ -93,28 +93,98 @@ class TopupProviderService {
   }
 
   /**
+   * Calculate profit margin strictly within Rp 200 .. Rp 2.500
+   */
+  calculateProfitMargin(modal, opts = {}) {
+    const cost = Math.max(0, Number(modal) || 0);
+    if (opts.isSmallest3Dm) return 200;
+    if (cost <= 2500) return 250;
+    if (cost <= 3500) return 300;
+    if (cost <= 5000) return 350;
+    if (cost <= 10000) return 450;
+    if (cost <= 12000) return 550;
+    if (cost <= 15000) return 600;
+    if (cost <= 25000) return 800;
+    if (cost <= 40000) return 1000;
+    if (cost <= 75000) return 1200;
+    if (cost <= 125000) return 1500;
+    if (cost <= 200000) return 1800;
+    if (cost <= 300000) return 2200;
+    return 2500;
+  }
+
+  /**
+   * Fetch live prepaid price list from Digiflazz
+   * Endpoint: POST https://api.digiflazz.com/v1/price-list
+   */
+  async fetchPriceList() {
+    const username = this.getUsername();
+    const apiKey = this.getApiKey();
+    const sign = crypto.createHash('md5').update(`${username}${apiKey}pricelist`).digest('hex');
+
+    const response = await fetch('https://api.digiflazz.com/v1/price-list', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cmd: 'prepaid',
+        username,
+        sign
+      }),
+      signal: AbortSignal.timeout(15000)
+    });
+
+    const resData = await response.json();
+    if (!Array.isArray(resData?.data)) {
+      const msg = resData?.data?.message || resData?.message || 'Gagal mengambil daftar harga Digiflazz';
+      const err = new Error(msg);
+      err.rc = resData?.data?.rc;
+      err.raw = resData;
+      throw err;
+    }
+    return resData.data;
+  }
+
+  /**
    * Resolve appropriate Digiflazz buyer_sku_code based on order details
    */
   resolveBuyerSku(order) {
     if (order.buyer_sku_code) return order.buyer_sku_code;
     const prodId = String(order.product_id || '').trim();
-    if (/^(ml\d+|mlweek|xld\d+|ff\d+|valo\d+|vp\d+)$/i.test(prodId)) {
+    if (/^(ml\d+|mlweek|mltwilight|xld\d+|ff\d+|valo-?\d+|vp-?\d+)$/i.test(prodId)) {
       return prodId.toLowerCase();
     }
     const nama = String(order.nama_item || '').toLowerCase();
     const game = String(order.game || '').toLowerCase();
 
     if (game === 'mlbb' || nama.includes('mobile legends')) {
-      if (nama.includes('weekly') || nama.includes('pass')) return 'mlweek';
+      const wpMatch = nama.match(/weekly\s+diamond\s+pass(?:\s*(\d+)x)?/i);
+      if (wpMatch) {
+        const mult = wpMatch[1] ? Number(wpMatch[1]) : 1;
+        return mult > 1 ? `mlweek${mult}` : 'mlweek';
+      }
+      if (nama.includes('weekly') && nama.includes('elite')) return 'mlweeklyelite';
+      if (nama.includes('monthly') && nama.includes('epic')) return 'mlmonthlyepic';
+      if (nama.includes('twilight')) return 'mltwilight';
+      if (nama.includes('super value pass')) return 'mlsupervalue';
+      if (nama.includes('coupon pass')) return 'mlcouponpass';
+      if (nama.includes('starlight') || nama.includes('startlight')) {
+        if (nama.includes('plus')) return 'mlstarplus';
+        const comboDm = nama.match(/(\d+)\s*diamonds?\s*\+/i);
+        return comboDm ? `mlstar${comboDm[1]}` : 'mlstar';
+      }
       const cleaned = nama.replace(/\(x\d+\)/gi, '').replace(/\./g, '');
-      const numMatch = cleaned.match(/(\d+)\s*diamond/i) || cleaned.match(/(?:^|\D)(\d+)(?:\D|$)/);
+      const bundleMatch = cleaned.match(/bundle\s+(\d+)\s*\+\s*(\d+)\s*diamonds?/i);
+      if (bundleMatch) {
+        return `ml${Number(bundleMatch[1]) + Number(bundleMatch[2])}`;
+      }
+      const numMatch = cleaned.match(/(\d+)\s*diamonds?/i) || cleaned.match(/(?:^|\D)(\d+)(?:\D|$)/);
       if (numMatch && numMatch[1]) {
         return `ml${numMatch[1]}`;
       }
     }
 
     if (game === 'valorant' || nama.includes('valorant')) {
-      const skuPrefix = (process.env.DIGIFLAZZ_VALO_SKU_PREFIX || 'valo').trim().toLowerCase();
+      const skuPrefix = (process.env.DIGIFLAZZ_VALO_SKU_PREFIX || 'valo-').trim().toLowerCase();
       if (order.nominal && /^\d+$/.test(String(order.nominal).trim())) {
         return `${skuPrefix}${String(order.nominal).trim()}`;
       }

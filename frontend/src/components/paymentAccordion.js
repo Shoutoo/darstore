@@ -1,9 +1,37 @@
 import { PAYMENT_GROUPS } from '../data/index.js';
 import { formatRupiah } from '../utils/format.js';
 
+function renderFeeLabel(fee, basePrice = 0) {
+  const numFee = Number(fee) || 0;
+  if (numFee === 0) {
+    return basePrice > 0
+      ? `<span style="color: #34d399; font-weight: 700;">Gratis Admin</span> <span style="color: var(--text-muted); font-size: 11px;">(${formatRupiah(basePrice)})</span>`
+      : `<span style="color: #34d399; font-weight: 700;">Gratis Admin</span>`;
+  }
+  return basePrice > 0
+    ? `<span style="color: #fbbf24; font-weight: 700;">Tambahan Admin +${formatRupiah(numFee)}</span> <span style="color: var(--text-primary); font-size: 11px; font-weight: 600;">(Total ${formatRupiah(basePrice + numFee)})</span>`
+    : `<span style="color: #fbbf24; font-weight: 700;">Tambahan Admin +${formatRupiah(numFee)}</span>`;
+}
+
+export function updatePaymentAccordionPrices(containerId, basePrice = 0) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.querySelectorAll('.payment-method-card').forEach(card => {
+    if (card.dataset.isDemo === 'true') return;
+    const priceEl = card.querySelector('.payment-method-price');
+    if (!priceEl) return;
+    const fee = Number(priceEl.dataset.fee) || 0;
+    priceEl.innerHTML = renderFeeLabel(fee, basePrice);
+  });
+}
+
 export function renderPaymentAccordion(containerId, gameKey, appState, onPaymentSelect) {
   const container = document.getElementById(containerId);
   if (!container) return;
+
+  const currentNominal = appState[gameKey]?.selectedNominal;
+  const currentQty = gameKey === 'ml' ? (appState[gameKey]?.qty || 1) : 1;
+  const currentBasePrice = currentNominal ? (Number(currentNominal.price) || 0) * currentQty : 0;
 
   container.innerHTML = PAYMENT_GROUPS.map((group) => `
     <div class="payment-group expanded ${group.isDemo ? 'group-qris-demo' : 'group-va-active'}" data-group-id="${group.id}">
@@ -39,7 +67,7 @@ export function renderPaymentAccordion(containerId, gameKey, appState, onPayment
                 ${method.isDemo ? '<span class="badge-demo-chip">DEMO</span>' : ''}
               </div>
               <span class="payment-method-price" data-fee="${method.fee}">
-                ${method.isDemo ? '<span style="color: #f87171; font-size: 11px; font-weight: 700;">Pratinjau (Belum Aktif)</span>' : (method.fee === 0 ? 'Gratis Biaya' : `+ ${formatRupiah(method.fee)}`)}
+                ${method.isDemo ? '<span style="color: #f87171; font-size: 11px; font-weight: 700;">Pratinjau (Belum Aktif)</span>' : renderFeeLabel(method.fee, currentBasePrice)}
               </span>
             </div>
           </div>

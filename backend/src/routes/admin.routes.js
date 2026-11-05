@@ -11,6 +11,7 @@ router.get('/dashboard', adminController.getDashboardStats);
 
 // Products
 router.get('/products', adminController.getProducts);
+router.post('/products/sync-digiflazz', adminController.syncDigiflazzPrices);
 router.post('/products', adminController.createProduct);
 router.put('/products/:id', adminController.updateProduct);
 router.delete('/products/:id', adminController.deleteProduct);

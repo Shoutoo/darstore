@@ -3,7 +3,7 @@ import { formatRupiah } from '../utils/format.js';
 import { appState } from '../utils/state.js';
 import { createOrder } from '../api/orders.js';
 import { getProducts } from '../api/products.js';
-import { renderPaymentAccordion } from '../components/paymentAccordion.js';
+import { renderPaymentAccordion, updatePaymentAccordionPrices } from '../components/paymentAccordion.js';
 import { renderFAQs } from './homepage.js';
 import { openModal } from '../components/modals.js';
 import { showCyberToast } from '../utils/cyberPopup.js';
@@ -112,6 +112,7 @@ export function updateMLSummary() {
   if (!summaryBox || !orderBtn) return;
 
   if (!state.selectedNominal) {
+    updatePaymentAccordionPrices('ml-payments-container', 0);
     summaryBox.innerHTML = `<div class="summary-empty-state">Belum ada item produk yang dipilih.</div>`;
     orderBtn.disabled = false;
     return;
@@ -120,6 +121,7 @@ export function updateMLSummary() {
   const qty = state.qty || 1;
   const basePrice = state.selectedNominal.price * qty;
   const fee = state.selectedPayment ? (state.selectedPayment.fee || 0) : 0;
+  updatePaymentAccordionPrices('ml-payments-container', basePrice);
 
   // Anti-loss loyalty calculations:
   // 1 Poin = Rp 100
@@ -195,8 +197,8 @@ export function updateMLSummary() {
       </div>
       ${state.selectedPayment ? `
         <div class="summary-row">
-          <span>Biaya Layanan (${state.selectedPayment.name})</span>
-          <span>${fee === 0 ? 'Gratis' : formatRupiah(fee)}</span>
+          <span>Biaya Admin (${state.selectedPayment.name})</span>
+          <span>${fee === 0 ? '<strong style="color: #34d399;">Gratis Admin</strong>' : `<strong style="color: #fbbf24;">Tambahan Admin +${formatRupiah(fee)}</strong>`}</span>
         </div>
       ` : ''}
       ${loyaltySection}
@@ -364,6 +366,14 @@ export async function handleMLCheckout() {
           <div class="summary-row" style="margin-bottom: 8px;">
             <span>Metode Bayar:</span>
             <strong style="color: #38bdf8;">${order.payment_method || state.selectedPayment.name}</strong>
+          </div>
+          <div class="summary-row" style="margin-bottom: 8px;">
+            <span>Harga Produk:</span>
+            <strong>${formatRupiah((state.selectedNominal.price || 0) * (state.qty || 1))}</strong>
+          </div>
+          <div class="summary-row" style="margin-bottom: 8px;">
+            <span>Biaya Admin:</span>
+            <strong style="color: ${(state.selectedPayment?.fee || 0) === 0 ? '#34d399' : '#fbbf24'};">${(state.selectedPayment?.fee || 0) === 0 ? 'Gratis Admin' : `Tambahan Admin +${formatRupiah(state.selectedPayment.fee)}`}</strong>
           </div>
           ${order.discount_amount > 0 ? `
             <div class="summary-row" style="margin-bottom: 8px; color: #fde047;">

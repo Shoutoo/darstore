@@ -130,9 +130,9 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // Calculate total price based on product unit price + fee
+    // Calculate total price based on product unit price + admin fee
     const quantity = game === 'valorant' ? 1 : Math.max(1, parseInt(qty, 10) || 1);
-    const fee = payment_method.toLowerCase().includes('qris') ? 800 : 1000;
+    const fee = payment_method.toLowerCase().includes('gratis') ? 0 : (payment_method.toLowerCase().includes('qris') ? 800 : 1000);
     const baseProductPrice = product.harga * quantity;
 
     let pointsUsed = 0;

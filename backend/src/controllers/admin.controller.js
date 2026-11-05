@@ -245,6 +245,59 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
+exports.syncDigiflazzPrices = async (req, res) => {
+  try {
+    const priceList = await topupProvider.fetchPriceList();
+    const skuPriceMap = new Map();
+    for (const item of priceList) {
+      if (!item || !item.buyer_sku_code || typeof item.price !== 'number') continue;
+      const code = String(item.buyer_sku_code).trim().toLowerCase();
+      skuPriceMap.set(code, item.price);
+      // Normalize leading zeros like ml05 -> ml5
+      const norm = code.replace(/^(ml|valo-?)0+(\d+)$/, '$1$2');
+      if (!skuPriceMap.has(norm)) {
+        skuPriceMap.set(norm, item.price);
+      }
+    }
+
+    const products = await dbAsync.all('SELECT * FROM products WHERE is_active = 1');
+    let updatedCount = 0;
+    const updates = [];
+
+    for (const prod of products) {
+      const sku = topupProvider.resolveBuyerSku(prod);
+      const modal = skuPriceMap.get(sku);
+      if (typeof modal === 'number' && modal > 0) {
+        const isSmallest3Dm = sku === 'ml3';
+        const profit = topupProvider.calculateProfitMargin(modal, { isSmallest3Dm });
+        const newPrice = modal + profit;
+        if (Number(prod.harga) !== newPrice) {
+          await dbAsync.run('UPDATE products SET harga = ? WHERE id = ?', [newPrice, prod.id]);
+          updatedCount++;
+          updates.push({ id: prod.id, nama_item: prod.nama_item, sku, modal, profit, old_harga: prod.harga, new_harga: newPrice });
+        }
+      }
+    }
+
+    if (req.user?.id) {
+      await logAdminAction(req.user.id, 'sync_digiflazz_prices', 'product', 0, { updatedCount });
+    }
+
+    return res.json({
+      success: true,
+      message: `Sinkronisasi harga Digiflazz selesai. ${updatedCount} produk diperbarui.`,
+      updatedCount,
+      updates
+    });
+  } catch (err) {
+    console.error('syncDigiflazzPrices error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Gagal melakukan sinkronisasi harga dari Digiflazz.'
+    });
+  }
+};
+
 // 3. ORDER MANAGEMENT
 exports.getOrders = async (req, res) => {
   try {
