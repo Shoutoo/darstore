@@ -70,13 +70,16 @@ exports.redeemReward = async (req, res) => {
       }
     }
 
+    let finalTargetUid = targetUid;
     if (reward.game === 'valorant') {
-      if (!targetUid.includes('#')) {
+      const parts = targetUid.split('#');
+      if (parts.length !== 2 || !/^.{3,16}$/.test(parts[0].trim()) || !/^[a-zA-Z0-9]{3,5}$/.test(parts[1].trim())) {
         return res.status(400).json({
           success: false,
-          message: 'Riot ID Valorant wajib menyertakan tagline (Contoh: Player#1234).'
+          message: 'Format Riot ID Valorant tidak valid. Gunakan Nama#Tagline (Nama 3-16 karakter & Tagline 3-5 huruf/angka, contoh: Player#1234 atau Player#IDN).'
         });
       }
+      finalTargetUid = `${parts[0].trim()}#${parts[1].trim()}`;
     }
 
     // Verify current user balance
@@ -102,7 +105,7 @@ exports.redeemReward = async (req, res) => {
     await dbAsync.run('UPDATE users SET points = ? WHERE id = ?', [newPoints, user.id]);
 
     // Record point history
-    const targetDesc = reward.game === 'mlbb' ? `${targetUid} (${targetSrv})` : targetUid;
+    const targetDesc = reward.game === 'mlbb' ? `${targetUid} (${targetSrv})` : finalTargetUid;
     await dbAsync.run(
       'INSERT INTO point_history (user_id, order_id, points_earned, description) VALUES (?, ?, ?, ?)',
       [
@@ -122,7 +125,7 @@ exports.redeemReward = async (req, res) => {
         reward.id,
         reward.title,
         reward.points_required,
-        targetUid,
+        finalTargetUid,
         reward.game === 'mlbb' ? targetSrv : null,
         claimCode
       ]

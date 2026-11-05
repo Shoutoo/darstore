@@ -113,6 +113,18 @@ class TopupProviderService {
       }
     }
 
+    if (game === 'valorant' || nama.includes('valorant')) {
+      const skuPrefix = (process.env.DIGIFLAZZ_VALO_SKU_PREFIX || 'valo').trim().toLowerCase();
+      if (order.nominal && /^\d+$/.test(String(order.nominal).trim())) {
+        return `${skuPrefix}${String(order.nominal).trim()}`;
+      }
+      const cleaned = nama.replace(/\(x\d+\)/gi, '').replace(/\./g, '');
+      const vpMatch = cleaned.match(/(\d+)\s*(?:valorant\s*)?(?:points?|vp)\b/i) || cleaned.match(/(?:^|\D)(\d+)(?:\D|$)/);
+      if (vpMatch && vpMatch[1]) {
+        return `${skuPrefix}${vpMatch[1]}`;
+      }
+    }
+
     if (this.isDevelopment()) {
       return 'xld10';
     }
@@ -125,7 +137,10 @@ class TopupProviderService {
    * According to Digiflazz API, calling with the same ref_id returns current status without duplicate charging
    */
   async reconcileTransaction(order) {
-    const customerNo = order.game === 'mlbb' ? `${order.game_user_id}${order.server_id}` : order.riot_id;
+    const cleanRiotId = order.game === 'valorant'
+      ? String(order.riot_id || '').split('#').map(s => s.trim()).join('#')
+      : order.riot_id;
+    const customerNo = order.game === 'mlbb' ? `${order.game_user_id}${order.server_id}` : cleanRiotId;
     return await this.requestTransaction({
       buyer_sku_code: this.resolveBuyerSku(order),
       customer_no: customerNo,
@@ -137,6 +152,10 @@ class TopupProviderService {
    * Process order to Digiflazz or simulate top up
    */
   async processTopup(order) {
+    const normalizedRiotId = order.game === 'valorant'
+      ? String(order.riot_id || '').split('#').map(s => s.trim()).join('#')
+      : order.riot_id;
+
     if (!this.isConfigured()) {
       // Simulate fast network latency when not configured
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -148,12 +167,12 @@ class TopupProviderService {
           ref_id: order.invoice_number,
           status: 'Sukses',
           buyer_sku_code: this.resolveBuyerSku(order),
-          customer_no: order.game === 'mlbb' ? `${order.game_user_id}${order.server_id}` : order.riot_id
+          customer_no: order.game === 'mlbb' ? `${order.game_user_id}${order.server_id}` : normalizedRiotId
         }
       };
     }
 
-    const customerNo = order.game === 'mlbb' ? `${order.game_user_id}${order.server_id}` : order.riot_id;
+    const customerNo = order.game === 'mlbb' ? `${order.game_user_id}${order.server_id}` : normalizedRiotId;
     const isDev = this.isDevelopment();
 
     // Di mode development sandbox Digiflazz, customer_no non-test akan berstatus 'Pending' terus.

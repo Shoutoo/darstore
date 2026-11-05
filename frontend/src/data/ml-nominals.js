@@ -323,6 +323,7 @@ export const ML_NOMINALS = {
     { id: 'ml_dm_321', name: 'Mobile Legends 1.220 Diamonds', price: 322041, icon: '/assets/icons/diamond_single.png' },
     { id: 'ml_dm_322', name: 'Mobile Legends 1.183 Diamonds', price: 325899, icon: '/assets/icons/diamond_single.png' },
     { id: 'ml_dm_323', name: 'MOBILE LEGENDS 1346 Diamond', price: 337572, icon: '/assets/icons/diamond_pack_3.png' },
+    /*
     { id: 'ml_dm_324', name: 'MOBILE LEGENDS 1358 Diamond', price: 340629, icon: '/assets/icons/diamond_pack_3.png' },
     { id: 'ml_dm_325', name: 'Mobile Legends 1.230 Diamonds', price: 345674, icon: '/assets/icons/diamond_single.png' },
     { id: 'ml_dm_326', name: 'Mobile Legends 1.412 Diamonds', price: 346519, icon: '/assets/icons/diamond_single.png' },
@@ -571,5 +572,6 @@ export const ML_NOMINALS = {
     { id: 'ml_dm_569', name: 'MOBILE LEGENDS 21330 Diamond', price: 5462138, icon: '/assets/icons/diamond_pack_5.png' },
     { id: 'ml_dm_570', name: 'MOBILE LEGENDS 27864 Diamond', price: 6583206, icon: '/assets/icons/diamond_pack_5.png' },
     { id: 'ml_dm_571', name: 'Mobile Legends 28.980 Diamonds', price: 6842526, icon: '/assets/icons/diamond_single.png' }
+    */
   ]
 };

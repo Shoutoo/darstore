@@ -66,19 +66,20 @@ exports.createOrder = async (req, res) => {
       }
     }
 
+    let normalizedRiotId = riot_id || null;
     if (game === 'valorant') {
       const rid = String(riot_id || '').trim();
       if (!rid || !rid.includes('#')) {
         return res.status(400).json({
           success: false,
-          message: 'Riot ID Valorant wajib menyertakan tagline dengan tanda # (Contoh: Player#1234).'
+          message: 'Riot ID Valorant wajib menyertakan tagline dengan tanda # (Contoh: Player#1234 atau Player#IDN).'
         });
       }
       const parts = rid.split('#');
       if (parts.length !== 2) {
         return res.status(400).json({
           success: false,
-          message: 'Format Riot ID tidak valid. Pastikan hanya ada 1 tanda # (Contoh: Player#1234).'
+          message: 'Format Riot ID tidak valid. Pastikan hanya ada 1 tanda # (Contoh: Player#1234 atau Player#IDN).'
         });
       }
       const [namaPart, tagPart] = parts;
@@ -88,12 +89,13 @@ exports.createOrder = async (req, res) => {
           message: 'Nama pada Riot ID harus 3-16 karakter. Contoh: Player#1234'
         });
       }
-      if (!/^\d{3,5}$/.test(tagPart.trim())) {
+      if (!/^[a-zA-Z0-9]{3,5}$/.test(tagPart.trim())) {
         return res.status(400).json({
           success: false,
-          message: 'Tagline Riot ID harus berupa angka saja (3-5 digit) untuk Region Indonesia. Contoh: Player#1234'
+          message: 'Tagline Riot ID harus berupa 3-5 karakter huruf/angka. Contoh: Player#1234 atau Player#IDN'
         });
       }
+      normalizedRiotId = `${namaPart.trim()}#${tagPart.trim()}`;
     }
 
     // Look up product in database
@@ -129,7 +131,7 @@ exports.createOrder = async (req, res) => {
     }
 
     // Calculate total price based on product unit price + fee
-    const quantity = Math.max(1, parseInt(qty, 10) || 1);
+    const quantity = game === 'valorant' ? 1 : Math.max(1, parseInt(qty, 10) || 1);
     const fee = payment_method.toLowerCase().includes('qris') ? 800 : 1000;
     const baseProductPrice = product.harga * quantity;
 
@@ -209,7 +211,7 @@ exports.createOrder = async (req, res) => {
         nama_item: tempOrder.nama_item,
         game_user_id: game_user_id || null,
         server_id: server_id || null,
-        riot_id: riot_id || null,
+        riot_id: normalizedRiotId,
         wa_email_guest,
         status: 'Menunggu Pembayaran',
         payment_method,

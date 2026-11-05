@@ -219,7 +219,7 @@ function openRedeemForm(reward) {
   } else {
     if (serverGroup) serverGroup.style.display = 'none';
     if (uidLabel) uidLabel.innerText = 'Riot ID Valorant (Nama#Tagline)';
-    if (uidInput) uidInput.placeholder = 'Contoh: Player#1234';
+    if (uidInput) uidInput.placeholder = 'Contoh: Player#1234 atau Player#IDN';
   }
 
   formBox.style.display = 'block';
@@ -262,12 +262,15 @@ async function handleRedeemSubmit(e) {
     }
   }
 
+  let normalizedUid = uid;
   if (reward.game === 'valorant') {
-    if (!uid.includes('#')) {
-      showCyberToast('Riot ID wajib menyertakan tanda # (Contoh: Player#1234)', 'warning', 'RIOT ID');
+    const parts = uid.split('#');
+    if (parts.length !== 2 || !/^.{3,16}$/.test(parts[0].trim()) || !/^[a-zA-Z0-9]{3,5}$/.test(parts[1].trim())) {
+      showCyberToast('Format Riot ID tidak valid! Gunakan Nama#Tagline (Nama 3-16 karakter & Tagline 3-5 huruf/angka, contoh: Player#1234 atau Player#IDN)', 'warning', 'RIOT ID TIDAK VALID');
       uidInput?.focus();
       return;
     }
+    normalizedUid = `${parts[0].trim()}#${parts[1].trim()}`;
   }
 
   if (submitBtn) {
@@ -277,7 +280,7 @@ async function handleRedeemSubmit(e) {
 
   try {
     const res = await redeemRewardItem(reward.id, {
-      game_user_id: uid,
+      game_user_id: normalizedUid,
       server_id: srv
     });
 

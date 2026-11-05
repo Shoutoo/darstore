@@ -26,24 +26,31 @@ export async function renderValoView() {
   const container = document.getElementById('valo-nominals-container');
   if (!container) return;
 
-  let items = [...VALO_NOMINALS['id']];
+  let items = VALO_NOMINALS['id'].map(item => ({
+    ...item,
+    nominal: Number(item.nominal) || parseInt(String(item.name || '').replace(/\D/g, ''), 10) || 0
+  }));
 
   try {
     const data = await getProducts('valorant');
     if (data && data.success && data.products && data.products.length > 0) {
-      items = data.products.map(p => ({
-        id: p.id.toString(),
-        name: p.nama_item || p.namaItem,
-        price: Number(p.harga),
-        icon: p.icon || '/assets/icons/vp_icon.png'
-      }));
+      items = data.products.map(p => {
+        const itemName = p.nama_item || p.namaItem || '';
+        return {
+          id: p.id.toString(),
+          name: itemName,
+          nominal: Number(p.nominal) || parseInt(String(itemName).replace(/\D/g, ''), 10) || 0,
+          price: Number(p.harga),
+          icon: p.icon || '/assets/icons/vp_icon.png'
+        };
+      });
     }
   } catch (err) {
     console.warn('Fetching Valorant products from database:', err);
   }
 
-  // Urutkan dari harga termurah ke termahal
-  items.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+  // Urutkan berdasarkan nominal VP terkecil ke terbesar, lalu harga termurah
+  items.sort((a, b) => (Number(a.nominal) || 0) - (Number(b.nominal) || 0) || (Number(a.price) || 0) - (Number(b.price) || 0));
   appState.valoProducts = items;
 
   container.innerHTML = `
@@ -98,7 +105,8 @@ export function setupValoInputValidation() {
       riotIdInput.style.borderColor = '';
       return;
     }
-    const isValid = /^.{3,16}#\d{3,5}$/.test(value);
+    const parts = value.split('#');
+    const isValid = parts.length === 2 && /^.{3,16}$/.test(parts[0].trim()) && /^[a-zA-Z0-9]{3,5}$/.test(parts[1].trim());
     riotIdInput.style.borderColor = isValid ? '#10b981' : '#ef4444';
   };
 
@@ -267,16 +275,16 @@ export async function handleValoCheckout() {
 
   const [namaPart, tagPart] = parts;
   const namaRegex = /^.{3,16}$/;
-  const tagRegex = /^\d{3,5}$/;
+  const tagRegex = /^[a-zA-Z0-9]{3,5}$/;
 
   if (!namaRegex.test(namaPart.trim())) {
-    showCyberToast('Nama pada Riot ID harus 3-16 karakter! Contoh: Player#1234', 'warning', 'NAMA RIOT ID');
+    showCyberToast('Nama pada Riot ID harus 3-16 karakter! Contoh: Player#1234 atau Player#IDN', 'warning', 'NAMA RIOT ID');
     riotIdInput?.focus();
     return;
   }
 
   if (!tagRegex.test(tagPart.trim())) {
-    showCyberToast('Tagline Riot ID harus berupa angka saja (3-5 digit) untuk Region Indonesia! Contoh: Player#1234', 'warning', 'TAGLINE RIOT ID');
+    showCyberToast('Tagline Riot ID harus berupa 3-5 karakter huruf/angka! Contoh: Player#1234 atau Player#IDN', 'warning', 'TAGLINE RIOT ID');
     riotIdInput?.focus();
     return;
   }
