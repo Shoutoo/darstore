@@ -1,13 +1,27 @@
 import { ML_NOMINALS } from '../data/index.js';
 import { formatRupiah } from '../utils/format.js';
 import { appState } from '../utils/state.js';
-import { createOrder } from '../api/orders.js';
+import { createOrder, checkMLAccount } from '../api/orders.js';
 import { getProducts } from '../api/products.js';
 import { renderPaymentAccordion, updatePaymentAccordionPrices } from '../components/paymentAccordion.js';
 import { renderFAQs } from './homepage.js';
 import { openModal } from '../components/modals.js';
 import { showCyberToast } from '../utils/cyberPopup.js';
 import { startQrisCountdown } from '../utils/countdown.js';
+
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+let checkRequestSeq = 0;
+let debounceTimer = null;
+let lastCheckedKey = '';
 
 function createNominalCardHTML(item) {
   return `
@@ -86,6 +100,190 @@ export async function renderMLView() {
   setupMLInputValidation();
 }
 
+export async function performMLAccountCheck(options = {}) {
+  const showToast = options.showToastOnFailure !== false;
+  const uidInput = document.getElementById('ml-userid');
+  const srvInput = document.getElementById('ml-server');
+  const resultContainer = document.getElementById('ml-account-check-result');
+  const checkBtn = document.getElementById('ml-btn-check-account');
+
+  if (!uidInput || !srvInput) return false;
+
+  const uid = uidInput.value.trim();
+  const srv = srvInput.value.trim();
+  const state = appState.ml;
+
+  if (!uid || !srv) {
+    if (options.manualClick && showToast) {
+      showCyberToast('Harap isi User ID dan Server / Zone ID Mobile Legends terlebih dahulu.', 'warning', 'DATA BELUM LENGKAP');
+      if (!uid) uidInput.focus();
+      else srvInput.focus();
+    }
+    return false;
+  }
+
+  if (!/^\d{6,10}$/.test(uid)) {
+    if (options.manualClick && showToast) {
+      showCyberToast('User ID tidak valid (harus 6-10 digit angka). Contoh: 123456789', 'warning', 'USER ID TIDAK VALID');
+      uidInput.focus();
+    }
+    return false;
+  }
+
+  if (!/^\d{3,5}$/.test(srv)) {
+    if (options.manualClick && showToast) {
+      showCyberToast('Zone ID / Server tidak valid (harus 3-5 digit angka). Contoh: 2114', 'warning', 'SERVER ID TIDAK VALID');
+      srvInput.focus();
+    }
+    return false;
+  }
+
+  const currentKey = `${uid}:${srv}`;
+
+  // Jika akun ini sudah dicek sebelumnya dan valid, tidak perlu cek ulang
+  if (lastCheckedKey === currentKey && state.accountVerified && state.nickname) {
+    return true;
+  }
+
+  const seq = ++checkRequestSeq;
+
+  // Tampilkan indikator loading
+  if (checkBtn) {
+    checkBtn.disabled = true;
+    checkBtn.innerHTML = `
+      <span class="account-spinner"></span>
+      <span>Mengecek...</span>
+    `;
+  }
+
+  if (resultContainer) {
+    resultContainer.style.display = 'block';
+    resultContainer.innerHTML = `
+      <div class="account-status-card checking">
+        <span class="account-spinner"></span>
+        <span>Sedang memverifikasi User ID <strong>${escapeHTML(uid)}</strong> (${escapeHTML(srv)}) ke server game Mobile Legends...</span>
+      </div>
+    `;
+  }
+
+  try {
+    const data = await checkMLAccount(uid, srv);
+
+    // Abaikan jika ada request baru yang telah dieksekusi
+    if (seq !== checkRequestSeq) return false;
+
+    lastCheckedKey = currentKey;
+
+    if (data && data.valid === true && data.nickname) {
+      state.userId = uid;
+      state.server = srv;
+      state.nickname = data.nickname;
+      state.accountVerified = true;
+      state.accountStatus = 'valid';
+
+      uidInput.style.borderColor = '#10b981';
+      srvInput.style.borderColor = '#10b981';
+
+      if (resultContainer) {
+        resultContainer.style.display = 'block';
+        resultContainer.innerHTML = `
+          <div class="account-status-card valid">
+            <div class="account-status-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div class="account-status-details">
+              <div class="account-status-title">AKUN TERVERIFIKASI</div>
+              <div class="account-status-nickname">
+                Nickname: <strong class="nickname-highlight">${escapeHTML(data.nickname)}</strong>
+              </div>
+              <div class="account-status-sub">ID: ${escapeHTML(uid)} (${escapeHTML(srv)}) • Terdaftar di database Mobile Legends</div>
+            </div>
+          </div>
+        `;
+      }
+
+      updateMLSummary();
+      return true;
+    } else if (data && data.valid === false) {
+      state.nickname = '';
+      state.accountVerified = false;
+      state.accountStatus = 'invalid';
+
+      uidInput.style.borderColor = '#ef4444';
+      srvInput.style.borderColor = '#ef4444';
+
+      if (resultContainer) {
+        resultContainer.style.display = 'block';
+        resultContainer.innerHTML = `
+          <div class="account-status-card invalid">
+            <div class="account-status-icon error-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+            </div>
+            <div class="account-status-details">
+              <div class="account-status-title error-title">AKUN TIDAK DITEMUKAN / TIDAK TERDAFTAR</div>
+              <div class="account-status-msg">
+                Kombinasi User ID <strong>${escapeHTML(uid)}</strong> dan Server <strong>(${escapeHTML(srv)})</strong> tidak terdaftar. Mohon periksa kembali nomor ID dalam profil game Mobile Legends Anda.
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (showToast) {
+        showCyberToast(`Akun Mobile Legends (${uid} - ${srv}) tidak terdaftar! Periksa kembali User ID & Server Anda.`, 'error', 'AKUN TIDAK TERDAFTAR');
+      }
+
+      updateMLSummary();
+      return false;
+    } else {
+      // Layanan pengecekan sementara tidak merespons / timeout
+      state.accountStatus = 'unavailable';
+      uidInput.style.borderColor = '';
+      srvInput.style.borderColor = '';
+
+      if (resultContainer) {
+        resultContainer.style.display = 'block';
+        resultContainer.innerHTML = `
+          <div class="account-status-card warning">
+            <div class="account-status-icon warning-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </div>
+            <div class="account-status-details">
+              <div class="account-status-title warning-title">LAYANAN PENGECEKAN SIBUK</div>
+              <div class="account-status-msg" style="color: #fef08a;">
+                Layanan verifikasi nickname sementara sibuk. Pastikan User ID <strong>${escapeHTML(uid)}</strong> dan Server <strong>(${escapeHTML(srv)})</strong> sudah Anda periksa dengan teliti.
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      return null;
+    }
+  } catch (err) {
+    console.error('Account check error:', err);
+    if (seq === checkRequestSeq && resultContainer) {
+      resultContainer.style.display = 'block';
+      resultContainer.innerHTML = `
+        <div class="account-status-card warning">
+          <div class="account-status-details">
+            <div class="account-status-title warning-title">KONEKSI GAGAL</div>
+            <div class="account-status-msg" style="color: #fef08a;">Gagal menghubungi server pengecekan. Silakan coba klik tombol cek akun lagi.</div>
+          </div>
+        </div>
+      `;
+    }
+    return null;
+  } finally {
+    if (checkBtn) {
+      checkBtn.disabled = false;
+      checkBtn.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <span>Cek Akun &amp; Nickname</span>
+      `;
+    }
+  }
+}
+
 export function setupMLInputValidation() {
   function restrictToNumeric(inputEl, maxLength) {
     if (!inputEl) return;
@@ -96,8 +294,79 @@ export function setupMLInputValidation() {
     });
   }
 
-  restrictToNumeric(document.getElementById('ml-userid'), 10);
-  restrictToNumeric(document.getElementById('ml-server'), 5);
+  const uidInput = document.getElementById('ml-userid');
+  const srvInput = document.getElementById('ml-server');
+  const resultContainer = document.getElementById('ml-account-check-result');
+  const checkBtn = document.getElementById('ml-btn-check-account');
+
+  restrictToNumeric(uidInput, 10);
+  restrictToNumeric(srvInput, 5);
+
+  function resetCheckState() {
+    lastCheckedKey = '';
+    appState.ml.nickname = '';
+    appState.ml.accountVerified = false;
+    appState.ml.accountStatus = null;
+    if (uidInput) uidInput.style.borderColor = '';
+    if (srvInput) srvInput.style.borderColor = '';
+    if (resultContainer) {
+      resultContainer.style.display = 'none';
+      resultContainer.innerHTML = '';
+    }
+    updateMLSummary();
+  }
+
+  function handleAutoCheck() {
+    const uid = uidInput?.value.trim() || '';
+    const srv = srvInput?.value.trim() || '';
+    const currentKey = `${uid}:${srv}`;
+
+    if (lastCheckedKey && lastCheckedKey !== currentKey) {
+      resetCheckState();
+    }
+
+    if (/^\d{6,10}$/.test(uid) && /^\d{3,5}$/.test(srv)) {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        performMLAccountCheck({ showToastOnFailure: true });
+      }, 600);
+    }
+  }
+
+  if (uidInput && !uidInput.dataset.checkListenerAttached) {
+    uidInput.dataset.checkListenerAttached = 'true';
+    uidInput.addEventListener('input', handleAutoCheck);
+    uidInput.addEventListener('blur', () => {
+      const uid = uidInput.value.trim();
+      const srv = srvInput?.value.trim() || '';
+      if (/^\d{6,10}$/.test(uid) && /^\d{3,5}$/.test(srv) && !appState.ml.accountVerified) {
+        clearTimeout(debounceTimer);
+        performMLAccountCheck({ showToastOnFailure: true });
+      }
+    });
+  }
+
+  if (srvInput && !srvInput.dataset.checkListenerAttached) {
+    srvInput.dataset.checkListenerAttached = 'true';
+    srvInput.addEventListener('input', handleAutoCheck);
+    srvInput.addEventListener('blur', () => {
+      const uid = uidInput?.value.trim() || '';
+      const srv = srvInput.value.trim();
+      if (/^\d{6,10}$/.test(uid) && /^\d{3,5}$/.test(srv) && !appState.ml.accountVerified) {
+        clearTimeout(debounceTimer);
+        performMLAccountCheck({ showToastOnFailure: true });
+      }
+    });
+  }
+
+  if (checkBtn && !checkBtn.dataset.listenerAttached) {
+    checkBtn.dataset.listenerAttached = 'true';
+    checkBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      clearTimeout(debounceTimer);
+      performMLAccountCheck({ manualClick: true, showToastOnFailure: true });
+    });
+  }
 
   const emailEl = document.getElementById('ml-email');
   if (emailEl && appState.currentUser?.email && !emailEl.value) {
@@ -181,12 +450,24 @@ export function updateMLSummary() {
     `;
   }
 
+  const targetAccount = (state.userId && state.server) ? `${state.userId} (${state.server})` : (state.userId || 'Belum diisi');
+
   summaryBox.innerHTML = `
     <div class="summary-details-list">
       <div class="summary-row">
         <span>Item</span>
         <strong style="color: var(--text-primary);">${state.selectedNominal.name}</strong>
       </div>
+      <div class="summary-row">
+        <span>Akun Tujuan</span>
+        <strong>${targetAccount}</strong>
+      </div>
+      ${state.nickname ? `
+        <div class="summary-row" style="background: rgba(56, 189, 248, 0.08); padding: 6px 10px; border-radius: 6px; margin: 4px 0 8px; border: 1px dashed rgba(56, 189, 248, 0.35);">
+          <span style="color: #38bdf8; font-weight: 700;">Nickname MLBB:</span>
+          <strong style="color: #38bdf8; font-size: 13.5px;">${escapeHTML(state.nickname)}</strong>
+        </div>
+      ` : ''}
       <div class="summary-row">
         <span>Jumlah</span>
         <strong>x${qty}</strong>
@@ -270,6 +551,21 @@ export async function handleMLCheckout() {
     showCyberToast('Zone ID/Server tidak valid! Zone ID hanya berupa angka (3-5 digit), lihat angka di dalam kurung pada profil ML Anda. Contoh: 2114', 'warning', 'ZONE ID TIDAK VALID');
     srvInput?.focus();
     return;
+  }
+
+  // Jika akun sudah dicek dan terbukti TIDAK TERDAFTAR, blokir checkout!
+  if (state.accountStatus === 'invalid') {
+    showCyberToast(`Akun Mobile Legends (${uid} - ${srv}) tidak terdaftar! Harap periksa kembali User ID dan Server sebelum memesan.`, 'error', 'AKUN TIDAK VALID');
+    uidInput?.focus();
+    return;
+  }
+
+  // Jika belum terverifikasi, lakukan pengecekan akun sekarang
+  if (!state.accountVerified) {
+    const verified = await performMLAccountCheck({ showToastOnFailure: true });
+    if (verified === false) {
+      return;
+    }
   }
 
   state.userId = uid;
@@ -361,7 +657,7 @@ export async function handleMLCheckout() {
           </div>
           <div class="summary-row" style="margin-bottom: 8px;">
             <span>Akun Tujuan:</span>
-            <strong>${order.game_user_id || state.userId} (${order.server_id || state.server})</strong>
+            <strong>${order.game_user_id || state.userId} (${order.server_id || state.server})${state.nickname ? ` — ${escapeHTML(state.nickname)}` : ''}</strong>
           </div>
           <div class="summary-row" style="margin-bottom: 8px;">
             <span>Metode Bayar:</span>

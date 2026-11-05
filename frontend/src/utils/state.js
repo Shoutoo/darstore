@@ -9,6 +9,8 @@ export const appState = {
     selectedPayment: null,
     userId: '',
     server: '',
+    nickname: '',
+    accountVerified: false,
     email: '',
     wa: ''
   },

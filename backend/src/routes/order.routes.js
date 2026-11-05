@@ -12,6 +12,8 @@ router.get('/track/:invoice', optionalToken, (req, res) => {
 });
 router.get('/history', orderController.getOrderHistory);
 router.get('/public/recent', orderController.getOrderHistory);
+router.get('/check-ml-account', rateLimit({ max: 60 }), orderController.checkMLAccount);
+router.post('/check-ml-account', rateLimit({ max: 60 }), orderController.checkMLAccount);
 router.get('/products', orderController.getProducts);
 router.get('/leaderboard', require('../controllers/leaderboard.controller').getLeaderboard);
 

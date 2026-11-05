@@ -1,5 +1,14 @@
 import { apiFetch } from './client.js';
 
+export async function checkMLAccount(userId, serverId) {
+  const params = new URLSearchParams({
+    user_id: String(userId || '').trim(),
+    server_id: String(serverId || '').trim()
+  });
+  const res = await apiFetch(`/api/orders/check-ml-account?${params.toString()}`);
+  return res.json();
+}
+
 export async function createOrder(orderPayload) {
   const res = await apiFetch('/api/orders', {
     method: 'POST',

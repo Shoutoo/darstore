@@ -1,6 +1,7 @@
 const { dbAsync } = require('../config/db');
 const { dbService } = require('../config/prisma');
 const paymentGateway = require('../services/paymentGateway');
+const { checkMLAccount } = require('../services/gameAccountChecker');
 
 function generateInvoiceNumber() {
   const now = new Date();
@@ -63,6 +64,17 @@ exports.createOrder = async (req, res) => {
           success: false,
           message: 'Zone ID/Server Mobile Legends tidak valid (harus 3-5 digit angka). Contoh: 2114'
         });
+      }
+
+      // Verifikasi akun Mobile Legends agar tidak terjadi salah top up ke akun yang tidak ada
+      if (process.env.NODE_ENV !== 'test' || req.body.force_ml_check) {
+        const mlCheck = await checkMLAccount(uid, srv);
+        if (mlCheck && mlCheck.valid === false) {
+          return res.status(400).json({
+            success: false,
+            message: mlCheck.message || 'Akun Mobile Legends dengan User ID dan Server tersebut tidak terdaftar / tidak ditemukan.'
+          });
+        }
       }
     }
 
@@ -509,3 +521,55 @@ exports.getProducts = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Gagal memuat produk dari database.' });
   }
 };
+
+exports.checkMLAccount = async (req, res) => {
+  try {
+    const userId = req.query.user_id || req.query.userId || req.body?.user_id || req.body?.userId;
+    const serverId = req.query.server_id || req.query.serverId || req.query.zone_id || req.query.zoneId || req.body?.server_id || req.body?.serverId || req.body?.zone_id;
+
+    if (!userId || !serverId) {
+      return res.status(400).json({
+        success: false,
+        valid: false,
+        message: 'Parameter User ID dan Server ID Mobile Legends wajib diisi.'
+      });
+    }
+
+    const result = await checkMLAccount(userId, serverId);
+
+    if (result.valid === true) {
+      return res.json({
+        success: true,
+        valid: true,
+        nickname: result.nickname,
+        user_id: result.user_id,
+        server_id: result.server_id,
+        source: result.source || 'verified'
+      });
+    }
+
+    if (result.valid === false) {
+      return res.status(404).json({
+        success: false,
+        valid: false,
+        status: result.status || 'not_found',
+        message: result.message || 'Akun Mobile Legends dengan User ID dan Server tersebut tidak terdaftar / tidak ditemukan.'
+      });
+    }
+
+    return res.status(503).json({
+      success: false,
+      valid: null,
+      status: result.status || 'service_unavailable',
+      message: result.message || 'Layanan verifikasi nickname sedang sibuk. Mohon periksa User ID & Server Anda secara manual.'
+    });
+  } catch (err) {
+    console.error('checkMLAccount error:', err);
+    return res.status(500).json({
+      success: false,
+      valid: null,
+      message: 'Terjadi kesalahan sistem saat mengecek akun Mobile Legends.'
+    });
+  }
+};
+

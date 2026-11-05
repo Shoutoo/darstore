@@ -5,6 +5,7 @@ const path = require('path');
 
 // Ensure test environment uses local SQLite
 process.env.DB_PATH = path.join(__dirname, '../test-database.sqlite');
+process.env.NODE_ENV = 'test';
 delete process.env.DATABASE_URL;
 
 const { initDatabase, dbAsync } = require('../src/config/db');
@@ -1693,6 +1694,77 @@ test('Skenario 48: Webhook settlement Midtrans tetap dapat memproses pesanan leg
 
   topupProvider.processTopup = originalProcessTopup;
 });
+
+// SKENARIO 49: Endpoint check-ml-account mengembalikan nickname pemain saat ID dan Server valid
+test('Skenario 49: Endpoint check-ml-account mengembalikan nickname pemain saat ID dan Server valid', async () => {
+  const { _accountCache } = require('../src/services/gameAccountChecker');
+  _accountCache.set('mlbb:104395251:2531', {
+    data: { success: true, valid: true, nickname: 'idarr ur 444', user_id: '104395251', server_id: '2531', source: 'gopay' },
+    expiresAt: Date.now() + 60000
+  });
+
+  const { req, res } = createMockReqRes({
+    query: { user_id: '104395251', server_id: '2531' },
+    method: 'GET'
+  });
+
+  await orderController.checkMLAccount(req, res);
+  assert.equal(res.statusCode, 200, 'Harus merespons HTTP 200 untuk akun valid');
+  assert.equal(res._json.success, true);
+  assert.equal(res._json.valid, true);
+  assert.equal(res._json.nickname, 'idarr ur 444');
+  assert.equal(res._json.user_id, '104395251');
+  assert.equal(res._json.server_id, '2531');
+});
+
+// SKENARIO 50: Endpoint check-ml-account menolak akun yang tidak terdaftar dengan status not_found
+test('Skenario 50: Endpoint check-ml-account menolak akun yang tidak terdaftar dengan status not_found', async () => {
+  const { _accountCache } = require('../src/services/gameAccountChecker');
+  _accountCache.set('mlbb:88888888:9999', {
+    data: { success: true, valid: false, status: 'not_found', message: 'Akun Mobile Legends dengan User ID dan Server tersebut tidak terdaftar / tidak ditemukan.' },
+    expiresAt: Date.now() + 60000
+  });
+
+  const { req, res } = createMockReqRes({
+    query: { user_id: '88888888', server_id: '9999' },
+    method: 'GET'
+  });
+
+  await orderController.checkMLAccount(req, res);
+  assert.equal(res.statusCode, 404, 'Harus merespons HTTP 404 untuk akun tidak terdaftar');
+  assert.equal(res._json.success, false);
+  assert.equal(res._json.valid, false);
+  assert.equal(res._json.status, 'not_found');
+  assert.ok(res._json.message.includes('tidak terdaftar'));
+});
+
+// SKENARIO 51: Pembuatan pesanan MLBB otomatis memblokir akun yang tidak terdaftar
+test('Skenario 51: createOrder menolak pesanan jika akun Mobile Legends tidak terdaftar', async () => {
+  const { _accountCache } = require('../src/services/gameAccountChecker');
+  _accountCache.set('mlbb:77777777:8888', {
+    data: { success: true, valid: false, status: 'not_found', message: 'Akun Mobile Legends dengan User ID dan Server tersebut tidak terdaftar / tidak ditemukan.' },
+    expiresAt: Date.now() + 60000
+  });
+
+  const { req, res } = createMockReqRes({
+    body: {
+      product_id: 'test_item_1',
+      game: 'mlbb',
+      game_user_id: '77777777',
+      server_id: '8888',
+      wa_email_guest: 'customer@test.com',
+      payment_method: 'Bank BRI (BRIVA)',
+      force_ml_check: true
+    },
+    method: 'POST'
+  });
+
+  await orderController.createOrder(req, res);
+  assert.equal(res.statusCode, 400, 'Harus ditolak HTTP 400 karena ID ML tidak valid/terdaftar');
+  assert.equal(res._json.success, false);
+  assert.ok(res._json.message.includes('tidak terdaftar'));
+});
+
 
 
 
