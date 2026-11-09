@@ -131,11 +131,11 @@ export async function searchInvoice(query, onPaymentSuccess) {
           </div>
           <div class="summary-row">
             <span>Harga Produk</span>
-            <strong>${formatRupiah(Math.max(0, ((order.total_harga || 0) + Number(order.discount_amount || 0)) - (String(order.payment_method || '').toLowerCase().includes('gratis') ? 0 : (String(order.payment_method || '').toLowerCase().includes('qris') ? 800 : 1000))))}</strong>
+            <strong>${formatRupiah(Math.max(0, ((order.total_harga || 0) + Number(order.discount_amount || 0)) - (order.fee !== undefined ? Number(order.fee) : 0)))}</strong>
           </div>
           <div class="summary-row">
             <span>Biaya Admin</span>
-            <strong style="color: ${(String(order.payment_method || '').toLowerCase().includes('gratis')) ? '#34d399' : '#fbbf24'};">${(String(order.payment_method || '').toLowerCase().includes('gratis')) ? 'Gratis Admin' : `Tambahan Admin +${formatRupiah(String(order.payment_method || '').toLowerCase().includes('qris') ? 800 : 1000)}`}</strong>
+            <strong style="color: ${(order.fee === 0 || !order.fee || String(order.payment_method || '').toLowerCase().includes('gratis')) ? '#34d399' : '#fbbf24'};">${(order.fee === 0 || !order.fee || String(order.payment_method || '').toLowerCase().includes('gratis')) ? 'Gratis Admin' : `Tambahan Admin +${formatRupiah(order.fee)}`}</strong>
           </div>
           ${Number(order.discount_amount || 0) > 0 ? `
           <div class="summary-row" style="color: #fde047;">

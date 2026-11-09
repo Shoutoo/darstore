@@ -129,8 +129,19 @@ exports.createOrder = async (req, res) => {
 
     // Calculate total price based on product unit price + admin fee
     const quantity = game === 'valorant' ? 1 : Math.max(1, parseInt(qty, 10) || 1);
-    const fee = payment_method.toLowerCase().includes('gratis') ? 0 : (payment_method.toLowerCase().includes('qris') ? 800 : 1000);
     const baseProductPrice = product.harga * quantity;
+
+    // Biaya Admin:
+    // Seluruh margin keuntungan (Rp 200 - Rp 2.500) sudah diintegrasikan ke dalam harga produk Digiflazz.
+    // Metode pembayaran Virtual Account bebas biaya admin (Gratis Admin = 0).
+    // Jika ada biaya admin eksplisit dari request body yang valid, gunakan nilai tersebut.
+    let fee = 0;
+    if (req.body.fee !== undefined && req.body.fee !== null) {
+      const parsedFee = Number(req.body.fee);
+      if (!isNaN(parsedFee) && parsedFee >= 0) {
+        fee = parsedFee;
+      }
+    }
 
     let pointsUsed = 0;
     let discountAmount = 0;

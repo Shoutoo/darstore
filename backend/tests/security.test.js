@@ -1230,7 +1230,7 @@ test('Skenario 33: Pembuatan pesanan VA valid menghitung nominal dari database &
   assert.equal(res.statusCode, 201, 'Pesanan VA valid harus berhasil dibuat dengan kode 201');
   assert.equal(res._json.success, true);
   assert.ok(res._json.order, 'Respon harus memuat objek order');
-  assert.equal(res._json.order.total_harga, 31000, 'Server harus menghitung harga murni Rp 30.000 + biaya VA Rp 1.000 dari database');
+  assert.equal(res._json.order.total_harga, 30000, 'Server harus menghitung harga murni Rp 30.000 (Gratis biaya admin)');
   assert.ok(res._json.payment_data, 'Respon harus menyertakan payment_data');
   assert.equal(res._json.payment_data.bank.toLowerCase(), 'bni');
   assert.ok(res._json.payment_data.va_number.startsWith('8808'), 'Nomor VA BNI harus berawalan prefix resmi 8808');

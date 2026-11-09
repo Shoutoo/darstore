@@ -53,7 +53,7 @@ router.post('/create', optionalToken, async (req, res) => {
 
     // 3. Hitung total harga resmi di backend
     const quantity = Math.max(1, parseInt(qty, 10) || 1);
-    const fee = 1000;
+    const fee = (req.body.fee !== undefined && !isNaN(Number(req.body.fee))) ? Math.max(0, Number(req.body.fee)) : 0;
     const finalAmount = (product.harga * quantity) + fee;
 
     // 4. Buat invoice unik dan token akses aman

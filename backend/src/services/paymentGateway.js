@@ -387,7 +387,7 @@ class PaymentGatewayService {
     const total = Math.round(Number(order.total_harga));
     const fee = order.fee !== undefined
       ? Number(order.fee)
-      : (order.payment_method && order.payment_method.toLowerCase().includes('gratis') ? 0 : 1000);
+      : (order.payment_method && order.payment_method.toLowerCase().includes('gratis') ? 0 : 0);
     const discount = Number(order.discount_amount || 0);
     const qty = Math.max(1, parseInt(order.quantity, 10) || 1);
 

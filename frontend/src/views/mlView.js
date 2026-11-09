@@ -601,6 +601,7 @@ export async function handleMLCheckout() {
       wa_email_guest: state.email,
       payment_method: state.selectedPayment.name,
       payment_channel: state.selectedPayment.channel || null,
+      fee: state.selectedPayment.fee !== undefined ? state.selectedPayment.fee : 0,
       qty: state.qty || 1,
       use_points: Boolean(state.usePoints),
       points_to_use: state.usePoints ? (state.computedPointsUsed || 0) : 0

@@ -24,3 +24,4 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 };
+

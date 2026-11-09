@@ -151,7 +151,7 @@ class EmailService {
     const gameTitle = order.game === 'mlbb' ? 'Mobile Legends: Bang Bang' : 'Valorant';
     const formattedTotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(order.total_harga || 0);
     const pendingDiscount = Number(order.discount_amount || 0);
-    const pendingFee = String(order.payment_method || '').toLowerCase().includes('gratis') ? 0 : (String(order.payment_method || '').toLowerCase().includes('qris') ? 800 : 1000);
+    const pendingFee = order.fee !== undefined ? Number(order.fee) : (String(order.payment_method || '').toLowerCase().includes('gratis') ? 0 : 0);
     const pendingBase = Math.max(0, ((order.total_harga || 0) + pendingDiscount) - pendingFee);
     const formattedPendingBase = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(pendingBase);
     const formattedPendingFee = pendingFee === 0 ? 'Gratis Admin' : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(pendingFee);
@@ -321,10 +321,12 @@ class EmailService {
     const discountAmount = order.discount_amount || 0;
     const formattedDiscount = discountAmount > 0 ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(discountAmount) : 'Rp 0';
     const paymentMethodLabel = order.payment_method || 'Midtrans Virtual Account';
-    const feeAmount = String(paymentMethodLabel).toLowerCase().includes('gratis') ? 0 : (String(paymentMethodLabel).toLowerCase().includes('qris') ? 800 : 1000);
+    const feeAmount = order.fee !== undefined ? Number(order.fee) : (String(paymentMethodLabel).toLowerCase().includes('gratis') ? 0 : 0);
     const basePrice = Math.max(0, ((order.total_harga || 0) + discountAmount) - feeAmount);
     const formattedBase = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(basePrice);
-    const formattedFee = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(feeAmount);
+    const formattedFee = feeAmount > 0
+      ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(feeAmount)
+      : 'Gratis Admin';
 
     const emailSubject = `[STRUK RESMI] Pembayaran Sukses - ${order.invoice_number} | Dar'sstore`;
 
