@@ -110,29 +110,14 @@ exports.createOrder = async (req, res) => {
       normalizedRiotId = `${namaPart.trim()}#${tagPart.trim()}`;
     }
 
-    // Look up product in database
-    let product = null;
-    if (dbService.isPostgres() && dbService.getPrisma()) {
-      try {
-        const numId = parseInt(product_id, 10);
-        const p = await dbService.getPrisma().product.findFirst({
-          where: isNaN(numId) ? { namaItem: { contains: String(product_id) } } : { id: numId }
-        });
-        if (p) {
-          product = {
-            id: p.id,
-            game: p.game,
-            nama_item: p.namaItem,
-            harga: p.harga,
-            nominal: p.nominal
-          };
-        }
-      } catch (e) {
-        console.warn('Prisma product lookup failed:', e.message);
-      }
-    }
+    // Look up product in database (strict ID first, then fallback to name)
+    const trimmedProductId = String(product_id || '').trim();
+    let product = await dbAsync.get('SELECT * FROM products WHERE id = ? AND is_active = 1', [trimmedProductId]);
     if (!product) {
-      product = await dbAsync.get('SELECT * FROM products WHERE (id = ? OR nama_item LIKE ?) AND is_active = 1', [product_id, `%${product_id}%`]);
+      product = await dbAsync.get(
+        'SELECT * FROM products WHERE (nama_item = ? OR nama_item LIKE ?) AND is_active = 1 ORDER BY id ASC LIMIT 1',
+        [trimmedProductId, `%${trimmedProductId}%`]
+      );
     }
 
     if (!product) {
@@ -207,6 +192,12 @@ exports.createOrder = async (req, res) => {
       total_harga,
       product_id: product.id,
       nama_item: `${product.nama_item} (x${quantity})`,
+      base_price: baseProductPrice,
+      unit_price: product.harga,
+      quantity,
+      fee,
+      discount_amount: discountAmount,
+      points_used: pointsUsed,
       wa_email_guest,
       payment_method,
       payment_channel: req.body.payment_channel || null
@@ -308,6 +299,10 @@ exports.createOrder = async (req, res) => {
         redirectUrl: vaData.redirect_url || null,
         snapToken: vaData.snap_token || null,
         expiredAt: vaData.expired_at,
+        basePrice: baseProductPrice,
+        unitPrice: product.harga,
+        quantity,
+        fee,
         totalHarga: total_harga,
         pointsUsed,
         discountAmount,
@@ -322,6 +317,10 @@ exports.createOrder = async (req, res) => {
           redirectUrl: vaData.redirect_url || null,
           snapToken: vaData.snap_token || null,
           expiredAt: vaData.expired_at,
+          base_price: baseProductPrice,
+          unit_price: product.harga,
+          quantity,
+          fee,
           points_used: pointsUsed,
           discount_amount: discountAmount
         }

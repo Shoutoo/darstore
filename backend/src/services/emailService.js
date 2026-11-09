@@ -150,6 +150,12 @@ class EmailService {
       : (order.riot_id || order.game_user_id || '-');
     const gameTitle = order.game === 'mlbb' ? 'Mobile Legends: Bang Bang' : 'Valorant';
     const formattedTotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(order.total_harga || 0);
+    const pendingDiscount = Number(order.discount_amount || 0);
+    const pendingFee = String(order.payment_method || '').toLowerCase().includes('gratis') ? 0 : (String(order.payment_method || '').toLowerCase().includes('qris') ? 800 : 1000);
+    const pendingBase = Math.max(0, ((order.total_harga || 0) + pendingDiscount) - pendingFee);
+    const formattedPendingBase = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(pendingBase);
+    const formattedPendingFee = pendingFee === 0 ? 'Gratis Admin' : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(pendingFee);
+    const formattedPendingDiscount = pendingDiscount > 0 ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(pendingDiscount) : null;
     const bankName = String(vaData.bank || order.payment_method || 'Virtual Account').toUpperCase();
     const vaNumber = vaData.va_number || order.va_number || null;
     const billKey = vaData.bill_key || order.bill_key || null;
@@ -245,6 +251,20 @@ class EmailService {
                     <td style="text-align: right;">${order.payment_method}</td>
                   </tr>
                   <tr>
+                    <td style="color: #64748b;">Harga Produk</td>
+                    <td style="text-align: right; font-weight: 700;">${formattedPendingBase}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;">Biaya Admin</td>
+                    <td style="text-align: right; font-weight: 700; color: ${pendingFee === 0 ? '#16a34a' : '#d97706'};">${formattedPendingFee}</td>
+                  </tr>
+                  ${formattedPendingDiscount ? `
+                  <tr>
+                    <td style="color: #ca8a04;">Diskon Poin (${order.points_used || 0} Poin)</td>
+                    <td style="text-align: right; font-weight: 700; color: #ca8a04;">-${formattedPendingDiscount}</td>
+                  </tr>
+                  ` : ''}
+                  <tr>
                     <td style="color: #0f172a; font-weight: 800;">Total Bayar</td>
                     <td style="text-align: right; font-weight: 900; color: #0284c7; font-size: 14px;">${formattedTotal}</td>
                   </tr>
@@ -301,7 +321,7 @@ class EmailService {
     const discountAmount = order.discount_amount || 0;
     const formattedDiscount = discountAmount > 0 ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(discountAmount) : 'Rp 0';
     const paymentMethodLabel = order.payment_method || 'Midtrans Virtual Account';
-    const feeAmount = String(paymentMethodLabel).toLowerCase().includes('qris') ? 800 : 1000;
+    const feeAmount = String(paymentMethodLabel).toLowerCase().includes('gratis') ? 0 : (String(paymentMethodLabel).toLowerCase().includes('qris') ? 800 : 1000);
     const basePrice = Math.max(0, ((order.total_harga || 0) + discountAmount) - feeAmount);
     const formattedBase = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(basePrice);
     const formattedFee = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(feeAmount);

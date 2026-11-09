@@ -130,6 +130,20 @@ export async function searchInvoice(query, onPaymentSuccess) {
             <strong>${order.payment_method}</strong>
           </div>
           <div class="summary-row">
+            <span>Harga Produk</span>
+            <strong>${formatRupiah(Math.max(0, ((order.total_harga || 0) + Number(order.discount_amount || 0)) - (String(order.payment_method || '').toLowerCase().includes('gratis') ? 0 : (String(order.payment_method || '').toLowerCase().includes('qris') ? 800 : 1000))))}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Biaya Admin</span>
+            <strong style="color: ${(String(order.payment_method || '').toLowerCase().includes('gratis')) ? '#34d399' : '#fbbf24'};">${(String(order.payment_method || '').toLowerCase().includes('gratis')) ? 'Gratis Admin' : `Tambahan Admin +${formatRupiah(String(order.payment_method || '').toLowerCase().includes('qris') ? 800 : 1000)}`}</strong>
+          </div>
+          ${Number(order.discount_amount || 0) > 0 ? `
+          <div class="summary-row" style="color: #fde047;">
+            <span>Diskon Poin (${order.points_used || 0} Poin)</span>
+            <strong style="color: #fde047;">-${formatRupiah(order.discount_amount)}</strong>
+          </div>
+          ` : ''}
+          <div class="summary-row">
             <span>Waktu Transaksi</span>
             <span>${dateFormatted}</span>
           </div>

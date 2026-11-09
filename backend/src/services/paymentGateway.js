@@ -137,6 +137,7 @@ class PaymentGatewayService {
           order_id: order.invoice_number,
           gross_amount: Math.round(Number(order.total_harga))
         },
+        item_details: this.buildItemDetails(order),
         customer_details: {
           first_name: customer.name || order.wa_email_guest || 'Pelanggan',
           email: customer.email || (order.wa_email_guest && order.wa_email_guest.includes('@') ? order.wa_email_guest : 'customer@darstore.com'),
@@ -256,6 +257,7 @@ class PaymentGatewayService {
           order_id: order.invoice_number,
           gross_amount: Math.round(Number(order.total_harga)),
         },
+        item_details: this.buildItemDetails(order),
         qris: {
           acquirer: 'gopay', // default acquirer
         },
@@ -375,6 +377,82 @@ class PaymentGatewayService {
   }
 
   /**
+   * Build transparent item details for Midtrans transactions
+   * Guarantees that the sum of item_details matches gross_amount exactly
+   * and separates the base product price and admin fee.
+   * @param {Object} order
+   * @returns {Array<Object>}
+   */
+  buildItemDetails(order) {
+    const total = Math.round(Number(order.total_harga));
+    const fee = order.fee !== undefined
+      ? Number(order.fee)
+      : (order.payment_method && order.payment_method.toLowerCase().includes('gratis') ? 0 : 1000);
+    const discount = Number(order.discount_amount || 0);
+    const qty = Math.max(1, parseInt(order.quantity, 10) || 1);
+
+    // Calculate base price of the product
+    let basePrice = order.base_price !== undefined
+      ? Number(order.base_price)
+      : (order.unit_price !== undefined ? Number(order.unit_price) * qty : (total - fee + discount));
+
+    if (basePrice <= 0 || (basePrice + fee - discount) !== total) {
+      basePrice = total - fee + discount;
+    }
+
+    const items = [];
+    const rawItemName = (order.nama_item || 'Produk Top Up Game').replace(/\s*\(x\d+\)$/i, '').trim();
+
+    if (discount > 0) {
+      // Some bank VA channels reject negative price line items.
+      // Apply discount to the product line item so all prices are non-negative.
+      const effectiveProductTotal = Math.max(0, basePrice - discount);
+      items.push({
+        id: String(order.product_id || 'PROD').slice(0, 50),
+        name: `${rawItemName} (Diskon Poin)`.slice(0, 50),
+        price: Math.round(effectiveProductTotal),
+        quantity: 1,
+      });
+    } else {
+      const unitPrice = Math.round(basePrice / qty);
+      items.push({
+        id: String(order.product_id || 'PROD').slice(0, 50),
+        name: rawItemName.slice(0, 50),
+        price: unitPrice,
+        quantity: qty,
+      });
+    }
+
+    if (fee > 0) {
+      const methodLabel = (order.payment_method || 'Virtual Account')
+        .replace(/\s*\([^)]*\)/g, '')
+        .trim();
+      items.push({
+        id: 'ADMIN_FEE',
+        name: `Biaya Admin (${methodLabel || 'VA'})`.slice(0, 50),
+        price: Math.round(fee),
+        quantity: 1,
+      });
+    }
+
+    // Verify sum equals total
+    const sum = items.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+    if (sum === total) {
+      return items;
+    }
+
+    // Fallback single line item if discrepancy exists
+    return [
+      {
+        id: String(order.product_id || order.invoice_number || 'PROD').slice(0, 50),
+        name: (order.nama_item || 'Produk Top Up Game').slice(0, 50),
+        price: total,
+        quantity: 1,
+      },
+    ];
+  }
+
+  /**
    * Create Snap Transaction (Active: GoPay, Mandiri, BNI, BRI, Permata, CIMB)
    * @param {Object} order - { invoice_number, total_harga, nama_item, payment_channel }
    * @param {Object} customer - { name, email, phone }
@@ -392,14 +470,7 @@ class PaymentGatewayService {
         gross_amount: Math.round(Number(order.total_harga)),
       },
       enabled_payments: enabledPayments,
-      item_details: [
-        {
-          id: String(order.product_id || order.invoice_number),
-          price: Math.round(Number(order.total_harga)),
-          quantity: 1,
-          name: (order.nama_item || 'Produk Top Up Game').substring(0, 50),
-        },
-      ],
+      item_details: this.buildItemDetails(order),
       customer_details: {
         first_name: customer.name || 'Pelanggan',
         email: customer.email || 'customer@darsstore.com',
@@ -464,12 +535,7 @@ class PaymentGatewayService {
             email: customer.email || 'customer@darstore.com',
             phone: customer.phone || '081234567890'
           },
-          item_details: [{
-            id: String(order.product_id || order.invoice_number),
-            price: Math.round(Number(order.total_harga)),
-            quantity: 1,
-            name: (order.nama_item || 'Produk Top Up Game').substring(0, 50)
-          }]
+          item_details: this.buildItemDetails(order)
         })
       });
 

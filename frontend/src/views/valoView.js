@@ -386,11 +386,11 @@ export async function handleValoCheckout() {
           </div>
           <div class="summary-row" style="margin-bottom: 8px;">
             <span>Harga Produk:</span>
-            <strong>${formatRupiah(state.selectedNominal.price || 0)}</strong>
+            <strong>${formatRupiah(data.basePrice || (state.selectedNominal.price || 0))}</strong>
           </div>
           <div class="summary-row" style="margin-bottom: 8px;">
             <span>Biaya Admin:</span>
-            <strong style="color: ${(state.selectedPayment?.fee || 0) === 0 ? '#34d399' : '#fbbf24'};">${(state.selectedPayment?.fee || 0) === 0 ? 'Gratis Admin' : `Tambahan Admin +${formatRupiah(state.selectedPayment.fee)}`}</strong>
+            <strong style="color: ${(data.fee ?? (state.selectedPayment?.fee || 0)) === 0 ? '#34d399' : '#fbbf24'};">${(data.fee ?? (state.selectedPayment?.fee || 0)) === 0 ? 'Gratis Admin' : `Tambahan Admin +${formatRupiah(data.fee ?? state.selectedPayment.fee)}`}</strong>
           </div>
           ${order.discount_amount > 0 ? `
             <div class="summary-row" style="margin-bottom: 8px; color: #fde047;">
