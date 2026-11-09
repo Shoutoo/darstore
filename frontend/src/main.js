@@ -632,6 +632,21 @@ window.copyQrString = function(str) {
   });
 };
 
+async function syncStoreContactSettings() {
+  try {
+    const res = await fetch('/api/settings');
+    const data = await res.json();
+    if (res.ok && data.success && data.settings?.cs_whatsapp) {
+      let waRaw = String(data.settings.cs_whatsapp).replace(/[^0-9]/g, '');
+      if (waRaw.startsWith('0')) waRaw = '62' + waRaw.slice(1);
+      const floatBtn = document.getElementById('floating-cs-btn');
+      if (floatBtn) {
+        floatBtn.href = `https://wa.me/${waRaw}?text=Halo%20Dar'sstore,%20saya%20butuh%20bantuan%20terkait%20pesanan`;
+      }
+    }
+  } catch (e) {}
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   renderHomepage();
   renderHomepageLeaderboardTeaser();
@@ -649,6 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupThemeToggle();
   initRewardsModal();
   checkCurrentUser();
+  syncStoreContactSettings();
 
   window.addEventListener('popstate', handleRouteChange);
   handleRouteChange();

@@ -174,7 +174,7 @@ export async function searchInvoice(query, onPaymentSuccess) {
               <strong>Penyebab:</strong> <span style="color: #fca5a5;">${order.failure_reason || 'ID Game atau Server tidak ditemukan / tidak terdaftar di publisher game.'}</span>
             </div>
             <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
-              🛡️ <strong>Dana & Poin Aman:</strong> Poin reward yang digunakan otomatis di-refund ke akun Anda. Jika dana pembayaran sudah terpotong melalui Virtual Account, silakan hubungi CS melalui WhatsApp di bawah untuk penggantian ID yang benar atau permohonan bantuan.
+              🛡️ <strong>Dana & Poin Aman:</strong> Poin reward yang digunakan otomatis di-refund ke akun Anda. Jika dana pembayaran sudah terpotong melalui Virtual Account, silakan hubungi CS melalui WhatsApp (+62 821-3543-9524) di bawah untuk penggantian ID yang benar atau permohonan bantuan.
             </div>
           </div>
         ` : (isProcess ? `
@@ -199,8 +199,8 @@ export async function searchInvoice(query, onPaymentSuccess) {
         ` : ''))}
 
         <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; gap: 12px;">
-          <a href="https://wa.me/6281234567890?text=Halo%20Dar'sstore,%20saya%20ingin%20cek%20invoice%20${order.invoice_number}%20(Akun%20Game:%20${encodeURIComponent(targetAccount)})" target="_blank" rel="noreferrer" class="btn-order-now" style="flex: 1; text-align: center; text-decoration: none; justify-content: center;">
-            Bantuan CS via WhatsApp
+          <a href="https://wa.me/6282135439524?text=Halo%20Dar'sstore,%20saya%20ingin%20cek%20invoice%20${order.invoice_number}%20(Akun%20Game:%20${encodeURIComponent(targetAccount)})" target="_blank" rel="noreferrer" class="btn-order-now" style="flex: 1; text-align: center; text-decoration: none; justify-content: center;">
+            Bantuan CS via WhatsApp (+62 821-3543-9524)
           </a>
         </div>
       </div>

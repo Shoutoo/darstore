@@ -525,7 +525,7 @@ class EmailService {
                 <!-- Footer Notes -->
                 <div style="font-size: 10.5px; color: #64748b; text-align: center; font-family: 'Courier New', Courier, monospace; line-height: 1.5;">
                   * Simpan struk digital ini sebagai bukti transaksi resmi *<br/>
-                  Layanan Pelanggan (CS 24 Jam): WhatsApp <a href="https://wa.me/6281234567890" style="color: #0284c7; text-decoration: none;">0812-3456-7890</a><br/>
+                  Layanan Pelanggan (CS 24 Jam): WhatsApp <a href="https://wa.me/6282135439524" style="color: #0284c7; text-decoration: none;">+62 821-3543-9524</a><br/>
                   Email Support: <a href="mailto:bayusaputro.bs2@gmail.com" style="color: #0284c7; text-decoration: none;">bayusaputro.bs2@gmail.com</a><br/>
                   <strong>TERIMA KASIH TELAH BERBELANJA DI DAR'SSTORE!</strong>
                 </div>
@@ -605,9 +605,9 @@ class EmailService {
             </p>
 
             <div style="text-align: center; margin: 24px 0 10px;">
-              <a href="https://wa.me/6281234567890?text=Halo%20Dar'sstore,%20pesanan%20saya%20${order.invoice_number}%20gagal%20karena%20salah%20ID.%20Mohon%20bantuan." 
+              <a href="https://wa.me/6282135439524?text=Halo%20Dar'sstore,%20pesanan%20saya%20${order.invoice_number}%20gagal%20karena%20salah%20ID.%20Mohon%20bantuan." 
                  style="background: #22c55e; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 14px; display: inline-block;">
-                Hubungi CS via WhatsApp
+                Hubungi CS via WhatsApp (+62 821-3543-9524)
               </a>
             </div>
           </div>

@@ -1346,7 +1346,7 @@ async function loadSettings() {
     const data = await res.json();
     if (res.ok && data.success) {
       document.getElementById('set-store-name').value = data.settings.store_name || "Dar'sstore";
-      document.getElementById('set-cs-wa').value = data.settings.cs_whatsapp || '081234567890';
+      document.getElementById('set-cs-wa').value = data.settings.cs_whatsapp || '082135439524';
       document.getElementById('set-cs-email').value = data.settings.cs_email || 'support@darstore.com';
     }
   } catch (err) {

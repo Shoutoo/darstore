@@ -25,7 +25,7 @@ export const FAQS = [
   },
   {
     q: "Jika ada kendala bagaimana cara menghubungi Customer Service Dar'sstore?",
-    a: "Anda cukup mengklik tombol \"WHATSAPP CS\" di pojok kanan bawah website ini untuk terhubung langsung dengan Customer Service resmi kami, atau kirim email ke support@darsstore.com."
+    a: "Anda cukup mengklik tombol \"WHATSAPP CS\" di pojok kanan bawah website ini atau hubungi WhatsApp resmi kami di +62 821-3543-9524 untuk terhubung langsung dengan Customer Service resmi kami, atau kirim email ke support@darsstore.com."
   },
   {
     q: "Apa penjelasan diamond yang dalam kurung misalnya: 70 (63+7) Diamonds?",
