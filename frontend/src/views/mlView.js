@@ -727,8 +727,9 @@ export async function handleMLCheckout() {
             </div>
           ` : ''}
 
-          <div style="font-size: 11.5px; color: var(--text-muted); text-align: left; background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: 6px; margin-top: 10px; line-height: 1.5;">
-            💡 <strong>Panduan Transfer:</strong> Buka m-Banking/ATM &rarr; Pilih menu Bayar/Transfer Virtual Account &rarr; Masukkan nomor VA di atas &rarr; Pastikan total bayar tepat <strong>${formatRupiah(data.totalHarga || order.total_harga)}</strong>.
+          <div style="font-size: 11.5px; color: var(--text-muted); text-align: left; background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: 6px; margin-top: 10px; line-height: 1.6;">
+            💡 <strong>Panduan Transfer:</strong> Buka m-Banking/ATM &rarr; Pilih menu Bayar/Transfer Virtual Account &rarr; Masukkan nomor VA di atas &rarr; Pastikan total bayar tepat <strong>${formatRupiah(data.totalHarga || order.total_harga)}</strong>.<br/>
+            💬 <strong>Bantuan CS WhatsApp:</strong> <a href="https://wa.me/6282135439524?text=Halo%20Dar'sstore,%20saya%20butuh%20bantuan%20terkait%20pesanan%20${invoiceNumber}" target="_blank" rel="noopener noreferrer" style="color: #22c55e; font-weight: 700; text-decoration: underline;">+62 821-3543-9524</a>
           </div>
         </div>
 

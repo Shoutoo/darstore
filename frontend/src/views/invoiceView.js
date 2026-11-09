@@ -152,6 +152,13 @@ export async function searchInvoice(query, onPaymentSuccess) {
             <span>${formatRupiah(order.total_harga)}</span>
           </div>
 
+          <div class="summary-row" style="border-top: 1px dashed var(--border-subtle); padding-top: 10px; margin-top: 4px;">
+            <span>Layanan CS WhatsApp</span>
+            <a href="https://wa.me/6282135439524?text=Halo%20Dar'sstore,%20saya%20ingin%20cek%20invoice%20${order.invoice_number}%20(Akun%20Game:%20${encodeURIComponent(targetAccount)})" target="_blank" rel="noreferrer" style="color: #22c55e; font-weight: 700; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;">
+              <span>💬 +62 821-3543-9524</span>
+            </a>
+          </div>
+
           ${order.sn ? `
           <div class="summary-row" style="background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: var(--radius-sm); padding: 10px 14px; margin-top: 6px;">
             <div style="display: flex; flex-direction: column;">
@@ -174,7 +181,7 @@ export async function searchInvoice(query, onPaymentSuccess) {
               <strong>Penyebab:</strong> <span style="color: #fca5a5;">${order.failure_reason || 'ID Game atau Server tidak ditemukan / tidak terdaftar di publisher game.'}</span>
             </div>
             <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
-              🛡️ <strong>Dana & Poin Aman:</strong> Poin reward yang digunakan otomatis di-refund ke akun Anda. Jika dana pembayaran sudah terpotong melalui Virtual Account, silakan hubungi CS melalui WhatsApp (+62 821-3543-9524) di bawah untuk penggantian ID yang benar atau permohonan bantuan.
+              🛡️ <strong>Dana & Poin Aman:</strong> Poin reward yang digunakan otomatis di-refund ke akun Anda. Jika dana pembayaran sudah terpotong melalui Virtual Account, silakan hubungi CS melalui <a href="https://wa.me/6282135439524?text=Halo%20Dar'sstore,%20pesanan%20saya%20${order.invoice_number}%20gagal%20karena%20salah%20ID.%20Mohon%20bantuan." target="_blank" rel="noreferrer" style="color: #38bdf8; text-decoration: underline; font-weight: 700;">WhatsApp (+62 821-3543-9524)</a> di bawah untuk penggantian ID yang benar atau permohonan bantuan.
             </div>
           </div>
         ` : (isProcess ? `

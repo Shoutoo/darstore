@@ -275,6 +275,11 @@ class EmailService {
                     🔍 Pantau Status Pesanan
                   </a>
                 </div>
+                <div style="text-align: center; margin: 0 0 10px;">
+                  <a href="https://wa.me/6282135439524?text=Halo%20Dar'sstore,%20saya%20butuh%20bantuan%20pembayaran%20${order.invoice_number}" target="_blank" style="background-color: #22c55e; color: #ffffff; display: block; font-size: 13px; font-weight: 800; line-height: 40px; text-align: center; text-decoration: none; border-radius: 8px; text-transform: uppercase;">
+                    💬 Chat CS WhatsApp (+62 821-3543-9524)
+                  </a>
+                </div>
                 <div style="font-size: 11px; color: #64748b; text-align: center; margin-top: 10px;">
                   Struk resmi beserta Serial Number (SN) akan dikirimkan otomatis ke email ini segera setelah pembayaran Anda terkonfirmasi.
                 </div>
@@ -506,7 +511,7 @@ class EmailService {
                 </div>
 
                 <!-- CTA Button to Check Invoice on Website -->
-                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 18px 0 10px;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 18px 0 8px;">
                   <tr>
                     <td align="center">
                       <a href="${trackingUrl}" target="_blank" style="background: linear-gradient(135deg, #0284c7, #0369a1); background-color: #0284c7; color: #ffffff; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 800; line-height: 46px; text-align: center; text-decoration: none; border-radius: 6px; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35); text-transform: uppercase; letter-spacing: 0.5px;">
@@ -515,8 +520,20 @@ class EmailService {
                     </td>
                   </tr>
                 </table>
+
+                <!-- WhatsApp CS Button in Struk -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 10px;">
+                  <tr>
+                    <td align="center">
+                      <a href="https://wa.me/6282135439524?text=Halo%20Dar'sstore,%20saya%20ingin%20bertanya%20terkait%20pesanan%20${order.invoice_number}" target="_blank" style="background-color: #22c55e; color: #ffffff; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13.5px; font-weight: 800; line-height: 42px; text-align: center; text-decoration: none; border-radius: 6px; box-shadow: 0 3px 10px rgba(34, 197, 94, 0.35); text-transform: uppercase; letter-spacing: 0.5px;">
+                        💬 CHAT CS WHATSAPP (+62 821-3543-9524)
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
                 <div style="font-size: 11px; color: #64748b; text-align: center; line-height: 1.4; margin-bottom: 14px;">
-                  Klik tombol di atas untuk membuka riwayat transaksi Anda secara realtime di website resmi Dar'sstore.
+                  Klik tombol di atas untuk membuka invoice atau chat Customer Service kami via WhatsApp.
                 </div>
 
                 <!-- Bottom Perforated Line -->
@@ -525,7 +542,7 @@ class EmailService {
                 <!-- Footer Notes -->
                 <div style="font-size: 10.5px; color: #64748b; text-align: center; font-family: 'Courier New', Courier, monospace; line-height: 1.5;">
                   * Simpan struk digital ini sebagai bukti transaksi resmi *<br/>
-                  Layanan Pelanggan (CS 24 Jam): WhatsApp <a href="https://wa.me/6282135439524" style="color: #0284c7; text-decoration: none;">+62 821-3543-9524</a><br/>
+                  Layanan Pelanggan (CS 24 Jam): WhatsApp <a href="https://wa.me/6282135439524?text=Halo%20Dar'sstore,%20saya%20ingin%20bertanya%20terkait%20pesanan%20${order.invoice_number}" style="color: #16a34a; font-weight: 700; text-decoration: underline;">+62 821-3543-9524</a><br/>
                   Email Support: <a href="mailto:bayusaputro.bs2@gmail.com" style="color: #0284c7; text-decoration: none;">bayusaputro.bs2@gmail.com</a><br/>
                   <strong>TERIMA KASIH TELAH BERBELANJA DI DAR'SSTORE!</strong>
                 </div>
