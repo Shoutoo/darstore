@@ -5,7 +5,7 @@ import { getRewardsList, redeemRewardItem, getMyRedemptions } from '../api/rewar
 import { getPointsHistory } from '../api/auth.js';
 import { showCyberToast } from '../utils/cyberPopup.js';
 
-let activeRewardsTab = 'catalog';
+let activeRewardsTab = 'rules';
 let selectedRewardForRedeem = null;
 
 export function initRewardsModal() {
@@ -51,16 +51,16 @@ export function renderRewardsHeader() {
   if (user) {
     const points = user.points || 0;
     if (balanceEl) balanceEl.innerText = `${points} Poin`;
-    if (rupiahEl) rupiahEl.innerText = `Setara potongan ${formatRupiah(points * 100)}`;
+    if (rupiahEl) rupiahEl.innerText = `Setara diskon checkout ${formatRupiah(points * 100)}`;
     if (guestPrompt) guestPrompt.style.display = 'none';
   } else {
     if (balanceEl) balanceEl.innerText = '0 Poin';
-    if (rupiahEl) rupiahEl.innerText = 'Setara potongan Rp 0';
+    if (rupiahEl) rupiahEl.innerText = 'Setara diskon checkout Rp 0';
     if (guestPrompt) {
       guestPrompt.style.display = 'block';
       guestPrompt.innerHTML = `
         <div class="rewards-guest-alert">
-          <span>💡 Masuk atau daftar akun untuk melihat saldo poin dan menukarkan hadiah!</span>
+          <span>💡 Masuk atau daftar akun untuk melihat saldo poin dan menikmati potongan harga langsung saat checkout!</span>
           <button class="btn-auth-sm" id="btn-rewards-guest-login">Masuk Akun</button>
         </div>
       `;
@@ -90,20 +90,15 @@ async function loadActiveTabContent() {
   const container = document.getElementById('rewards-tab-content');
   if (!container) return;
 
-  container.innerHTML = `
-    <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
-      <div class="spinner-small" style="margin: 0 auto 12px auto;"></div>
-      <div>Memuat data reward...</div>
-    </div>
-  `;
-
-  if (activeRewardsTab === 'catalog') {
-    await renderRewardsCatalog(container);
-  } else if (activeRewardsTab === 'history') {
+  if (activeRewardsTab === 'history') {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+        <div class="spinner-small" style="margin: 0 auto 12px auto;"></div>
+        <div>Memuat riwayat poin...</div>
+      </div>
+    `;
     await renderPointsHistory(container);
-  } else if (activeRewardsTab === 'claims') {
-    await renderMyClaims(container);
-  } else if (activeRewardsTab === 'rules') {
+  } else {
     renderRules(container);
   }
 }
@@ -496,20 +491,20 @@ function renderRules(container) {
       <div class="rule-card">
         <div class="rule-icon">🏷️</div>
         <div class="rule-content">
-          <h4>2. Potong Harga Langsung Saat Beli Lagi</h4>
+          <h4>2. Nilai Tukar Diskon Checkout</h4>
           <p>
-            Poin yang telah dikumpulkan dapat digunakan sebagai <strong>potongan diskon harga langsung saat checkout berikutnya</strong> (1 Poin = Potongan Rp 100).
-            Untuk menjaga stabilitas harga, maksimal potongan dibatasi hingga <strong>20% dari harga produk</strong> per pesanan.
+            Poin yang telah dikumpulkan digunakan sebagai <strong>potongan diskon harga langsung saat checkout berikutnya (1 Poin = Potongan Rp 100)</strong>.<br/>
+            Contoh: 10 Poin = Hemat Rp 1.000, 50 Poin = Hemat Rp 5.000, 100 Poin = Hemat Rp 10.000.
           </p>
         </div>
       </div>
 
       <div class="rule-card">
-        <div class="rule-icon">🎁</div>
+        <div class="rule-icon">⚡</div>
         <div class="rule-content">
-          <h4>3. Tukar Hadiah Mikro Game</h4>
+          <h4>3. Cara Menggunakan Saat Top Up</h4>
           <p>
-            Selain potong harga, Anda juga bisa menukarkan poin dengan <strong>Paket Diamond Mobile Legends (3 DM, 5 DM, 12 DM)</strong> atau <strong>Valorant Points (125 VP, 300 VP)</strong> gratis di tab Katalog Hadiah!
+            Buka menu game (Mobile Legends atau Valorant), pilih item nominal. Di <strong>Langkah 5 (Ringkasan Pesanan)</strong>, cukup centang kotak <strong>"⭐ Tukar Poin Loyalitas"</strong>. Tagihan akan otomatis terpotong langsung hingga maksimal 20% dari harga produk!
           </p>
         </div>
       </div>
