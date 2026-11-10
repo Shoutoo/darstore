@@ -38,7 +38,7 @@ app.get('/api/settings/contact', async (req, res) => {
     const { dbAsync } = require('./config/db');
     const rows = await dbAsync.all("SELECT key, value FROM store_settings WHERE key IN ('cs_whatsapp', 'cs_email', 'store_name')");
     const settings = {
-      cs_whatsapp: '082135439524',
+      cs_whatsapp: '087729424233',
       cs_email: 'support@darstore.com',
       store_name: "Dar'sstore"
     };
@@ -47,7 +47,7 @@ app.get('/api/settings/contact', async (req, res) => {
   } catch (e) {
     res.json({
       success: true,
-      settings: { cs_whatsapp: '082135439524', cs_email: 'support@darstore.com', store_name: "Dar'sstore" }
+      settings: { cs_whatsapp: '087729424233', cs_email: 'support@darstore.com', store_name: "Dar'sstore" }
     });
   }
 });

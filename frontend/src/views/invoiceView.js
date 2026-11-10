@@ -154,8 +154,8 @@ export async function searchInvoice(query, onPaymentSuccess) {
 
           <div class="summary-row" style="border-top: 1px dashed var(--border-subtle); padding-top: 10px; margin-top: 4px;">
             <span>Layanan CS WhatsApp</span>
-            <a href="https://wa.me/6282135439524?text=Halo%20Dar'sstore,%20saya%20ingin%20cek%20invoice%20${order.invoice_number}%20(Akun%20Game:%20${encodeURIComponent(targetAccount)})" target="_blank" rel="noreferrer" style="color: #22c55e; font-weight: 700; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;">
-              <span>💬 +62 821-3543-9524</span>
+            <a href="https://wa.me/6287729424233?text=Halo%20Dar'sstore,%20saya%20ingin%20cek%20invoice%20${order.invoice_number}%20(Akun%20Game:%20${encodeURIComponent(targetAccount)})" target="_blank" rel="noreferrer" style="color: #22c55e; font-weight: 700; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;">
+              <span>💬 +62 877-2942-4233</span>
             </a>
           </div>
 
@@ -181,7 +181,7 @@ export async function searchInvoice(query, onPaymentSuccess) {
               <strong>Penyebab:</strong> <span style="color: #fca5a5;">${order.failure_reason || 'ID Game atau Server tidak ditemukan / tidak terdaftar di publisher game.'}</span>
             </div>
             <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
-              🛡️ <strong>Dana & Poin Aman:</strong> Poin reward yang digunakan otomatis di-refund ke akun Anda. Jika dana pembayaran sudah terpotong melalui Virtual Account, silakan hubungi CS melalui <a href="https://wa.me/6282135439524?text=Halo%20Dar'sstore,%20pesanan%20saya%20${order.invoice_number}%20gagal%20karena%20salah%20ID.%20Mohon%20bantuan." target="_blank" rel="noreferrer" style="color: #38bdf8; text-decoration: underline; font-weight: 700;">WhatsApp (+62 821-3543-9524)</a> di bawah untuk penggantian ID yang benar atau permohonan bantuan.
+              🛡️ <strong>Dana & Poin Aman:</strong> Poin reward yang digunakan otomatis di-refund ke akun Anda. Jika dana pembayaran sudah terpotong melalui Virtual Account, silakan hubungi CS melalui <a href="https://wa.me/6287729424233?text=Halo%20Dar'sstore,%20pesanan%20saya%20${order.invoice_number}%20gagal%20karena%20salah%20ID.%20Mohon%20bantuan." target="_blank" rel="noreferrer" style="color: #38bdf8; text-decoration: underline; font-weight: 700;">WhatsApp (+62 877-2942-4233)</a> di bawah untuk penggantian ID yang benar atau permohonan bantuan.
             </div>
           </div>
         ` : (isProcess ? `
@@ -206,8 +206,8 @@ export async function searchInvoice(query, onPaymentSuccess) {
         ` : ''))}
 
         <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; gap: 12px;">
-          <a href="https://wa.me/6282135439524?text=Halo%20Dar'sstore,%20saya%20ingin%20cek%20invoice%20${order.invoice_number}%20(Akun%20Game:%20${encodeURIComponent(targetAccount)})" target="_blank" rel="noreferrer" class="btn-order-now" style="flex: 1; text-align: center; text-decoration: none; justify-content: center;">
-            Bantuan CS via WhatsApp (+62 821-3543-9524)
+          <a href="https://wa.me/6287729424233?text=Halo%20Dar'sstore,%20saya%20ingin%20cek%20invoice%20${order.invoice_number}%20(Akun%20Game:%20${encodeURIComponent(targetAccount)})" target="_blank" rel="noreferrer" class="btn-order-now" style="flex: 1; text-align: center; text-decoration: none; justify-content: center;">
+            Bantuan CS via WhatsApp (+62 877-2942-4233)
           </a>
         </div>
       </div>

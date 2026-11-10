@@ -511,15 +511,15 @@ async function initDatabase() {
   // Seed default store settings if empty
   const settingsCount = await dbAsync.get('SELECT COUNT(*) as count FROM store_settings');
   if (settingsCount && settingsCount.count === 0) {
-    await dbAsync.run("INSERT OR IGNORE INTO store_settings (key, value) VALUES (?, ?)", ['cs_whatsapp', '082135439524']);
+    await dbAsync.run("INSERT OR IGNORE INTO store_settings (key, value) VALUES (?, ?)", ['cs_whatsapp', '087729424233']);
     await dbAsync.run("INSERT OR IGNORE INTO store_settings (key, value) VALUES (?, ?)", ['cs_email', 'support@darstore.com']);
     await dbAsync.run("INSERT OR IGNORE INTO store_settings (key, value) VALUES (?, ?)", ['store_name', "Dar'sstore"]);
     await dbAsync.run("INSERT OR IGNORE INTO store_settings (key, value) VALUES (?, ?)", ['tripay_mode', 'sandbox']);
     await dbAsync.run("INSERT OR IGNORE INTO store_settings (key, value) VALUES (?, ?)", ['digiflazz_mode', 'development']);
   } else {
-    // Automatically update old placeholder WhatsApp number if present
+    // Automatically update WhatsApp number to 087729424233 if old number is present
     await dbAsync.run(
-      "UPDATE store_settings SET value = '082135439524' WHERE key = 'cs_whatsapp' AND (value = '081234567890' OR value = '+6281234567890' OR value = '6281234567890')"
+      "UPDATE store_settings SET value = '087729424233' WHERE key = 'cs_whatsapp' AND value != '087729424233'"
     );
   }
 }

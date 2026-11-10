@@ -759,7 +759,7 @@ exports.getSettings = async (req, res) => {
     rows.forEach(r => { settings[r.key] = r.value; });
 
     // Fallbacks
-    settings.cs_whatsapp = settings.cs_whatsapp || '082135439524';
+    settings.cs_whatsapp = settings.cs_whatsapp || '087729424233';
     settings.cs_email = settings.cs_email || 'support@darstore.com';
     settings.store_name = settings.store_name || "Dar'sstore";
 

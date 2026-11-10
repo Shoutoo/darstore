@@ -187,7 +187,7 @@ router.post('/payment-link', optionalToken, async (req, res) => {
       {
         name: customerContact,
         email: customerContact.includes('@') ? customerContact : 'customer@darstore.com',
-        phone: !customerContact.includes('@') ? customerContact : '082135439524',
+        phone: !customerContact.includes('@') ? customerContact : '087729424233',
       }
     );
 

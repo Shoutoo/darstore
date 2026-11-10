@@ -141,7 +141,7 @@ class PaymentGatewayService {
         customer_details: {
           first_name: customer.name || order.wa_email_guest || 'Pelanggan',
           email: customer.email || (order.wa_email_guest && order.wa_email_guest.includes('@') ? order.wa_email_guest : 'customer@darstore.com'),
-          phone: customer.phone || '082135439524'
+          phone: customer.phone || '087729424233'
         },
         custom_expiry: {
           expiry_duration: 24,
@@ -474,7 +474,7 @@ class PaymentGatewayService {
       customer_details: {
         first_name: customer.name || 'Pelanggan',
         email: customer.email || 'customer@darsstore.com',
-        phone: customer.phone || '082135439524',
+        phone: customer.phone || '087729424233',
       },
     };
 
@@ -533,7 +533,7 @@ class PaymentGatewayService {
           customer_details: {
             first_name: customer.name || 'Pelanggan Darstore',
             email: customer.email || 'customer@darstore.com',
-            phone: customer.phone || '082135439524'
+            phone: customer.phone || '087729424233'
           },
           item_details: this.buildItemDetails(order)
         })
