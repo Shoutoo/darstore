@@ -51,7 +51,7 @@ export function renderRewardsHeader() {
   if (user) {
     const points = user.points || 0;
     if (balanceEl) balanceEl.innerText = `${points} Poin`;
-    if (rupiahEl) rupiahEl.innerText = `Setara diskon checkout ${formatRupiah(points * 100)}`;
+    if (rupiahEl) rupiahEl.innerText = `Setara diskon checkout ${formatRupiah(points * 10)}`;
     if (guestPrompt) guestPrompt.style.display = 'none';
   } else {
     if (balanceEl) balanceEl.innerText = '0 Poin';
@@ -493,8 +493,8 @@ function renderRules(container) {
         <div class="rule-content">
           <h4>2. Nilai Tukar Diskon Checkout</h4>
           <p>
-            Poin yang telah dikumpulkan digunakan sebagai <strong>potongan diskon harga langsung saat checkout berikutnya (1 Poin = Potongan Rp 100)</strong>.<br/>
-            Contoh: 10 Poin = Hemat Rp 1.000, 50 Poin = Hemat Rp 5.000, 100 Poin = Hemat Rp 10.000.
+            Poin yang telah dikumpulkan digunakan sebagai <strong>potongan diskon harga langsung saat checkout berikutnya (1 Poin = Potongan Rp 10)</strong>.<br/>
+            Contoh: 10 Poin = Hemat Rp 100, 50 Poin = Hemat Rp 500, 100 Poin = Hemat Rp 1.000.
           </p>
         </div>
       </div>

@@ -393,12 +393,12 @@ export function updateMLSummary() {
   updatePaymentAccordionPrices('ml-payments-container', basePrice);
 
   // Anti-loss loyalty calculations:
-  // 1 Poin = Rp 100
+  // 1 Poin = Rp 10
   // Max discount 20% of basePrice
   const user = appState.currentUser;
   const userPoints = user ? (user.points || 0) : 0;
   const maxDiscountRupiah = Math.floor(basePrice * 0.20);
-  const maxPointsEligible = Math.floor(maxDiscountRupiah / 100);
+  const maxPointsEligible = Math.floor(maxDiscountRupiah / 10);
   const pointsAvailableToUse = Math.min(userPoints, maxPointsEligible);
 
   let discountAmount = 0;
@@ -406,7 +406,7 @@ export function updateMLSummary() {
 
   if (state.usePoints && pointsAvailableToUse > 0) {
     pointsUsed = pointsAvailableToUse;
-    discountAmount = pointsUsed * 100;
+    discountAmount = pointsUsed * 10;
   }
 
   const total = Math.max(fee, (basePrice + fee) - discountAmount);
@@ -430,7 +430,7 @@ export function updateMLSummary() {
             <span class="summary-loyalty-badge">${userPoints} Poin Tersedia</span>
           </div>
           <div class="summary-loyalty-hint">
-            Potong harga s/d 20% (Hemat ${formatRupiah(pointsAvailableToUse * 100)} dengan ${pointsAvailableToUse} Poin)
+            Potong harga s/d 20% (Hemat ${formatRupiah(pointsAvailableToUse * 10)} dengan ${pointsAvailableToUse} Poin)
           </div>
         </div>
       `;

@@ -157,7 +157,7 @@ exports.getPointHistory = async (req, res) => {
     return res.json({
       success: true,
       points,
-      rupiahValue: points * 100,
+      rupiahValue: points * 10,
       history: history || []
     });
   } catch (err) {

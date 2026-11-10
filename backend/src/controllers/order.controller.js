@@ -147,9 +147,9 @@ exports.createOrder = async (req, res) => {
     let discountAmount = 0;
 
     // Anti-Loss Loyalty Point Protection:
-    // 1 Poin = Rp 100 potongan harga
+    // 1 Poin = Rp 10 potongan harga
     // Maksimal potongan: 20% dari harga produk murni (agar bisnis tidak pernah nombok modal pokok)
-    const POINT_VALUE_RUPIAH = 100;
+    const POINT_VALUE_RUPIAH = 10;
     const MAX_DISCOUNT_PERCENT = 0.20;
     const maxAllowedDiscountRupiah = Math.floor(baseProductPrice * MAX_DISCOUNT_PERCENT);
     const maxAllowedPoints = Math.floor(maxAllowedDiscountRupiah / POINT_VALUE_RUPIAH);
